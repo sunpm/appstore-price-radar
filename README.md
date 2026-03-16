@@ -47,9 +47,9 @@ cp apps/worker/.dev.vars.example apps/worker/.dev.vars
 
 填写规则：
 
-- `apps/worker/.dev.vars`：给 `wrangler dev`（Worker 本地运行）使用。
-- 根目录 `.env`：给前端 `VITE_API_BASE` 使用，也可作为 Drizzle CLI 的备用来源。
-- Worker 相关变量建议优先写到 `apps/worker/.dev.vars`。
+- `apps/worker/.dev.vars`：只放 Worker（后端）变量，供 `wrangler dev` 与 `drizzle-kit` 使用。
+- 根目录 `.env`：只放 Web（前端）变量，目前仅 `VITE_API_BASE`。
+- 不建议在根目录 `.env` 再写 Worker 变量，避免团队协作时混淆。
 
 | 变量名 | 作用 | 生效端 | 本地建议写入 | 是否必填 | 示例 |
 | --- | --- | --- | --- | --- | --- |
@@ -73,7 +73,7 @@ cp apps/worker/.dev.vars.example apps/worker/.dev.vars
   - `apps/worker/.dev.vars`
   - `apps/worker/.env`
   - 仓库根 `.env`
-- 因此不需要再手动 `export DATABASE_URL=...`。
+- 推荐把 `DATABASE_URL` 放在 `apps/worker/.dev.vars`，不需要手动 `export DATABASE_URL=...`。
 
 ### 3) 初始化数据库
 
@@ -160,7 +160,7 @@ crons = ["*/30 * * * *"]
 
 ### Worker
 
-1. 配置生产环境变量（`DATABASE_URL`、`RESEND_API_KEY`、`RESEND_FROM_EMAIL`、`CRON_SECRET`、`APP_BASE_URL`、`CORS_ORIGIN` 等）。
+1. 配置生产环境变量（分成 `Secrets` 与普通 `Vars` 两类，见下方）。
 2. 先在生产数据库执行初始化 SQL（或 `db:push`）。
 3. 部署 Worker：
 
@@ -168,7 +168,7 @@ crons = ["*/30 * * * *"]
 pnpm --filter @appstore-price-radar/worker deploy
 ```
 
-并通过 Wrangler 设置 secrets：
+通过 Wrangler 设置敏感变量（`Secrets`）：
 
 ```bash
 cd apps/worker
@@ -176,16 +176,55 @@ wrangler secret put DATABASE_URL
 wrangler secret put RESEND_API_KEY
 wrangler secret put RESEND_FROM_EMAIL
 wrangler secret put CRON_SECRET
-wrangler secret put APP_BASE_URL
-wrangler secret put CORS_ORIGIN
-wrangler secret put SESSION_TTL_DAYS
-wrangler secret put RESET_PASSWORD_TTL_MINUTES
-wrangler secret put LOGIN_CODE_TTL_MINUTES
 ```
+
+普通配置项（`Vars`）建议在 Cloudflare Dashboard 的 Worker 变量里填写（非 Secret）：
+
+- `APP_BASE_URL=https://<your-web-domain>`
+- `CORS_ORIGIN=https://<your-web-domain>`
+- `SESSION_TTL_DAYS=30`
+- `RESET_PASSWORD_TTL_MINUTES=30`
+- `LOGIN_CODE_TTL_MINUTES=10`
+
+说明：
+
+- `APP_BASE_URL`：用于邮件中的页面跳转链接（如重置密码）。
+- `CORS_ORIGIN`：必须精确为你的前端域名，不能用 `*`。
+- 以上 `Vars` 也可写在 `wrangler.toml` 的 `[vars]`，但生产环境更推荐在 Dashboard 独立管理。
+
+#### 使用 Cloudflare Dashboard（Workers Builds）时怎么填
+
+如果你是用 Git 自动部署（不是本地命令行手动 deploy），在 Worker 的 `Settings -> Build` 页面可按下面填写：
+
+| 页面字段 | 建议值（本项目） | 说明 |
+| --- | --- | --- |
+| 构建命令 | 留空（可选） | Worker 项目不需要单独构建步骤，`wrangler deploy` 会打包 |
+| 部署命令 | `npm run deploy` | 会执行 `apps/worker/package.json` 中的 `wrangler deploy` |
+| 路径 | `apps/worker` | Monorepo 下必须指向 `wrangler.toml` 所在目录 |
+| 非生产分支构建 | 按需开启 | 不需要预览环境可关闭 |
+| API 令牌 | 选择“创建新令牌”即可 | Cloudflare 会自动生成可用权限 |
+| 令牌名称 | `workers-build-appstore-price-radar`（示例） | 自定义名字，便于后续识别 |
+| Build Variables / Secrets | 通常留空 | 这里是“构建期变量”，不是 Worker 运行时变量 |
+
+注意：
+
+- Worker 运行时变量请到 `Settings -> Variables and Secrets` 填写，而不是填在 Build Variables。
+- Dashboard 中 Worker 名称必须与 `apps/worker/wrangler.toml` 的 `name` 一致（当前是 `appstore-price-radar-worker`）。
+- 若你把“路径”设为 `/`，部署命令必须显式带配置路径：`npx wrangler deploy --config apps/worker/wrangler.toml`。
 
 ### Web
 
 `apps/web` 可以部署到 Cloudflare Pages / Vercel / Netlify，设置：
+
+- `VITE_API_BASE=https://<your-worker-domain>`
+
+如果部署到 Netlify，仓库根目录已提供 `netlify.toml`，默认配置为：
+
+- Build command: `pnpm --filter @appstore-price-radar/web build`
+- Publish directory: `apps/web/dist`
+- SPA 路由回退：`/* -> /index.html`
+
+Netlify 侧你只需要额外设置前端环境变量：
 
 - `VITE_API_BASE=https://<your-worker-domain>`
 
