@@ -129,6 +129,24 @@ const parseErrorText = async (res: Response): Promise<string> => {
   }
 };
 
+const toFriendlyLoadError = (error: unknown) => {
+  if (error instanceof Error) {
+    const message = error.message || '';
+
+    if (/Failed to fetch/i.test(message)) {
+      return '请求失败：请检查 Worker 的 CORS_ORIGIN 是否包含当前前端域名，以及 VITE_API_BASE 是否正确。';
+    }
+
+    if (/Unexpected token </i.test(message)) {
+      return '请求返回了 HTML 而不是 JSON：请检查 VITE_API_BASE 是否指向 Worker API 域名。';
+    }
+
+    return message;
+  }
+
+  return '公开情报加载失败，请稍后重试。';
+};
+
 const loadDrops = async () => {
   loading.value = true;
   errorText.value = '';
@@ -149,7 +167,7 @@ const loadDrops = async () => {
     const data = (await res.json()) as { items: DropEventItem[] };
     drops.value = data.items;
   } catch (error) {
-    errorText.value = error instanceof Error ? error.message : '公开情报加载失败，请稍后重试。';
+    errorText.value = toFriendlyLoadError(error);
   } finally {
     loading.value = false;
   }

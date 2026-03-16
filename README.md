@@ -61,7 +61,7 @@ cp apps/worker/.dev.vars.example apps/worker/.dev.vars
 | `RESET_PASSWORD_TTL_MINUTES` | 重置密码 token 有效期（分钟），默认 30，范围 5-120 | Worker | `apps/worker/.dev.vars` | `否` | `30` |
 | `LOGIN_CODE_TTL_MINUTES` | 邮箱验证码有效期（分钟），默认 10，范围 2-60 | Worker | `apps/worker/.dev.vars` | `否` | `10` |
 | `APP_BASE_URL` | 前端站点地址（预留给邮件链接和跳转） | Worker | `apps/worker/.dev.vars` | `否` | `http://localhost:5173` |
-| `CORS_ORIGIN` | 允许跨域访问 API 的来源地址 | Worker | `apps/worker/.dev.vars` | `建议必填` | `http://localhost:5173` |
+| `CORS_ORIGIN` | 允许跨域访问 API 的来源地址（支持多值逗号分隔，支持 `*.domain.com`） | Worker | `apps/worker/.dev.vars` | `建议必填` | `http://localhost:5173` |
 | `VITE_API_BASE` | 前端请求后端 API 的基础地址 | Web | `.env` | `是` | `http://127.0.0.1:8787` |
 
 说明：
@@ -189,7 +189,7 @@ wrangler secret put CRON_SECRET
 说明：
 
 - `APP_BASE_URL`：用于邮件中的页面跳转链接（如重置密码）。
-- `CORS_ORIGIN`：必须精确为你的前端域名，不能用 `*`。
+- `CORS_ORIGIN`：建议精确到你的前端域名；如需同时支持 Netlify Preview，可用逗号分隔或通配写法，例如 `https://your-site.netlify.app,https://*.netlify.app`（也支持 `*.netlify.app`）。
 - 以上 `Vars` 也可写在 `wrangler.toml` 的 `[vars]`，但生产环境更推荐在 Dashboard 独立管理。
 
 #### 使用 Cloudflare Dashboard（Workers Builds）时怎么填
@@ -233,8 +233,27 @@ Netlify 侧你只需要额外设置前端环境变量：
 - `SESSION_TTL_DAYS=14` 或 `30`
 - `RESET_PASSWORD_TTL_MINUTES=30`
 - `LOGIN_CODE_TTL_MINUTES=10`
-- `CORS_ORIGIN` 精确到你的前端域名，不要设为 `*`
+- `CORS_ORIGIN` 优先精确配置（支持多值/通配），仅排障时临时使用 `*`
 - `APP_BASE_URL` 必须是生产前端地址（用于密码重置邮件链接）
+
+## 常见故障排查
+
+### 前端 Preview 页面空白或没有数据
+
+1. 检查 Netlify 环境变量 `VITE_API_BASE` 是否为 Worker 线上地址（不是本地 `127.0.0.1`）。
+2. 检查 Worker `CORS_ORIGIN` 是否包含当前前端域名（含 Preview 域名）。
+3. 在浏览器网络面板确认 `/api/public/drops` 返回的是 JSON，不是 HTML。
+
+### 接口返回 500
+
+1. 到 Worker `Settings -> Variables and Secrets` 确认已添加 `DATABASE_URL`（类型为 Secret）。
+2. 直接访问 `https://<worker-domain>/api/public/drops?limit=1`，查看返回的 `error` 字段。
+3. 查看日志：
+
+```bash
+cd apps/worker
+npx wrangler tail
+```
 
 ## 核心逻辑说明
 
