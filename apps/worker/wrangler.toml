@@ -4,10 +4,3 @@ compatibility_date = "2025-01-01"
 
 [triggers]
 crons = ["*/30 * * * *"]
-
-[vars]
-APP_BASE_URL = "http://localhost:5173"
-CORS_ORIGIN = "http://localhost:5173"
-SESSION_TTL_DAYS = "30"
-RESET_PASSWORD_TTL_MINUTES = "30"
-LOGIN_CODE_TTL_MINUTES = "10"
