@@ -1,0 +1,21 @@
+# Local Worker runtime vars for `wrangler dev`
+# Copy this file to `apps/worker/.dev.vars` and fill in real values.
+
+# Neon Postgres connection string (required)
+DATABASE_URL=
+# Resend API key (required for emails: price alerts / forgot-password / login code)
+RESEND_API_KEY=
+# Sender email under a verified Resend domain
+RESEND_FROM_EMAIL=
+# Secret for POST /api/jobs/check authentication (recommended)
+CRON_SECRET=
+# Auth session ttl in days (1-90, default 30)
+SESSION_TTL_DAYS=30
+# Password reset token ttl in minutes (5-120, default 30)
+RESET_PASSWORD_TTL_MINUTES=30
+# Email login code ttl in minutes (2-60, default 10)
+LOGIN_CODE_TTL_MINUTES=10
+# Frontend URL (used in reset-password links)
+APP_BASE_URL=http://localhost:5173
+# CORS allow origin for API
+CORS_ORIGIN=http://localhost:5173
