@@ -67,36 +67,36 @@ Explicit exclusions for this milestone.
 
 ## Traceability
 
-Which phases cover which requirements. This table is initialized now and updated during roadmap creation.
+Which phases cover which requirements.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ING-01 | TBD | Pending |
-| ING-02 | TBD | Pending |
-| ING-03 | TBD | Pending |
-| ING-04 | TBD | Pending |
-| PRIC-01 | TBD | Pending |
-| PRIC-02 | TBD | Pending |
-| PRIC-03 | TBD | Pending |
-| PRIC-04 | TBD | Pending |
-| ALRT-01 | TBD | Pending |
-| ALRT-02 | TBD | Pending |
-| ALRT-03 | TBD | Pending |
-| ALRT-04 | TBD | Pending |
-| OPS-01 | TBD | Pending |
-| OPS-02 | TBD | Pending |
-| OPS-03 | TBD | Pending |
-| OPS-04 | TBD | Pending |
-| ABUS-01 | TBD | Pending |
-| ABUS-02 | TBD | Pending |
-| ABUS-03 | TBD | Pending |
-| MNG-01 | TBD | Pending |
+| ING-01 | Phase 1 | Pending |
+| ING-02 | Phase 1 | Pending |
+| ING-03 | Phase 1 | Pending |
+| ING-04 | Phase 1 | Pending |
+| PRIC-01 | Phase 2 | Pending |
+| PRIC-02 | Phase 2 | Pending |
+| PRIC-03 | Phase 2 | Pending |
+| PRIC-04 | Phase 2 | Pending |
+| ALRT-01 | Phase 3 | Pending |
+| ALRT-02 | Phase 3 | Pending |
+| ALRT-03 | Phase 3 | Pending |
+| ALRT-04 | Phase 3 | Pending |
+| OPS-01 | Phase 4 | Pending |
+| OPS-02 | Phase 4 | Pending |
+| OPS-03 | Phase 4 | Pending |
+| OPS-04 | Phase 4 | Pending |
+| ABUS-01 | Phase 5 | Pending |
+| ABUS-02 | Phase 5 | Pending |
+| ABUS-03 | Phase 5 | Pending |
+| MNG-01 | Phase 5 | Pending |
 
 **Coverage:**
 - v1 requirements: 20 total
-- Mapped to phases: 0
-- Unmapped: 20 ⚠️
+- Mapped to phases: 20
+- Unmapped: 0 ✅
 
 ---
 *Requirements defined: 2026-03-17*
-*Last updated: 2026-03-17 after initial definition*
+*Last updated: 2026-03-17 after roadmap creation*
