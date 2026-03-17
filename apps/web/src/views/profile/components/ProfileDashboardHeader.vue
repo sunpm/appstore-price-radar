@@ -6,8 +6,6 @@ defineProps<{
     total: number;
     withTarget: number;
   };
-  successText: string;
-  errorText: string;
   toTime: (value: string) => string;
 }>();
 
@@ -46,12 +44,5 @@ const emit = defineEmits<{
         <p class="metric-mono mt-2 text-2xl font-semibold text-zinc-900">{{ watchStats.withTarget }}</p>
       </div>
     </div>
-
-    <p v-if="successText" class="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">
-      {{ successText }}
-    </p>
-    <p v-if="errorText" class="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">
-      {{ errorText }}
-    </p>
   </section>
 </template>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
+import { useToast } from '../../lib/toast';
 import HomeFeedFilters from './components/HomeFeedFilters.vue';
 import HomeFeedHero from './components/HomeFeedHero.vue';
 import HomeFeedList from './components/HomeFeedList.vue';
@@ -59,6 +60,15 @@ const errorText = ref('');
 const keyword = ref('');
 const selectedCountry = ref('ALL');
 const drops = ref<DropEventItem[]>([]);
+const toast = useToast();
+
+watch(errorText, (next) => {
+  if (!next) {
+    return;
+  }
+
+  toast.error(next);
+});
 
 const toMoney = (value: number | null | undefined, currency = 'USD') => {
   if (value === null || value === undefined) {

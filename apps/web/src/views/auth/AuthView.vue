@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { clearStoredToken, getStoredToken, setStoredToken } from '../../lib/auth-session';
+import { useToast } from '../../lib/toast';
 import AuthCredentialForms from './components/AuthCredentialForms.vue';
 import AuthHeaderBlock from './components/AuthHeaderBlock.vue';
 import AuthModeSwitcher from './components/AuthModeSwitcher.vue';
@@ -71,6 +72,7 @@ const token = ref(getStoredToken());
 const currentUser = ref<AuthUser | null>(null);
 const sessionExpiresAt = ref('');
 const restoringSession = ref(true);
+const toast = useToast();
 
 const authLoading = ref(false);
 const codeSending = ref(false);
@@ -80,6 +82,22 @@ const resetSubmitting = ref(false);
 
 const successText = ref('');
 const errorText = ref('');
+
+watch(successText, (next) => {
+  if (!next) {
+    return;
+  }
+
+  toast.success(next);
+});
+
+watch(errorText, (next) => {
+  if (!next) {
+    return;
+  }
+
+  toast.error(next);
+});
 
 const resetMessages = () => {
   successText.value = '';
@@ -522,18 +540,6 @@ onBeforeUnmount(() => {
           />
         </template>
 
-        <p
-          v-if="successText"
-          class="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700"
-        >
-          {{ successText }}
-        </p>
-        <p
-          v-if="errorText"
-          class="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700"
-        >
-          {{ errorText }}
-        </p>
       </section>
     </div>
   </main>

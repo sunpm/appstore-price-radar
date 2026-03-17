@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { clearStoredToken, getStoredToken } from '../../lib/auth-session';
+import { useToast } from '../../lib/toast';
 import ProfileDashboardHeader from './components/ProfileDashboardHeader.vue';
 import ProfileHistorySection from './components/ProfileHistorySection.vue';
 import ProfileSubscriptionListCard from './components/ProfileSubscriptionListCard.vue';
@@ -86,6 +87,7 @@ const token = ref(getStoredToken());
 const currentUser = ref<AuthUser | null>(null);
 const sessionExpiresAt = ref('');
 const restoringSession = ref(true);
+const toast = useToast();
 
 const form = reactive({
   appId: '',
@@ -106,6 +108,22 @@ const updatingHistoryTarget = ref(false);
 
 const successText = ref('');
 const errorText = ref('');
+
+watch(successText, (next) => {
+  if (!next) {
+    return;
+  }
+
+  toast.success(next);
+});
+
+watch(errorText, (next) => {
+  if (!next) {
+    return;
+  }
+
+  toast.error(next);
+});
 
 const resetMessages = () => {
   successText.value = '';
@@ -481,8 +499,6 @@ onMounted(async () => {
           :current-user-email="currentUser.email"
           :session-expires-at="sessionExpiresAt"
           :watch-stats="watchStats"
-          :success-text="successText"
-          :error-text="errorText"
           :to-time="toTime"
           @logout="logout"
         />
