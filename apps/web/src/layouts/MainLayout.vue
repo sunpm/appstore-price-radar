@@ -22,6 +22,10 @@ function isRouteActive(path: string) {
   return route.path === path || route.path.startsWith(`${path}/`)
 }
 
+function isWorkbenchRouteActive() {
+  return isRouteActive('/profile') || isRouteActive('/security')
+}
+
 function syncToken() {
   token.value = getStoredToken()
 }
@@ -131,7 +135,7 @@ watch(
             v-else
             to="/profile"
             class="inline-flex items-center justify-center rounded-full border px-3 py-1.5 text-sm font-medium transition duration-300"
-            :class="navClass(isRouteActive('/profile'))"
+            :class="navClass(isWorkbenchRouteActive())"
           >
             我的工作台
           </RouterLink>

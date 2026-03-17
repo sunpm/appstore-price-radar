@@ -5,6 +5,7 @@ import { getStoredToken } from './lib/auth-session'
 import AuthView from './views/auth/AuthView.vue'
 import HomeView from './views/home/HomeView.vue'
 import ProfileView from './views/profile/ProfileView.vue'
+import SecurityView from './views/security/SecurityView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -27,9 +28,9 @@ const router = createRouter({
           },
         },
         {
-          path: 'profile/security',
-          name: 'profile-security',
-          component: ProfileView,
+          path: 'security',
+          name: 'security',
+          component: SecurityView,
           meta: {
             requiresAuth: true,
           },
@@ -49,18 +50,6 @@ const router = createRouter({
 })
 
 router.beforeEach((to) => {
-  const tabQuery = Array.isArray(to.query.tab) ? to.query.tab[0] : to.query.tab
-
-  if (to.path === '/profile' && tabQuery === 'security') {
-    const { tab: _tab, ...restQuery } = to.query
-
-    return {
-      path: '/profile/security',
-      query: restQuery,
-      hash: to.hash,
-    }
-  }
-
   if (to.meta.requiresAuth && !getStoredToken()) {
     return { path: '/auth' }
   }

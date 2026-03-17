@@ -7,10 +7,8 @@ import { clearStoredToken, getStoredToken } from '../../lib/auth-session'
 import { formatDateTime, formatMoney } from '../../lib/format'
 import { buildApiUrl, parseApiErrorText } from '../../lib/http'
 import { useToast } from '../../lib/toast'
-import { MIN_PASSWORD_LENGTH } from '../auth/constants'
 import ProfileDashboardHeader from './components/ProfileDashboardHeader.vue'
 import ProfileHistorySection from './components/ProfileHistorySection.vue'
-import ProfileSecurityCard from './components/ProfileSecurityCard.vue'
 import ProfileSubscriptionListCard from './components/ProfileSubscriptionListCard.vue'
 import ProfileWatchFormCard from './components/ProfileWatchFormCard.vue'
 
@@ -18,15 +16,11 @@ const router = useRouter()
 const route = useRoute()
 const countryOptions = COUNTRY_OPTIONS
 const COUNTRY_CODE_PATTERN = /^[A-Z]{2}$/
-type ProfileTab = 'workspace' | 'security'
-type ProfileRouteName = 'profile' | 'profile-security'
+
+type AccountSection = 'profile' | 'security'
 
 function countryLabel(countryCode: string): string {
   return resolveCountryLabel(countryCode)
-}
-
-function resolveProfileTabByRouteName(name: string | null): ProfileTab {
-  return name === 'profile-security' ? 'security' : 'workspace'
 }
 
 const token = ref(getStoredToken())
@@ -41,12 +35,6 @@ const form = reactive({
   targetPrice: '',
 })
 
-const securityForm = reactive({
-  currentPassword: '',
-  newPassword: '',
-  confirmPassword: '',
-})
-
 const subscriptions = ref<SubscriptionItem[]>([])
 const selectedHistory = ref<HistoryPayload | null>(null)
 const selectedSubscription = ref<SubscriptionItem | null>(null)
@@ -57,7 +45,6 @@ const loadingList = ref(false)
 const creating = ref(false)
 const loadingHistory = ref(false)
 const updatingHistoryTarget = ref(false)
-const changingPassword = ref(false)
 
 const successText = ref('')
 const errorText = ref('')
@@ -78,37 +65,12 @@ watch(errorText, (next): void => {
   toast.error(next)
 })
 
-const activeProfileTab = computed<ProfileTab>(() => {
-  const routeName = typeof route.name === 'string' ? route.name : null
-  return resolveProfileTabByRouteName(routeName)
+const activeSection = computed<AccountSection>(() => {
+  return route.name === 'security' ? 'security' : 'profile'
 })
 
-function isProfileTabActive(tab: ProfileTab): boolean {
-  return activeProfileTab.value === tab
-}
-
-async function switchProfileTab(tab: ProfileTab): Promise<void> {
-  const nextRouteName: ProfileRouteName = tab === 'security' ? 'profile-security' : 'profile'
-
-  if (route.name === nextRouteName) {
-    return
-  }
-
-  await router.replace({
-    name: nextRouteName,
-  })
-}
-
-function mapChangePasswordError(message: string): string {
-  if (message === 'Current password is incorrect') {
-    return '当前密码不正确。若你刚完成重置密码，请输入最新密码。'
-  }
-
-  if (message === 'Unauthorized') {
-    return '登录状态已失效，请重新登录后再试。'
-  }
-
-  return message
+function isAccountSectionActive(section: AccountSection): boolean {
+  return activeSection.value === section
 }
 
 function resetMessages(): void {
@@ -256,66 +218,6 @@ async function logout(): Promise<void> {
 
   clearSession()
   await router.push('/auth')
-}
-
-async function changePassword(): Promise<void> {
-  resetMessages()
-
-  if (!currentUser.value) {
-    errorText.value = '请先完成登录。'
-    return
-  }
-
-  const currentPassword = securityForm.currentPassword
-  const newPassword = securityForm.newPassword
-  const confirmPassword = securityForm.confirmPassword
-
-  if (!currentPassword || !newPassword || !confirmPassword) {
-    errorText.value = '请填写当前密码、新密码和确认密码。'
-    return
-  }
-
-  if (newPassword.length < MIN_PASSWORD_LENGTH) {
-    errorText.value = `新密码长度需不少于 ${MIN_PASSWORD_LENGTH} 位。`
-    return
-  }
-
-  if (newPassword !== confirmPassword) {
-    errorText.value = '两次输入的新密码不一致。'
-    return
-  }
-
-  if (newPassword === currentPassword) {
-    errorText.value = '新密码不能与当前密码相同。'
-    return
-  }
-
-  changingPassword.value = true
-
-  try {
-    await apiRequest<{ ok: boolean }>(
-      '/api/auth/change-password',
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          currentPassword,
-          newPassword,
-        }),
-      },
-      { auth: true },
-    )
-
-    securityForm.currentPassword = ''
-    securityForm.newPassword = ''
-    securityForm.confirmPassword = ''
-    successText.value = '密码已更新，其他设备会话已失效，当前设备保持登录。'
-  }
-  catch (error) {
-    errorText.value = error instanceof Error ? mapChangePasswordError(error.message) : '密码修改失败，请稍后重试。'
-  }
-  finally {
-    changingPassword.value = false
-  }
 }
 
 async function loadSubscriptions(options: { silent?: boolean } = {}): Promise<void> {
@@ -536,39 +438,35 @@ onMounted(async (): Promise<void> => {
           @logout="logout"
         />
 
-        <section class="reveal reveal-delay-1 mt-4 rounded-[1.5rem] border border-zinc-200/75 bg-white/85 p-2 shadow-[0_18px_38px_-16px_rgba(7,13,20,0.12)]">
-          <div class="grid gap-2 sm:grid-cols-2">
-            <button
-              class="inline-flex items-center justify-center rounded-xl border px-3 py-2.5 text-sm font-medium transition duration-300"
-              :class="
-                isProfileTabActive('workspace')
-                  ? 'border-zinc-900 bg-zinc-900 text-white'
-                  : 'border-zinc-300 bg-white text-zinc-700 hover:-translate-y-0.5 hover:border-zinc-400 hover:text-zinc-900'
-              "
-              type="button"
-              @click="switchProfileTab('workspace')"
+        <section class="reveal reveal-delay-1 mt-4 rounded-[1.5rem] border border-zinc-200/75 bg-white/88 px-4 shadow-[0_18px_38px_-16px_rgba(7,13,20,0.12)] md:px-6">
+          <nav class="flex gap-2 border-b border-zinc-200/80" aria-label="工作台页面导航">
+            <RouterLink
+              :to="{ name: 'profile' }"
+              class="group relative inline-flex min-w-fit items-center px-3 py-3.5 text-sm font-semibold tracking-[0.02em] transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/80 focus-visible:ring-offset-2"
+              :class="isAccountSectionActive('profile') ? 'text-zinc-950' : 'text-zinc-500 hover:text-zinc-800'"
             >
               监控工作台
-            </button>
-            <button
-              class="inline-flex items-center justify-center rounded-xl border px-3 py-2.5 text-sm font-medium transition duration-300"
-              :class="
-                isProfileTabActive('security')
-                  ? 'border-zinc-900 bg-zinc-900 text-white'
-                  : 'border-zinc-300 bg-white text-zinc-700 hover:-translate-y-0.5 hover:border-zinc-400 hover:text-zinc-900'
-              "
-              type="button"
-              @click="switchProfileTab('security')"
+              <span
+                class="pointer-events-none absolute inset-x-2 -bottom-[1px] h-0.5 rounded-full transition duration-300"
+                :class="isAccountSectionActive('profile') ? 'bg-zinc-900 opacity-100' : 'bg-zinc-400 opacity-0 group-hover:opacity-100'"
+              />
+            </RouterLink>
+
+            <RouterLink
+              :to="{ name: 'security' }"
+              class="group relative inline-flex min-w-fit items-center px-3 py-3.5 text-sm font-semibold tracking-[0.02em] transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/80 focus-visible:ring-offset-2"
+              :class="isAccountSectionActive('security') ? 'text-zinc-950' : 'text-zinc-500 hover:text-zinc-800'"
             >
               账号安全
-            </button>
-          </div>
+              <span
+                class="pointer-events-none absolute inset-x-2 -bottom-[1px] h-0.5 rounded-full transition duration-300"
+                :class="isAccountSectionActive('security') ? 'bg-zinc-900 opacity-100' : 'bg-zinc-400 opacity-0 group-hover:opacity-100'"
+              />
+            </RouterLink>
+          </nav>
         </section>
 
-        <section
-          v-if="isProfileTabActive('workspace')"
-          class="reveal reveal-delay-1 mt-4 grid gap-4 lg:grid-cols-[0.98fr_1.02fr]"
-        >
+        <section class="reveal reveal-delay-1 mt-4 grid gap-4 lg:grid-cols-[0.98fr_1.02fr]">
           <ProfileWatchFormCard
             v-model:app-id="form.appId"
             v-model:country="form.country"
@@ -591,7 +489,6 @@ onMounted(async (): Promise<void> => {
         </section>
 
         <ProfileHistorySection
-          v-if="isProfileTabActive('workspace')"
           v-model:history-target-price="historyTargetPrice"
           :selected-history="selectedHistory"
           :selected-subscription="selectedSubscription"
@@ -601,16 +498,6 @@ onMounted(async (): Promise<void> => {
           :target-rule-text="targetRuleText"
           :to-money="toMoney"
           @save-target-price="saveHistoryTargetPrice"
-        />
-
-        <ProfileSecurityCard
-          v-else
-          v-model:current-password="securityForm.currentPassword"
-          v-model:new-password="securityForm.newPassword"
-          v-model:confirm-password="securityForm.confirmPassword"
-          :submitting="changingPassword"
-          :min-password-length="MIN_PASSWORD_LENGTH"
-          @submit="changePassword"
         />
       </template>
 
