@@ -1,12 +1,13 @@
 {
   "name": "@appstore-price-radar/web",
+  "type": "module",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "typecheck": "vue-tsc --noEmit",
+    "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -14,8 +15,10 @@
     "vue-router": "^4.5.1"
   },
   "devDependencies": {
+    "@antfu/eslint-config": "^7.7.3",
     "@tailwindcss/vite": "^4.1.12",
     "@vitejs/plugin-vue": "^5.2.4",
+    "eslint": "^10.0.3",
     "tailwindcss": "^4.1.12",
     "typescript": "^5.9.2",
     "vite": "^5.4.19",

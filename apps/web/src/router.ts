@@ -1,10 +1,10 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHistory } from 'vue-router'
 
-import { getStoredToken } from './lib/auth-session';
-import AuthView from './views/auth/AuthView.vue';
-import HomeView from './views/home/HomeView.vue';
-import MainLayout from './layouts/MainLayout.vue';
-import ProfileView from './views/profile/ProfileView.vue';
+import MainLayout from './layouts/MainLayout.vue'
+import { getStoredToken } from './lib/auth-session'
+import AuthView from './views/auth/AuthView.vue'
+import HomeView from './views/home/HomeView.vue'
+import ProfileView from './views/profile/ProfileView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -38,14 +38,14 @@ const router = createRouter({
       redirect: '/',
     },
   ],
-});
+})
 
 router.beforeEach((to) => {
   if (to.meta.requiresAuth && !getStoredToken()) {
-    return { path: '/auth' };
+    return { path: '/auth' }
   }
 
-  return true;
-});
+  return true
+})
 
-export default router;
+export default router

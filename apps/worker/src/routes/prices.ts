@@ -3,30 +3,24 @@ import { and, desc, eq } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
+import { DEFAULT_COUNTRY_CODE, PRICE_HISTORY_DEFAULT_LIMIT, PRICE_HISTORY_MAX_LIMIT } from '../constants/routes';
 import type { AppEnv } from '../types';
 import { getDb } from '../db/client';
 import { appPriceHistory, appSnapshots } from '../db/schema';
 import { extractAppId } from '../lib/appstore';
+import { createOptionalIntWithDefault } from '../lib/zod';
 
 const paramsSchema = z.object({
   appId: z.string().trim().min(1),
 });
 
 const querySchema = z.object({
-  country: z.string().trim().length(2).optional().default('US'),
-  limit: z
-    .preprocess((value) => {
-      if (value === undefined || value === null || value === '') {
-        return 30;
-      }
-
-      if (typeof value === 'string') {
-        return Number(value);
-      }
-
-      return value;
-    }, z.number().int().min(1).max(3650))
-    .optional(),
+  country: z.string().trim().length(2).optional().default(DEFAULT_COUNTRY_CODE),
+  limit: createOptionalIntWithDefault({
+    defaultValue: PRICE_HISTORY_DEFAULT_LIMIT,
+    min: 1,
+    max: PRICE_HISTORY_MAX_LIMIT,
+  }),
 });
 
 const router = new Hono<AppEnv>();
@@ -74,7 +68,7 @@ router.get(
         ),
       )
       .orderBy(desc(appPriceHistory.fetchedAt))
-      .limit(limit ?? 30);
+      .limit(limit ?? PRICE_HISTORY_DEFAULT_LIMIT);
 
     const history = historyRaw.slice().reverse();
 

@@ -11,31 +11,7 @@ import {
 } from '../db/schema';
 import { sendDropAlertEmail } from './alerts';
 import { fetchAppStorePrice } from './appstore';
-
-export type RefreshOptions = {
-  notifyDrops?: boolean;
-};
-
-export type RefreshResult = {
-  appId: string;
-  country: string;
-  appName?: string;
-  oldPrice?: number;
-  newPrice?: number;
-  currency?: string;
-  priceDropped: boolean;
-  alertsSent: number;
-};
-
-export type CheckReport = {
-  startedAt: string;
-  finishedAt: string;
-  scanned: number;
-  updated: number;
-  drops: number;
-  emailsSent: number;
-  errors: string[];
-};
+import type { CheckReport, RefreshOptions, RefreshResult } from './checker.types';
 
 export const refreshSingleApp = async (
   env: EnvConfig,

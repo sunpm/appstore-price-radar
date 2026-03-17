@@ -1,18 +1,15 @@
 <script setup lang="ts">
-type AuthUser = {
-  id: string;
-  email: string;
-};
+import type { AuthUser } from '../types'
 
 const props = defineProps<{
-  currentUser: AuthUser;
-  sessionExpiresAt: string;
-  toTime: (value: string) => string;
-}>();
+  currentUser: AuthUser
+  sessionExpiresAt: string
+  toTime: (value: string) => string
+}>()
 
 const emit = defineEmits<{
-  logout: [];
-}>();
+  logout: []
+}>()
 </script>
 
 <template>
@@ -20,7 +17,9 @@ const emit = defineEmits<{
     <p class="text-sm text-zinc-700">
       当前账号：<strong>{{ props.currentUser.email }}</strong>
     </p>
-    <p class="mt-1 text-xs text-zinc-500" v-if="props.sessionExpiresAt">会话有效期至：{{ props.toTime(props.sessionExpiresAt) }}</p>
+    <p v-if="props.sessionExpiresAt" class="mt-1 text-xs text-zinc-500">
+      会话有效期至：{{ props.toTime(props.sessionExpiresAt) }}
+    </p>
 
     <div class="mt-4 flex flex-wrap items-center gap-2">
       <RouterLink

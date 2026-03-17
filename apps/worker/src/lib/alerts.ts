@@ -1,24 +1,7 @@
-import { Resend } from 'resend';
-
 import type { EnvConfig } from '../env';
 import { escapeHtml, renderEmailShell } from './email-template';
-
-export type DropAlertPayload = {
-  to: string;
-  appName: string;
-  appId: string;
-  country: string;
-  oldPrice: number;
-  newPrice: number;
-  currency: string;
-  targetPrice: number | null;
-  storeUrl: string | null;
-};
-
-export type AlertResult = {
-  sent: boolean;
-  reason?: string;
-};
+import { getMissingEmailConfigReason, getResendClient, sendResendEmail } from './email-client';
+import type { AlertResult, DropAlertPayload } from './alerts.types';
 
 const formatMoney = (amount: number, currency: string): string => {
   try {
@@ -50,14 +33,15 @@ export const sendDropAlertEmail = async (
   env: EnvConfig,
   payload: DropAlertPayload,
 ): Promise<AlertResult> => {
-  if (!env.RESEND_API_KEY || !env.RESEND_FROM_EMAIL) {
+  const client = getResendClient(env);
+
+  if (!client) {
     return {
       sent: false,
-      reason: 'missing RESEND_API_KEY or RESEND_FROM_EMAIL',
+      reason: getMissingEmailConfigReason(),
     };
   }
 
-  const resend = new Resend(env.RESEND_API_KEY);
   const oldText = formatMoney(payload.oldPrice, payload.currency);
   const newText = formatMoney(payload.newPrice, payload.currency);
   const targetText =
@@ -97,9 +81,9 @@ export const sendDropAlertEmail = async (
     footer: '你收到此邮件是因为开启了 App Store 价格监听。',
   });
 
-  try {
-    await resend.emails.send({
-      from: env.RESEND_FROM_EMAIL,
+  return sendResendEmail(
+    client,
+    {
       to: payload.to,
       subject: `[Price Radar] ${payload.appName} 降价：${oldText} -> ${newText}`,
       html,
@@ -115,13 +99,7 @@ export const sendDropAlertEmail = async (
       ]
         .filter(Boolean)
         .join('\n'),
-    });
-
-    return { sent: true };
-  } catch (error) {
-    return {
-      sent: false,
-      reason: error instanceof Error ? error.message : 'unknown email send error',
-    };
-  }
+    },
+    'drop alert email',
+  );
 };

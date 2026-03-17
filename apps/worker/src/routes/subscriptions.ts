@@ -3,29 +3,19 @@ import { and, desc, eq } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
+import { DEFAULT_COUNTRY_CODE } from '../constants/routes';
 import type { AppEnv } from '../types';
 import { getDb } from '../db/client';
 import { appSnapshots, subscriptions } from '../db/schema';
 import { refreshSingleApp } from '../lib/checker';
 import { extractAppId } from '../lib/appstore';
+import { createOptionalPositiveNumberOrNull } from '../lib/zod';
 import { requireAuth } from '../middleware/auth';
 
 const createSubscriptionSchema = z.object({
   appId: z.string().trim().min(1),
-  country: z.string().trim().length(2).optional().default('US'),
-  targetPrice: z
-    .preprocess((value) => {
-      if (value === '' || value === undefined || value === null) {
-        return null;
-      }
-
-      if (typeof value === 'string') {
-        return Number(value);
-      }
-
-      return value;
-    }, z.number().positive().nullable())
-    .optional(),
+  country: z.string().trim().length(2).optional().default(DEFAULT_COUNTRY_CODE),
+  targetPrice: createOptionalPositiveNumberOrNull(),
 });
 
 const deleteParamsSchema = z.object({

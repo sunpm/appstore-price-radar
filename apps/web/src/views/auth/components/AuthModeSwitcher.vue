@@ -1,13 +1,13 @@
 <script setup lang="ts">
-type AuthMode = 'login' | 'register' | 'code';
+import type { AuthMode } from '../types'
 
 const props = defineProps<{
-  mode: AuthMode;
-}>();
+  mode: AuthMode
+}>()
 
 const emit = defineEmits<{
-  change: [mode: AuthMode];
-}>();
+  change: [mode: AuthMode]
+}>()
 </script>
 
 <template>
@@ -27,14 +27,6 @@ const emit = defineEmits<{
       @click="emit('change', 'register')"
     >
       创建账号
-    </button>
-    <button
-      type="button"
-      class="rounded-full px-4 py-2 text-sm font-medium transition"
-      :class="props.mode === 'code' ? 'bg-zinc-900 text-white' : 'text-zinc-600 hover:text-zinc-900'"
-      @click="emit('change', 'code')"
-    >
-      邮箱验证码
     </button>
   </div>
 </template>

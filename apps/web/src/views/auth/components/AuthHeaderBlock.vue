@@ -1,13 +1,15 @@
 <script setup lang="ts">
 defineProps<{
-  isPageMode: boolean;
-}>();
+  isPageMode: boolean
+}>()
 </script>
 
 <template>
   <div class="flex flex-wrap items-center justify-between gap-3">
     <div>
-      <p class="text-xs tracking-[0.18em] text-zinc-500">{{ isPageMode ? 'AUTHENTICATION' : 'SIGN IN' }}</p>
+      <p class="text-xs tracking-[0.18em] text-zinc-500">
+        {{ isPageMode ? 'AUTHENTICATION' : 'SIGN IN' }}
+      </p>
       <h1 class="mt-2 font-semibold tracking-tight text-zinc-900" :class="isPageMode ? 'text-3xl md:text-4xl' : 'text-2xl md:text-3xl'">
         {{ isPageMode ? '账号访问与安全验证' : '登录 App Store Price Radar' }}
       </h1>

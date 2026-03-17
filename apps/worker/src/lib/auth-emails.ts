@@ -1,23 +1,11 @@
-import { Resend } from 'resend';
-
 import type { EnvConfig } from '../env';
 import { escapeHtml, renderEmailShell } from './email-template';
-
-type EmailResult = {
-  sent: boolean;
-  reason?: string;
-};
-
-const getResendClient = (env: EnvConfig): { resend: Resend; from: string } | null => {
-  if (!env.RESEND_API_KEY || !env.RESEND_FROM_EMAIL) {
-    return null;
-  }
-
-  return {
-    resend: new Resend(env.RESEND_API_KEY),
-    from: env.RESEND_FROM_EMAIL,
-  };
-};
+import {
+  getMissingEmailConfigReason,
+  getResendClient,
+  sendResendEmail,
+  type EmailResult,
+} from './email-client';
 
 export const sendPasswordResetEmail = async (
   env: EnvConfig,
@@ -28,7 +16,7 @@ export const sendPasswordResetEmail = async (
   const client = getResendClient(env);
 
   if (!client) {
-    return { sent: false, reason: 'missing RESEND_API_KEY or RESEND_FROM_EMAIL' };
+    return { sent: false, reason: getMissingEmailConfigReason() };
   }
 
   const appBase = env.APP_BASE_URL ?? 'http://localhost:5173';
@@ -62,9 +50,9 @@ export const sendPasswordResetEmail = async (
     footer: '如果不是你本人操作，可忽略此邮件，你的账号不会被修改。',
   });
 
-  try {
-    await client.resend.emails.send({
-      from: client.from,
+  return sendResendEmail(
+    client,
+    {
       to,
       subject: '[Price Radar] 重置密码',
       html,
@@ -75,15 +63,9 @@ export const sendPasswordResetEmail = async (
         `有效期: ${expiresMinutes} 分钟`,
         '如果不是你本人操作，可忽略此邮件。',
       ].join('\n'),
-    });
-
-    return { sent: true };
-  } catch (error) {
-    return {
-      sent: false,
-      reason: error instanceof Error ? error.message : 'unknown reset email error',
-    };
-  }
+    },
+    'reset email',
+  );
 };
 
 export const sendLoginCodeEmail = async (
@@ -95,7 +77,7 @@ export const sendLoginCodeEmail = async (
   const client = getResendClient(env);
 
   if (!client) {
-    return { sent: false, reason: 'missing RESEND_API_KEY or RESEND_FROM_EMAIL' };
+    return { sent: false, reason: getMissingEmailConfigReason() };
   }
 
   const contentHtml = `
@@ -120,9 +102,9 @@ export const sendLoginCodeEmail = async (
     footer: '为保障账号安全，请勿将验证码泄露给他人。',
   });
 
-  try {
-    await client.resend.emails.send({
-      from: client.from,
+  return sendResendEmail(
+    client,
+    {
       to,
       subject: `[Price Radar] 登录验证码 ${code}`,
       html,
@@ -132,13 +114,7 @@ export const sendLoginCodeEmail = async (
         `有效期: ${expiresMinutes} 分钟`,
         '若本次登录不是你本人发起，请忽略此邮件。',
       ].join('\n'),
-    });
-
-    return { sent: true };
-  } catch (error) {
-    return {
-      sent: false,
-      reason: error instanceof Error ? error.message : 'unknown login code email error',
-    };
-  }
+    },
+    'login code email',
+  );
 };

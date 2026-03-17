@@ -1,104 +1,106 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { RouterLink, RouterView, useRoute } from 'vue-router';
-import { AUTH_TOKEN_CHANGED_EVENT, TOKEN_STORAGE_KEY, getStoredToken } from '../lib/auth-session';
-import AuthView from '../views/auth/AuthView.vue';
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { RouterLink, RouterView, useRoute } from 'vue-router'
+import { AUTH_TOKEN_CHANGED_EVENT, getStoredToken, TOKEN_STORAGE_KEY } from '../lib/auth-session'
+import AuthView from '../views/auth/AuthView.vue'
 
-const route = useRoute();
-const token = ref('');
-const showAuthModal = ref(false);
+const route = useRoute()
+const token = ref('')
+const showAuthModal = ref(false)
 
-const navClass = (active: boolean) => {
+function navClass(active: boolean) {
   return active
     ? 'border-zinc-900 bg-zinc-900 text-white'
-    : 'border-zinc-300 bg-white text-zinc-700 hover:border-zinc-400 hover:text-zinc-900';
-};
+    : 'border-zinc-300 bg-white text-zinc-700 hover:border-zinc-400 hover:text-zinc-900'
+}
 
-const isRouteActive = (path: string) => {
+function isRouteActive(path: string) {
   if (path === '/') {
-    return route.path === '/';
+    return route.path === '/'
   }
 
-  return route.path === path || route.path.startsWith(`${path}/`);
-};
+  return route.path === path || route.path.startsWith(`${path}/`)
+}
 
-const syncToken = () => {
-  token.value = getStoredToken();
-};
+function syncToken() {
+  token.value = getStoredToken()
+}
 
-const loadCurrentToken = () => {
-  syncToken();
-};
+function loadCurrentToken() {
+  syncToken()
+}
 
-const handleAuthChanged = () => {
-  loadCurrentToken();
-};
+function handleAuthChanged() {
+  loadCurrentToken()
+}
 
-const handleStorage = (event: StorageEvent) => {
+function handleStorage(event: StorageEvent) {
   if (event.key !== TOKEN_STORAGE_KEY) {
-    return;
+    return
   }
 
-  loadCurrentToken();
-};
+  loadCurrentToken()
+}
 
-const openAuthModal = () => {
-  showAuthModal.value = true;
-};
+function openAuthModal() {
+  showAuthModal.value = true
+}
 
-const closeAuthModal = () => {
-  showAuthModal.value = false;
-};
+function closeAuthModal() {
+  showAuthModal.value = false
+}
 
-const handleAuthenticated = () => {
-  showAuthModal.value = false;
-};
+function handleAuthenticated() {
+  showAuthModal.value = false
+}
 
-const handleWindowKeydown = (event: KeyboardEvent) => {
+function handleWindowKeydown(event: KeyboardEvent) {
   if (event.key === 'Escape' && showAuthModal.value) {
-    closeAuthModal();
+    closeAuthModal()
   }
-};
+}
 
-const loginEntryActive = () => {
-  return showAuthModal.value;
-};
+function loginEntryActive() {
+  return showAuthModal.value
+}
 
 onMounted(() => {
-  loadCurrentToken();
-  window.addEventListener(AUTH_TOKEN_CHANGED_EVENT, handleAuthChanged);
-  window.addEventListener('storage', handleStorage);
-  window.addEventListener('keydown', handleWindowKeydown);
-});
+  loadCurrentToken()
+  window.addEventListener(AUTH_TOKEN_CHANGED_EVENT, handleAuthChanged)
+  window.addEventListener('storage', handleStorage)
+  window.addEventListener('keydown', handleWindowKeydown)
+})
 
 onBeforeUnmount(() => {
-  window.removeEventListener(AUTH_TOKEN_CHANGED_EVENT, handleAuthChanged);
-  window.removeEventListener('storage', handleStorage);
-  window.removeEventListener('keydown', handleWindowKeydown);
-});
+  window.removeEventListener(AUTH_TOKEN_CHANGED_EVENT, handleAuthChanged)
+  window.removeEventListener('storage', handleStorage)
+  window.removeEventListener('keydown', handleWindowKeydown)
+})
 
 watch(
   () => route.fullPath,
   () => {
-    closeAuthModal();
+    closeAuthModal()
   },
-);
+)
 
 watch(
   () => token.value,
   (next) => {
     if (next) {
-      closeAuthModal();
+      closeAuthModal()
     }
   },
-);
+)
 </script>
 
 <template>
   <div class="min-h-[100dvh] bg-zinc-100">
     <header class="sticky top-0 z-20 border-b border-zinc-200/80 bg-white/85 backdrop-blur-md">
       <div class="mx-auto flex max-w-[1400px] items-center justify-between gap-3 px-4 py-3 md:px-8">
-        <RouterLink to="/" class="text-sm font-semibold tracking-[0.16em] text-zinc-700"> APP STORE PRICE RADAR </RouterLink>
+        <RouterLink to="/" class="text-sm font-semibold tracking-[0.16em] text-zinc-700">
+          APP STORE PRICE RADAR
+        </RouterLink>
         <nav class="flex items-center gap-2">
           <RouterLink
             to="/"
@@ -145,7 +147,7 @@ watch(
         aria-label="关闭登录窗口"
         class="absolute inset-0 bg-zinc-950/45 backdrop-blur-[1.5px]"
         @click="closeAuthModal"
-      ></button>
+      />
 
       <div class="relative mx-auto mt-[4vh] w-full max-w-[760px]">
         <button

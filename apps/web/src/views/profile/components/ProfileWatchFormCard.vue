@@ -1,44 +1,40 @@
 <script setup lang="ts">
-type CountryOption = {
-  code: string;
-  label: string;
-};
+import type { CountryOption } from '../../../types/common'
 
 const props = defineProps<{
-  appId: string;
-  country: string;
-  targetPrice: string;
-  countryOptions: CountryOption[];
-  creating: boolean;
-}>();
+  countryOptions: CountryOption[]
+  creating: boolean
+}>()
 
 const emit = defineEmits<{
-  'update:appId': [value: string];
-  'update:country': [value: string];
-  'update:targetPrice': [value: string];
-  submit: [];
-}>();
+  submit: []
+}>()
+const appId = defineModel<string>('appId', { required: true })
+const country = defineModel<string>('country', { required: true })
+const targetPrice = defineModel<string>('targetPrice', { required: true })
 
-const onAppIdInput = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  emit('update:appId', target.value);
-};
+function onAppIdInput(event: Event): void {
+  const target = event.target as HTMLInputElement
+  appId.value = target.value
+}
 
-const onCountryChange = (event: Event) => {
-  const target = event.target as HTMLSelectElement;
-  emit('update:country', target.value);
-};
+function onCountryChange(event: Event): void {
+  const target = event.target as HTMLSelectElement
+  country.value = target.value
+}
 
-const onTargetPriceInput = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  emit('update:targetPrice', target.value);
-};
+function onTargetPriceInput(event: Event): void {
+  const target = event.target as HTMLInputElement
+  targetPrice.value = target.value
+}
 </script>
 
 <template>
   <article class="rounded-[2rem] border border-zinc-200/70 bg-white/92 p-5 shadow-[0_20px_40px_-15px_rgba(7,13,20,0.1)] md:p-6">
     <div class="flex items-end justify-between gap-3">
-      <h2 class="text-lg font-semibold tracking-tight text-zinc-900">新建监控任务</h2>
+      <h2 class="text-lg font-semibold tracking-tight text-zinc-900">
+        新建监控任务
+      </h2>
       <span class="metric-mono text-xs tracking-[0.16em] text-zinc-500">WATCH FORM</span>
     </div>
 
@@ -46,20 +42,20 @@ const onTargetPriceInput = (event: Event) => {
       <label class="grid gap-2">
         <span class="text-sm font-medium text-zinc-700">App ID 或 App Store 链接</span>
         <input
-          :value="props.appId"
+          :value="appId"
           type="text"
           placeholder="123456789 或 https://apps.apple.com/.../id123456789"
           required
           class="w-full rounded-xl border border-zinc-300/80 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
           @input="onAppIdInput"
-        />
+        >
       </label>
 
       <label class="grid gap-2">
         <span class="text-sm font-medium text-zinc-700">市场区域</span>
         <div class="relative">
           <select
-            :value="props.country"
+            :value="country"
             class="w-full appearance-none rounded-xl border border-zinc-300/80 bg-white px-3 py-2.5 pr-11 text-sm leading-6 text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
             @change="onCountryChange"
           >
@@ -78,15 +74,15 @@ const onTargetPriceInput = (event: Event) => {
       <label class="grid gap-2">
         <span class="text-sm font-medium text-zinc-700">目标价格（可选）</span>
         <input
-          :value="props.targetPrice"
+          :value="targetPrice"
           type="number"
           min="0.01"
           step="0.01"
           placeholder="示例：0.99"
           class="w-full rounded-xl border border-zinc-300/80 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
           @input="onTargetPriceInput"
-        />
-        <p class="text-xs text-zinc-500">通知规则：当前价 <= 目标价格。留空表示任意降价都会通知。</p>
+        >
+        <p class="text-xs text-zinc-500">通知规则：当前价 &lt;= 目标价格。留空表示任意降价都会通知。</p>
       </label>
 
       <button

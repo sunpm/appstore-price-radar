@@ -1,53 +1,41 @@
 <script setup lang="ts">
-type SubscriptionItem = {
-  id: string;
-  appId: string;
-  country: string;
-  targetPrice: number | null;
-  lastNotifiedPrice: number | null;
-  isActive: boolean;
-  appName: string | null;
-  storeUrl: string | null;
-  iconUrl: string | null;
-  currentPrice: number | null;
-  currency: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
+import type { SubscriptionItem } from '../types'
 
 const props = defineProps<{
-  loadingList: boolean;
-  subscriptions: SubscriptionItem[];
-  countryLabel: (countryCode: string) => string;
-  toMoney: (value: number | null | undefined, currency?: string) => string;
-  targetRuleText: (targetPrice: number | null, currency?: string) => string;
-}>();
+  loadingList: boolean
+  subscriptions: SubscriptionItem[]
+  countryLabel: (countryCode: string) => string
+  toMoney: (value: number | null | undefined, currency?: string) => string
+  targetRuleText: (targetPrice: number | null, currency?: string) => string
+}>()
 
 const emit = defineEmits<{
-  refresh: [];
-  showHistory: [item: SubscriptionItem];
-  remove: [id: string];
-}>();
+  refresh: []
+  showHistory: [item: SubscriptionItem]
+  remove: [id: string]
+}>()
 </script>
 
 <template>
   <article class="rounded-[2rem] border border-zinc-200/70 bg-white/92 p-5 shadow-[0_20px_40px_-15px_rgba(7,13,20,0.1)] md:p-6">
     <div class="flex items-center justify-between gap-3">
-      <h2 class="text-lg font-semibold tracking-tight text-zinc-900">我的监控任务</h2>
+      <h2 class="text-lg font-semibold tracking-tight text-zinc-900">
+        我的监控任务
+      </h2>
       <button
         class="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition duration-300 hover:-translate-y-0.5 hover:border-zinc-400 hover:text-zinc-900 active:translate-y-[1px] disabled:cursor-not-allowed disabled:opacity-60"
         type="button"
-        @click="emit('refresh')"
         :disabled="props.loadingList"
+        @click="emit('refresh')"
       >
         {{ props.loadingList ? '同步中...' : '同步数据' }}
       </button>
     </div>
 
     <div v-if="props.loadingList" class="mt-4 grid gap-3">
-      <div class="skeleton-box h-20 rounded-2xl"></div>
-      <div class="skeleton-box h-20 rounded-2xl"></div>
-      <div class="skeleton-box h-20 rounded-2xl"></div>
+      <div class="skeleton-box h-20 rounded-2xl" />
+      <div class="skeleton-box h-20 rounded-2xl" />
+      <div class="skeleton-box h-20 rounded-2xl" />
     </div>
 
     <div
@@ -68,7 +56,7 @@ const emit = defineEmits<{
           :src="item.iconUrl"
           :alt="item.appName ?? item.appId"
           class="h-[58px] w-[58px] rounded-xl border border-zinc-200 object-cover"
-        />
+        >
         <div
           v-else
           class="grid h-[58px] w-[58px] place-items-center rounded-xl border border-zinc-200 bg-white text-xs font-semibold tracking-[0.12em] text-zinc-500"
@@ -77,12 +65,18 @@ const emit = defineEmits<{
         </div>
 
         <div class="min-w-0">
-          <p class="truncate text-sm font-semibold text-zinc-900">{{ item.appName ?? `App ${item.appId}` }}</p>
+          <p class="truncate text-sm font-semibold text-zinc-900">
+            {{ item.appName ?? `App ${item.appId}` }}
+          </p>
           <p class="mt-1 text-xs text-zinc-500">
             App ID: {{ item.appId }} · {{ props.countryLabel(item.country) }}（{{ item.country }}）
           </p>
-          <p class="mt-1 text-xs text-zinc-600">最新价格：{{ props.toMoney(item.currentPrice, item.currency ?? 'USD') }}</p>
-          <p class="mt-1 text-xs text-zinc-600">通知规则：{{ props.targetRuleText(item.targetPrice, item.currency ?? 'USD') }}</p>
+          <p class="mt-1 text-xs text-zinc-600">
+            最新价格：{{ props.toMoney(item.currentPrice, item.currency ?? 'USD') }}
+          </p>
+          <p class="mt-1 text-xs text-zinc-600">
+            通知规则：{{ props.targetRuleText(item.targetPrice, item.currency ?? 'USD') }}
+          </p>
         </div>
 
         <div class="grid gap-2 md:w-28">

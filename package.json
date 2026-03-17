@@ -11,7 +11,8 @@
     "dev:worker": "pnpm --filter @appstore-price-radar/worker dev",
     "dev:web": "pnpm --filter @appstore-price-radar/web dev",
     "build": "pnpm -r build",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm --filter @appstore-price-radar/web lint"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

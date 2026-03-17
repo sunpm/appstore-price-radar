@@ -3,43 +3,25 @@ import { and, desc, eq, or, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
+import {
+  PUBLIC_DROPS_DEFAULT_LIMIT,
+  PUBLIC_DROPS_FETCH_MAX_LIMIT,
+  PUBLIC_DROPS_FETCH_MULTIPLIER,
+  PUBLIC_DROPS_MAX_LIMIT,
+} from '../constants/routes';
 import type { AppEnv } from '../types';
 import { getDb } from '../db/client';
 import { appDropEvents, subscriptions } from '../db/schema';
+import { createOptionalBooleanWithDefault, createOptionalIntWithDefault } from '../lib/zod';
 
 const querySchema = z.object({
   country: z.string().trim().length(2).optional(),
-  dedupe: z
-    .preprocess((value) => {
-      if (value === undefined || value === null || value === '') {
-        return true;
-      }
-
-      if (typeof value === 'string') {
-        const normalized = value.trim().toLowerCase();
-        return normalized === '1' || normalized === 'true' || normalized === 'yes';
-      }
-
-      if (typeof value === 'boolean') {
-        return value;
-      }
-
-      return true;
-    }, z.boolean())
-    .optional(),
-  limit: z
-    .preprocess((value) => {
-      if (value === undefined || value === null || value === '') {
-        return 50;
-      }
-
-      if (typeof value === 'string') {
-        return Number(value);
-      }
-
-      return value;
-    }, z.number().int().min(1).max(200))
-    .optional(),
+  dedupe: createOptionalBooleanWithDefault(true),
+  limit: createOptionalIntWithDefault({
+    defaultValue: PUBLIC_DROPS_DEFAULT_LIMIT,
+    min: 1,
+    max: PUBLIC_DROPS_MAX_LIMIT,
+  }),
 });
 
 const router = new Hono<AppEnv>();
@@ -48,9 +30,11 @@ router.get('/drops', zValidator('query', querySchema), async (c) => {
   const { country, limit, dedupe } = c.req.valid('query');
   const countryCode = country?.toUpperCase();
   const db = getDb(c.get('config'));
-  const finalLimit = limit ?? 50;
+  const finalLimit = limit ?? PUBLIC_DROPS_DEFAULT_LIMIT;
   const useDedupe = dedupe ?? true;
-  const fetchLimit = useDedupe ? Math.min(finalLimit * 12, 2000) : finalLimit;
+  const fetchLimit = useDedupe
+    ? Math.min(finalLimit * PUBLIC_DROPS_FETCH_MULTIPLIER, PUBLIC_DROPS_FETCH_MAX_LIMIT)
+    : finalLimit;
 
   const where = countryCode ? eq(appDropEvents.country, countryCode) : undefined;
 

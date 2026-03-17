@@ -1,27 +1,34 @@
 <script setup lang="ts">
+import type { WatchStats } from '../types'
+
 defineProps<{
-  currentUserEmail: string;
-  sessionExpiresAt: string;
-  watchStats: {
-    total: number;
-    withTarget: number;
-  };
-  toTime: (value: string) => string;
-}>();
+  currentUserEmail: string
+  sessionExpiresAt: string
+  watchStats: WatchStats
+  toTime: (value: string) => string
+}>()
 
 const emit = defineEmits<{
-  logout: [];
-}>();
+  logout: []
+}>()
 </script>
 
 <template>
   <section class="reveal rounded-[2rem] border border-zinc-200/70 bg-white/92 p-6 shadow-[0_20px_40px_-15px_rgba(7,13,20,0.1)]">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div>
-        <p class="metric-mono text-xs tracking-[0.22em] text-zinc-500">PROFILE</p>
-        <h1 class="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">订阅策略工作台</h1>
-        <p class="mt-2 text-sm text-zinc-600">当前账号：{{ currentUserEmail }}</p>
-        <p class="mt-1 text-xs text-zinc-500" v-if="sessionExpiresAt">会话有效期至：{{ toTime(sessionExpiresAt) }}</p>
+        <p class="metric-mono text-xs tracking-[0.22em] text-zinc-500">
+          PROFILE
+        </p>
+        <h1 class="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
+          订阅策略工作台
+        </h1>
+        <p class="mt-2 text-sm text-zinc-600">
+          当前账号：{{ currentUserEmail }}
+        </p>
+        <p v-if="sessionExpiresAt" class="mt-1 text-xs text-zinc-500">
+          会话有效期至：{{ toTime(sessionExpiresAt) }}
+        </p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <button
@@ -36,12 +43,20 @@ const emit = defineEmits<{
 
     <div class="mt-6 grid gap-3 md:grid-cols-2">
       <div class="rounded-2xl border border-zinc-200/75 bg-zinc-50/85 p-4">
-        <p class="text-xs font-medium uppercase tracking-[0.16em] text-zinc-500">监控任务数</p>
-        <p class="metric-mono mt-2 text-2xl font-semibold text-zinc-900">{{ watchStats.total }}</p>
+        <p class="text-xs font-medium uppercase tracking-[0.16em] text-zinc-500">
+          监控任务数
+        </p>
+        <p class="metric-mono mt-2 text-2xl font-semibold text-zinc-900">
+          {{ watchStats.total }}
+        </p>
       </div>
       <div class="rounded-2xl border border-zinc-200/75 bg-zinc-50/85 p-4">
-        <p class="text-xs font-medium uppercase tracking-[0.16em] text-zinc-500">已设价格阈值</p>
-        <p class="metric-mono mt-2 text-2xl font-semibold text-zinc-900">{{ watchStats.withTarget }}</p>
+        <p class="text-xs font-medium uppercase tracking-[0.16em] text-zinc-500">
+          已设价格阈值
+        </p>
+        <p class="metric-mono mt-2 text-2xl font-semibold text-zinc-900">
+          {{ watchStats.withTarget }}
+        </p>
       </div>
     </div>
   </section>

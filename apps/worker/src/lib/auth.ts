@@ -1,3 +1,5 @@
+import { DEFAULT_SESSION_TTL_DAYS } from '../constants/env';
+
 const encoder = new TextEncoder();
 
 const HASH_ALGO = 'SHA-256';
@@ -5,6 +7,7 @@ const PBKDF2_ITERATIONS = 120_000;
 const PBKDF2_HASH_BYTES = 32;
 const SALT_BYTES = 16;
 const PASSWORD_SCHEME = 'pbkdf2_sha256_v1';
+const BEARER_TOKEN_RE = /^Bearer\s+(.+)$/i;
 
 const toHex = (bytes: Uint8Array): string => {
   return Array.from(bytes)
@@ -127,12 +130,12 @@ export const parseBearerToken = (value: string | undefined): string | null => {
     return null;
   }
 
-  const match = value.match(/^Bearer\s+(.+)$/i);
+  const match = value.match(BEARER_TOKEN_RE);
   return match?.[1]?.trim() || null;
 };
 
-export const buildSessionExpiry = (days = 30): Date => {
-  const safeDays = Number.isFinite(days) && days > 0 ? days : 30;
+export const buildSessionExpiry = (days = DEFAULT_SESSION_TTL_DAYS): Date => {
+  const safeDays = Number.isFinite(days) && days > 0 ? days : DEFAULT_SESSION_TTL_DAYS;
   const expiresAt = new Date();
   expiresAt.setUTCDate(expiresAt.getUTCDate() + safeDays);
   return expiresAt;

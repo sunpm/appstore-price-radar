@@ -1,42 +1,39 @@
 <script setup lang="ts">
-type CountryOption = {
-  code: string;
-  label: string;
-};
+import type { CountryOption } from '../../../types/common'
 
 const props = defineProps<{
-  selectedCountry: string;
-  keyword: string;
-  countryOptions: CountryOption[];
-}>();
+  countryOptions: CountryOption[]
+}>()
 
 const emit = defineEmits<{
-  'update:selectedCountry': [value: string];
-  'update:keyword': [value: string];
-  refresh: [];
-}>();
+  refresh: []
+}>()
+const selectedCountry = defineModel<string>('selectedCountry', { required: true })
+const keyword = defineModel<string>('keyword', { required: true })
 
-const onCountryChange = (event: Event) => {
-  const target = event.target as HTMLSelectElement;
-  emit('update:selectedCountry', target.value);
-  emit('refresh');
-};
+function onCountryChange(event: Event): void {
+  const target = event.target as HTMLSelectElement
+  selectedCountry.value = target.value
+  emit('refresh')
+}
 
-const onKeywordInput = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  emit('update:keyword', target.value);
-};
+function onKeywordInput(event: Event): void {
+  const target = event.target as HTMLInputElement
+  keyword.value = target.value
+}
 </script>
 
 <template>
   <article class="reveal reveal-delay-1 rounded-[2rem] border border-zinc-200/70 bg-white/92 p-6 shadow-[0_20px_40px_-15px_rgba(7,13,20,0.1)]">
-    <h2 class="text-base font-semibold tracking-tight text-zinc-900">智能筛选</h2>
+    <h2 class="text-base font-semibold tracking-tight text-zinc-900">
+      智能筛选
+    </h2>
     <div class="mt-4 grid gap-3">
       <label class="grid gap-2">
         <span class="text-sm font-medium text-zinc-700">市场区域</span>
         <div class="relative">
           <select
-            :value="props.selectedCountry"
+            :value="selectedCountry"
             class="w-full appearance-none rounded-xl border border-zinc-300 bg-white px-3 py-2.5 pr-11 text-sm leading-6 text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
             @change="onCountryChange"
           >
@@ -55,12 +52,12 @@ const onKeywordInput = (event: Event) => {
       <label class="grid gap-2">
         <span class="text-sm font-medium text-zinc-700">检索关键词</span>
         <input
-          :value="props.keyword"
+          :value="keyword"
           type="text"
           placeholder="请输入应用名称 / App ID / 地区"
           class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
           @input="onKeywordInput"
-        />
+        >
       </label>
 
       <button

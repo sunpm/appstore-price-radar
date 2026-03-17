@@ -1,72 +1,72 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useToast } from '../../lib/toast';
-import type { ToastType } from '../../lib/toast';
+import type { ToastType } from '../../lib/toast'
+import { computed } from 'vue'
+import { useToast } from '../../lib/toast'
 
-const toast = useToast();
+const toast = useToast()
 
-const toneClass = (type: ToastType) => {
+function toneClass(type: ToastType) {
   if (type === 'success') {
-    return 'border-emerald-200 bg-emerald-50 text-emerald-800';
+    return 'border-emerald-200 bg-emerald-50 text-emerald-800'
   }
 
   if (type === 'error') {
-    return 'border-rose-200 bg-rose-50 text-rose-800';
+    return 'border-rose-200 bg-rose-50 text-rose-800'
   }
 
-  return 'border-sky-200 bg-sky-50 text-sky-800';
-};
+  return 'border-sky-200 bg-sky-50 text-sky-800'
+}
 
-const markerClass = (type: ToastType) => {
+function markerClass(type: ToastType) {
   if (type === 'success') {
-    return 'bg-emerald-500';
+    return 'bg-emerald-500'
   }
 
   if (type === 'error') {
-    return 'bg-rose-500';
+    return 'bg-rose-500'
   }
 
-  return 'bg-sky-500';
-};
+  return 'bg-sky-500'
+}
 
-const splitMessage = (message: string) => {
-  const text = message.trim();
+function splitMessage(message: string) {
+  const text = message.trim()
 
   if (!text) {
-    return { title: '', detail: '' };
+    return { title: '', detail: '' }
   }
 
-  const zhStop = text.indexOf('。');
+  const zhStop = text.indexOf('。')
 
   if (zhStop > 0 && zhStop < 36) {
     return {
       title: text.slice(0, zhStop + 1),
       detail: text.slice(zhStop + 1).trim(),
-    };
+    }
   }
 
-  const zhComma = text.indexOf('，');
+  const zhComma = text.indexOf('，')
 
   if (zhComma > 0 && text.length > 26 && zhComma < 32) {
     return {
       title: text.slice(0, zhComma + 1),
       detail: text.slice(zhComma + 1).trim(),
-    };
+    }
   }
 
-  return { title: text, detail: '' };
-};
+  return { title: text, detail: '' }
+}
 
 const list = computed(() => {
   return toast.items.value.map((item) => {
-    const parts = splitMessage(item.message);
+    const parts = splitMessage(item.message)
     return {
       ...item,
       title: parts.title,
       detail: parts.detail,
-    };
-  });
-});
+    }
+  })
+})
 </script>
 
 <template>
@@ -79,7 +79,7 @@ const list = computed(() => {
         :class="toneClass(item.type)"
       >
         <div class="grid grid-cols-[12px_1fr_auto] items-start gap-3">
-          <span class="mt-[0.47rem] h-2.5 w-2.5 flex-none rounded-full" :class="markerClass(item.type)"></span>
+          <span class="mt-[0.47rem] h-2.5 w-2.5 flex-none rounded-full" :class="markerClass(item.type)" />
           <div class="min-w-0">
             <p class="break-words text-sm font-semibold leading-6 md:text-[15px]">
               {{ item.title }}

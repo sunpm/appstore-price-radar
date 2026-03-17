@@ -10,6 +10,7 @@ export type WorkerBindings = {
   SESSION_TTL_DAYS?: string;
   RESET_PASSWORD_TTL_MINUTES?: string;
   LOGIN_CODE_TTL_MINUTES?: string;
+  LOGIN_CODE_RESEND_COOLDOWN_SECONDS?: string;
 };
 
 export type AppEnv = {

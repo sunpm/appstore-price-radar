@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import type { AppStorePrice } from './appstore.types';
+
 const lookupResponseSchema = z.object({
   resultCount: z.number(),
   results: z
@@ -17,25 +19,17 @@ const lookupResponseSchema = z.object({
     .default([]),
 });
 
-export type AppStorePrice = {
-  appId: string;
-  country: string;
-  appName: string;
-  price: number;
-  currency: string;
-  storeUrl: string | null;
-  iconUrl: string | null;
-  formattedPrice: string | null;
-};
+const NUMERIC_APP_ID_RE = /^\d+$/;
+const APP_STORE_URL_ID_RE = /id(\d{5,})/i;
 
 export const extractAppId = (value: string): string | null => {
   const trimmed = value.trim();
 
-  if (/^\d+$/.test(trimmed)) {
+  if (NUMERIC_APP_ID_RE.test(trimmed)) {
     return trimmed;
   }
 
-  const match = trimmed.match(/id(\d{5,})/i);
+  const match = trimmed.match(APP_STORE_URL_ID_RE);
   return match?.[1] ?? null;
 };
 

@@ -1,40 +1,42 @@
-export const TOKEN_STORAGE_KEY = 'price-radar-token';
-export const AUTH_TOKEN_CHANGED_EVENT = 'price-radar-auth-token-changed';
+// @env browser
 
-const dispatchAuthChanged = (token: string) => {
+export const TOKEN_STORAGE_KEY = 'price-radar-token'
+export const AUTH_TOKEN_CHANGED_EVENT = 'price-radar-auth-token-changed'
+
+function dispatchAuthChanged(token: string): void {
   if (typeof window === 'undefined') {
-    return;
+    return
   }
 
   window.dispatchEvent(
     new CustomEvent(AUTH_TOKEN_CHANGED_EVENT, {
       detail: { token },
     }),
-  );
-};
+  )
+}
 
-export const getStoredToken = () => {
+export function getStoredToken(): string {
   if (typeof localStorage === 'undefined') {
-    return '';
+    return ''
   }
 
-  return localStorage.getItem(TOKEN_STORAGE_KEY) ?? '';
-};
+  return localStorage.getItem(TOKEN_STORAGE_KEY) ?? ''
+}
 
-export const setStoredToken = (token: string) => {
+export function setStoredToken(token: string): void {
   if (typeof localStorage === 'undefined') {
-    return;
+    return
   }
 
-  localStorage.setItem(TOKEN_STORAGE_KEY, token);
-  dispatchAuthChanged(token);
-};
+  localStorage.setItem(TOKEN_STORAGE_KEY, token)
+  dispatchAuthChanged(token)
+}
 
-export const clearStoredToken = () => {
+export function clearStoredToken(): void {
   if (typeof localStorage === 'undefined') {
-    return;
+    return
   }
 
-  localStorage.removeItem(TOKEN_STORAGE_KEY);
-  dispatchAuthChanged('');
-};
+  localStorage.removeItem(TOKEN_STORAGE_KEY)
+  dispatchAuthChanged('')
+}
