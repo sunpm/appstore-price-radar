@@ -60,6 +60,11 @@ export type ResetPasswordPayload = {
   password: string;
 };
 
+export type ChangePasswordPayload = {
+  currentPassword: string;
+  newPassword: string;
+};
+
 export type VerifyLoginCodePayload = {
   email: string;
   code: string;

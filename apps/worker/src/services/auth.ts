@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, isNull } from 'drizzle-orm';
+import { and, desc, eq, gt, isNull, ne } from 'drizzle-orm';
 
 import {
   OTP_CODE_LENGTH,
@@ -25,6 +25,7 @@ import {
 import { sendLoginCodeEmail, sendPasswordResetEmail } from '../lib/auth-emails';
 import type {
   AuthCooldownResponse,
+  ChangePasswordPayload,
   AuthErrorResponse,
   AuthHttpStatus,
   AuthOkResponse,
@@ -130,6 +131,26 @@ const findActiveUserByEmail = async (
     })
     .from(users)
     .where(and(eq(users.email, email), eq(users.isActive, true)))
+    .limit(1);
+
+  return user ?? null;
+};
+
+const findActiveUserById = async (
+  config: EnvConfig,
+  userId: string,
+): Promise<AuthUserRow | null> => {
+  const db = getDb(config);
+
+  const [user] = await db
+    .select({
+      id: users.id,
+      email: users.email,
+      passwordHash: users.passwordHash,
+      isActive: users.isActive,
+    })
+    .from(users)
+    .where(and(eq(users.id, userId), eq(users.isActive, true)))
     .limit(1);
 
   return user ?? null;
@@ -395,6 +416,49 @@ export const resetPassword = async (
     .where(eq(passwordResetTokens.id, tokenRow.id));
 
   await db.delete(userSessions).where(eq(userSessions.userId, tokenRow.userId));
+
+  return buildServiceResponse(200, { ok: true });
+};
+
+export const changePassword = async (
+  config: EnvConfig,
+  userId: string,
+  currentSessionId: string,
+  payload: ChangePasswordPayload,
+): Promise<AuthServiceResponse<OkOrErrorBody>> => {
+  const user = await findActiveUserById(config, userId);
+
+  if (!user) {
+    return buildServiceResponse(401, { error: 'Unauthorized' });
+  }
+
+  const currentPasswordMatched = await verifyPassword(payload.currentPassword, user.passwordHash);
+
+  if (!currentPasswordMatched) {
+    return buildServiceResponse(401, { error: 'Current password is incorrect' });
+  }
+
+  if (payload.currentPassword === payload.newPassword) {
+    return buildServiceResponse(400, {
+      error: 'New password must be different from current password',
+    });
+  }
+
+  const db = getDb(config);
+  const passwordHash = await hashPassword(payload.newPassword);
+  const now = new Date();
+
+  await db
+    .update(users)
+    .set({
+      passwordHash,
+      updatedAt: now,
+    })
+    .where(eq(users.id, user.id));
+
+  await db
+    .delete(userSessions)
+    .where(and(eq(userSessions.userId, user.id), ne(userSessions.id, currentSessionId)));
 
   return buildServiceResponse(200, { ok: true });
 };

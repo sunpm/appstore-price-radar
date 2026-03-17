@@ -7,8 +7,10 @@ import { clearStoredToken, getStoredToken } from '../../lib/auth-session'
 import { formatDateTime, formatMoney } from '../../lib/format'
 import { buildApiUrl, parseApiErrorText } from '../../lib/http'
 import { useToast } from '../../lib/toast'
+import { MIN_PASSWORD_LENGTH } from '../auth/constants'
 import ProfileDashboardHeader from './components/ProfileDashboardHeader.vue'
 import ProfileHistorySection from './components/ProfileHistorySection.vue'
+import ProfileSecurityCard from './components/ProfileSecurityCard.vue'
 import ProfileSubscriptionListCard from './components/ProfileSubscriptionListCard.vue'
 import ProfileWatchFormCard from './components/ProfileWatchFormCard.vue'
 
@@ -32,6 +34,12 @@ const form = reactive({
   targetPrice: '',
 })
 
+const securityForm = reactive({
+  currentPassword: '',
+  newPassword: '',
+  confirmPassword: '',
+})
+
 const subscriptions = ref<SubscriptionItem[]>([])
 const selectedHistory = ref<HistoryPayload | null>(null)
 const selectedSubscription = ref<SubscriptionItem | null>(null)
@@ -42,6 +50,7 @@ const loadingList = ref(false)
 const creating = ref(false)
 const loadingHistory = ref(false)
 const updatingHistoryTarget = ref(false)
+const changingPassword = ref(false)
 
 const successText = ref('')
 const errorText = ref('')
@@ -207,6 +216,66 @@ async function logout(): Promise<void> {
 
   clearSession()
   await router.push('/auth')
+}
+
+async function changePassword(): Promise<void> {
+  resetMessages()
+
+  if (!currentUser.value) {
+    errorText.value = '请先完成登录。'
+    return
+  }
+
+  const currentPassword = securityForm.currentPassword
+  const newPassword = securityForm.newPassword
+  const confirmPassword = securityForm.confirmPassword
+
+  if (!currentPassword || !newPassword || !confirmPassword) {
+    errorText.value = '请填写当前密码、新密码和确认密码。'
+    return
+  }
+
+  if (newPassword.length < MIN_PASSWORD_LENGTH) {
+    errorText.value = `新密码长度需不少于 ${MIN_PASSWORD_LENGTH} 位。`
+    return
+  }
+
+  if (newPassword !== confirmPassword) {
+    errorText.value = '两次输入的新密码不一致。'
+    return
+  }
+
+  if (newPassword === currentPassword) {
+    errorText.value = '新密码不能与当前密码相同。'
+    return
+  }
+
+  changingPassword.value = true
+
+  try {
+    await apiRequest<{ ok: boolean }>(
+      '/api/auth/change-password',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+        }),
+      },
+      { auth: true },
+    )
+
+    securityForm.currentPassword = ''
+    securityForm.newPassword = ''
+    securityForm.confirmPassword = ''
+    successText.value = '密码已更新，其他设备会话已失效，当前设备保持登录。'
+  }
+  catch (error) {
+    errorText.value = error instanceof Error ? error.message : '密码修改失败，请稍后重试。'
+  }
+  finally {
+    changingPassword.value = false
+  }
 }
 
 async function loadSubscriptions(options: { silent?: boolean } = {}): Promise<void> {
@@ -459,6 +528,15 @@ onMounted(async (): Promise<void> => {
           :target-rule-text="targetRuleText"
           :to-money="toMoney"
           @save-target-price="saveHistoryTargetPrice"
+        />
+
+        <ProfileSecurityCard
+          v-model:current-password="securityForm.currentPassword"
+          v-model:new-password="securityForm.newPassword"
+          v-model:confirm-password="securityForm.confirmPassword"
+          :submitting="changingPassword"
+          :min-password-length="MIN_PASSWORD_LENGTH"
+          @submit="changePassword"
         />
       </template>
     </div>

@@ -10,6 +10,7 @@ import {
 import type { AppEnv } from '../types';
 import { requireAuth } from '../middleware/auth';
 import {
+  changePassword,
   loginWithPassword,
   registerWithLoginCode,
   requestPasswordReset,
@@ -39,6 +40,11 @@ const resetPasswordSchema = z.object({
   password: z.string().min(MIN_PASSWORD_LENGTH).max(MAX_PASSWORD_LENGTH),
 });
 
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(MIN_PASSWORD_LENGTH).max(MAX_PASSWORD_LENGTH),
+  newPassword: z.string().min(MIN_PASSWORD_LENGTH).max(MAX_PASSWORD_LENGTH),
+});
+
 const verifyCodeSchema = z.object({
   email: z.string().trim().email(),
   code: z.string().trim().regex(OTP_CODE_PATTERN),
@@ -63,6 +69,16 @@ router.post('/forgot-password', zValidator('json', emailSchema), async (c) => {
 
 router.post('/reset-password', zValidator('json', resetPasswordSchema), async (c) => {
   const result = await resetPassword(c.get('config'), c.req.valid('json'));
+  return c.json(result.body, result.status);
+});
+
+router.post('/change-password', requireAuth, zValidator('json', changePasswordSchema), async (c) => {
+  const result = await changePassword(
+    c.get('config'),
+    c.get('authUser').id,
+    c.get('sessionId'),
+    c.req.valid('json'),
+  );
   return c.json(result.body, result.status);
 });
 
