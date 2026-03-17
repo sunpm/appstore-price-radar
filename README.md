@@ -193,6 +193,7 @@ wrangler secret put CRON_SECRET
 - `APP_BASE_URL`：用于邮件中的页面跳转链接（如重置密码）。
 - `CORS_ORIGIN`：建议精确到你的前端域名；如需同时支持 Netlify Preview，可用逗号分隔或通配写法，例如 `https://your-site.netlify.app,https://*.netlify.app`（也支持 `*.netlify.app`）。
 - 本项目默认不在 `wrangler.toml` 写 `[vars]`，避免 Git 部署时把 Dashboard 里的线上变量覆盖回本地默认值。
+- `apps/worker/wrangler.toml` 已设置 `keep_vars = true`，用于保留 Dashboard 中已配置的运行时普通变量。
 - 生产环境请以 `Settings -> Variables and Secrets` 为准管理 `Vars` / `Secrets`。
 
 #### 使用 Cloudflare Dashboard（Workers Builds）时怎么填
@@ -215,6 +216,7 @@ wrangler secret put CRON_SECRET
 - Dashboard 中 Worker 名称必须与 `apps/worker/wrangler.toml` 的 `name` 一致（当前是 `appstore-price-radar-worker`）。
 - 若你把“路径”设为 `/`，部署命令必须显式带配置路径：`npx wrangler deploy --config apps/worker/wrangler.toml`。
 - 若 `wrangler.toml` 存在 `[vars]`，每次部署会以下发配置为准，覆盖 Dashboard 同名普通变量（`Secrets` 不受此影响）。
+- 若未启用 `keep_vars = true`，即使没有 `[vars]`，`wrangler deploy` 也可能覆盖 Dashboard 里的普通变量。
 
 ### Web
 
