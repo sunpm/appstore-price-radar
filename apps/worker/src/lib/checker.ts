@@ -9,8 +9,10 @@ import {
   subscriptions,
   users,
 } from '../db/schema';
+import { LEGACY_PASSWORD_HASH_ITERATIONS } from './auth';
 import { sendDropAlertEmail } from './alerts';
 import { fetchAppStorePrice } from './appstore';
+import { countLegacyPasswordHashUsers } from '../services/auth';
 import type { CheckReport, RefreshOptions, RefreshResult } from './checker.types';
 
 export const refreshSingleApp = async (
@@ -163,6 +165,16 @@ export const refreshSingleApp = async (
 export const runPriceCheck = async (env: EnvConfig): Promise<CheckReport> => {
   const startedAt = new Date();
   const db = getDb(env);
+
+  try {
+    const legacyPasswordUsers = await countLegacyPasswordHashUsers(env);
+    console.log('auth.legacy_password_hash_users', {
+      activeUsers: legacyPasswordUsers,
+      iterations: LEGACY_PASSWORD_HASH_ITERATIONS,
+    });
+  } catch (error) {
+    console.error('failed to collect auth legacy password metric', error);
+  }
 
   const watchedPairs = await db
     .selectDistinct({

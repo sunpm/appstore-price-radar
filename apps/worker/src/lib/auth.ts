@@ -1,12 +1,19 @@
+import { pbkdf2 } from '@noble/hashes/pbkdf2.js';
+import { sha256 } from '@noble/hashes/sha2.js';
+
 import { DEFAULT_SESSION_TTL_DAYS } from '../constants/env';
 
 const encoder = new TextEncoder();
 
 const HASH_ALGO = 'SHA-256';
-const PBKDF2_ITERATIONS = 120_000;
+// Cloudflare Workers WebCrypto currently rejects PBKDF2 iterations above 100_000.
+const PBKDF2_WEB_CRYPTO_MAX_ITERATIONS = 100_000;
+const PBKDF2_ITERATIONS = PBKDF2_WEB_CRYPTO_MAX_ITERATIONS;
+export const LEGACY_PASSWORD_HASH_ITERATIONS = 120_000;
 const PBKDF2_HASH_BYTES = 32;
 const SALT_BYTES = 16;
 const PASSWORD_SCHEME = 'pbkdf2_sha256_v1';
+export const LEGACY_PASSWORD_HASH_PREFIX = `${PASSWORD_SCHEME}$${LEGACY_PASSWORD_HASH_ITERATIONS}$`;
 const BEARER_TOKEN_RE = /^Bearer\s+(.+)$/i;
 
 const toHex = (bytes: Uint8Array): string => {
@@ -49,25 +56,47 @@ const derivePasswordHash = async (
   iterations: number,
 ): Promise<Uint8Array> => {
   const normalizedSalt = Uint8Array.from(salt);
+  const passwordBytes = encoder.encode(password);
+
+  const deriveWithNoble = (): Uint8Array => {
+    return pbkdf2(sha256, passwordBytes, normalizedSalt, {
+      c: iterations,
+      dkLen: PBKDF2_HASH_BYTES,
+    });
+  };
+
+  if (iterations > PBKDF2_WEB_CRYPTO_MAX_ITERATIONS) {
+    return deriveWithNoble();
+  }
 
   const key = await crypto.subtle.importKey(
     'raw',
-    encoder.encode(password),
+    passwordBytes,
     { name: 'PBKDF2' },
     false,
     ['deriveBits'],
   );
 
-  const derivedBits = await crypto.subtle.deriveBits(
-    {
-      name: 'PBKDF2',
-      salt: normalizedSalt,
-      iterations,
-      hash: HASH_ALGO,
-    },
-    key,
-    PBKDF2_HASH_BYTES * 8,
-  );
+  let derivedBits: ArrayBuffer;
+
+  try {
+    derivedBits = await crypto.subtle.deriveBits(
+      {
+        name: 'PBKDF2',
+        salt: normalizedSalt,
+        iterations,
+        hash: HASH_ALGO,
+      },
+      key,
+      PBKDF2_HASH_BYTES * 8,
+    );
+  } catch (error) {
+    if (error instanceof Error && /iteration counts above/i.test(error.message)) {
+      return deriveWithNoble();
+    }
+
+    throw error;
+  }
 
   return new Uint8Array(derivedBits);
 };

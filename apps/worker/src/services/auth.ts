@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, isNull, ne } from 'drizzle-orm';
+import { and, count, desc, eq, gt, isNull, like, ne } from 'drizzle-orm';
 
 import {
   OTP_CODE_LENGTH,
@@ -15,6 +15,7 @@ import type { EnvConfig } from '../env';
 import { getDb } from '../db/client';
 import { loginCodes, passwordResetTokens, userSessions, users } from '../db/schema';
 import {
+  LEGACY_PASSWORD_HASH_PREFIX,
   buildSessionExpiry,
   generateSessionToken,
   hashPassword,
@@ -43,6 +44,7 @@ import type {
 type AuthOrErrorBody = AuthResponsePayload | AuthErrorResponse;
 type OkOrErrorBody = AuthOkResponse | AuthErrorResponse;
 type CooldownOrErrorBody = AuthCooldownResponse | AuthErrorResponse;
+const LEGACY_PASSWORD_HASH_LIKE = `${LEGACY_PASSWORD_HASH_PREFIX}%`;
 
 const buildOtpOnlyPasswordHash = (): string => {
   return `${OTP_ONLY_PASSWORD_PREFIX}$${generateSessionToken()}`;
@@ -61,6 +63,22 @@ const buildServiceResponse = <TBody>(
 
 const isEmailServiceConfigured = (config: EnvConfig): boolean => {
   return Boolean(config.RESEND_API_KEY && config.RESEND_FROM_EMAIL);
+};
+
+export const countLegacyPasswordHashUsers = async (config: EnvConfig): Promise<number> => {
+  const db = getDb(config);
+
+  const [row] = await db
+    .select({ total: count() })
+    .from(users)
+    .where(
+      and(
+        eq(users.isActive, true),
+        like(users.passwordHash, LEGACY_PASSWORD_HASH_LIKE),
+      ),
+    );
+
+  return Number(row?.total ?? 0);
 };
 
 const createSession = async (
