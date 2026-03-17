@@ -159,7 +159,11 @@ const lowestMarker = computed<ChartPoint | null>(() => {
 
 const currentPoint = computed<ChartPoint | null>(() => {
   const points = chartGeometry.value.points
-  return points.length === 0 ? null : points.at(-1)
+  if (points.length === 0) {
+    return null
+  }
+
+  return points[points.length - 1]
 })
 
 const highestPoint = computed<ChartPoint | null>(() => {
