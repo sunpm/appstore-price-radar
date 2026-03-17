@@ -60,6 +60,7 @@ cp apps/worker/.dev.vars.example apps/worker/.dev.vars
 | `SESSION_TTL_DAYS` | 登录会话有效期（天），默认 30，范围 1-90 | Worker | `apps/worker/.dev.vars` | `否` | `30` |
 | `RESET_PASSWORD_TTL_MINUTES` | 重置密码 token 有效期（分钟），默认 30，范围 5-120 | Worker | `apps/worker/.dev.vars` | `否` | `30` |
 | `LOGIN_CODE_TTL_MINUTES` | 邮箱验证码有效期（分钟），默认 10，范围 2-60 | Worker | `apps/worker/.dev.vars` | `否` | `10` |
+| `LOGIN_CODE_RESEND_COOLDOWN_SECONDS` | 邮箱验证码重发冷却秒数，默认 60，范围 10-600 | Worker | `apps/worker/.dev.vars` | `否` | `60` |
 | `APP_BASE_URL` | 前端站点地址（预留给邮件链接和跳转） | Worker | `apps/worker/.dev.vars` | `否` | `http://localhost:5173` |
 | `CORS_ORIGIN` | 允许跨域访问 API 的来源地址（支持多值逗号分隔，支持 `*.domain.com`） | Worker | `apps/worker/.dev.vars` | `建议必填` | `http://localhost:5173` |
 | `VITE_API_BASE` | 前端请求后端 API 的基础地址 | Web | `.env` | `是` | `http://127.0.0.1:8787` |
@@ -185,6 +186,7 @@ wrangler secret put CRON_SECRET
 - `SESSION_TTL_DAYS=30`
 - `RESET_PASSWORD_TTL_MINUTES=30`
 - `LOGIN_CODE_TTL_MINUTES=10`
+- `LOGIN_CODE_RESEND_COOLDOWN_SECONDS=60`
 
 说明：
 
@@ -235,6 +237,7 @@ Netlify 侧你只需要额外设置前端环境变量：
 - `SESSION_TTL_DAYS=14` 或 `30`
 - `RESET_PASSWORD_TTL_MINUTES=30`
 - `LOGIN_CODE_TTL_MINUTES=10`
+- `LOGIN_CODE_RESEND_COOLDOWN_SECONDS=60`
 - `CORS_ORIGIN` 优先精确配置（支持多值/通配），仅排障时临时使用 `*`
 - `APP_BASE_URL` 必须是生产前端地址（用于密码重置邮件链接）
 

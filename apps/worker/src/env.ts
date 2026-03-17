@@ -46,6 +46,19 @@ const envSchema = z.object({
       return value;
     }, z.number().int().min(2).max(60))
     .optional(),
+  LOGIN_CODE_RESEND_COOLDOWN_SECONDS: z
+    .preprocess((value) => {
+      if (value === undefined || value === null || value === '') {
+        return 60;
+      }
+
+      if (typeof value === 'string') {
+        return Number(value);
+      }
+
+      return value;
+    }, z.number().int().min(10).max(600))
+    .optional(),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;

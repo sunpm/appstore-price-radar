@@ -147,10 +147,10 @@ watch(
         @click="closeAuthModal"
       ></button>
 
-      <div class="relative mx-auto mt-[4vh] w-full max-w-[980px]">
+      <div class="relative mx-auto mt-[4vh] w-full max-w-[760px]">
         <button
           type="button"
-          class="absolute right-4 top-4 z-20 inline-flex items-center justify-center rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition duration-300 hover:-translate-y-0.5 hover:border-zinc-400 hover:text-zinc-900 active:translate-y-[1px]"
+          class="absolute right-3 top-3 z-20 inline-flex items-center justify-center rounded-full border border-zinc-300 bg-white/95 px-3 py-1.5 text-xs font-medium text-zinc-700 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-zinc-400 hover:text-zinc-900 active:translate-y-[1px]"
           @click="closeAuthModal"
         >
           关闭窗口

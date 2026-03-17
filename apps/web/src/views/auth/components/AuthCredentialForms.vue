@@ -3,13 +3,14 @@ type AuthMode = 'login' | 'register' | 'code';
 
 const props = defineProps<{
   authMode: AuthMode;
-  redirectOnSuccess: boolean;
   showResetPanel: boolean;
   authLoading: boolean;
   codeSending: boolean;
   codeVerifying: boolean;
   resetSending: boolean;
   resetSubmitting: boolean;
+  loginCodeCooldownSeconds: number;
+  loginCodeCanResend: boolean;
   authEmail: string;
   authPassword: string;
   codeEmail: string;
@@ -30,7 +31,8 @@ const emit = defineEmits<{
   submitAuth: [];
   sendLoginCode: [];
   verifyLoginCode: [];
-  toggleResetPanel: [];
+  openResetPanel: [];
+  closeResetPanel: [];
   sendResetEmail: [];
   resetPassword: [];
   syncPrimaryEmail: [value: string];
@@ -70,16 +72,96 @@ const onResetNewPasswordInput = (event: Event) => {
 </script>
 
 <template>
-  <div class="mt-4 grid gap-4 md:grid-cols-[1.1fr_0.9fr]">
-    <article
-      class="rounded-2xl border border-zinc-200/80 bg-zinc-50/60 p-4"
-      :class="props.showResetPanel ? '' : 'md:col-span-2'"
-    >
+  <div class="mt-5">
+    <article class="rounded-2xl border border-zinc-200/80 bg-zinc-50/60 p-4 md:p-5">
+      <template v-if="props.showResetPanel">
+        <div class="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <p class="text-xs tracking-[0.16em] text-zinc-500">RECOVERY</p>
+            <h2 class="mt-1 text-lg font-semibold tracking-tight text-zinc-900">找回访问权限</h2>
+          </div>
+          <button
+            class="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition duration-300 hover:-translate-y-0.5 hover:border-zinc-400 hover:text-zinc-900 active:translate-y-[1px]"
+            type="button"
+            @click="emit('closeResetPanel')"
+          >
+            返回登录
+          </button>
+        </div>
+
+        <div class="grid gap-4">
+          <form class="grid gap-3 rounded-xl border border-zinc-200 bg-white p-3.5" @submit.prevent="emit('sendResetEmail')">
+            <h3 class="text-sm font-semibold text-zinc-900">第一步：发送重置邮件</h3>
+            <label class="grid gap-2">
+              <span class="text-sm font-medium text-zinc-700">邮箱地址</span>
+              <input
+                :value="props.resetEmail"
+                type="email"
+                autocomplete="email"
+                placeholder="you@example.com"
+                required
+                class="w-full rounded-xl border border-zinc-300/80 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+                @input="onResetEmailInput"
+                @blur="emit('syncPrimaryEmail', props.resetEmail)"
+              />
+            </label>
+            <button
+              class="inline-flex items-center justify-center rounded-xl border border-zinc-900 bg-zinc-900 px-3 py-2.5 text-sm font-medium text-white transition duration-300 hover:-translate-y-0.5 hover:bg-zinc-800 active:translate-y-[1px] disabled:cursor-not-allowed disabled:opacity-60"
+              type="submit"
+              :disabled="props.resetSending"
+            >
+              {{ props.resetSending ? '发送中...' : '发送重置邮件' }}
+            </button>
+          </form>
+
+          <form class="grid gap-3 rounded-xl border border-zinc-200 bg-white p-3.5" @submit.prevent="emit('resetPassword')">
+            <h3 class="text-sm font-semibold text-zinc-900">第二步：完成密码重置</h3>
+            <label class="grid gap-2">
+              <span class="text-sm font-medium text-zinc-700">重置令牌</span>
+              <input
+                :value="props.resetToken"
+                type="text"
+                placeholder="粘贴邮件中的重置令牌"
+                required
+                class="w-full rounded-xl border border-zinc-300/80 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+                @input="onResetTokenInput"
+              />
+            </label>
+            <label class="grid gap-2">
+              <span class="text-sm font-medium text-zinc-700">新密码（至少 8 位）</span>
+              <input
+                :value="props.resetNewPassword"
+                type="password"
+                minlength="8"
+                placeholder="请输入新密码"
+                required
+                class="w-full rounded-xl border border-zinc-300/80 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+                @input="onResetNewPasswordInput"
+              />
+            </label>
+            <button
+              class="inline-flex items-center justify-center rounded-xl border border-zinc-900 bg-zinc-900 px-3 py-2.5 text-sm font-medium text-white transition duration-300 hover:-translate-y-0.5 hover:bg-zinc-800 active:translate-y-[1px] disabled:cursor-not-allowed disabled:opacity-60"
+              type="submit"
+              :disabled="props.resetSubmitting"
+            >
+              {{ props.resetSubmitting ? '提交中...' : '更新密码' }}
+            </button>
+          </form>
+        </div>
+      </template>
+
       <form
-        v-if="props.authMode === 'login' || props.authMode === 'register'"
+        v-else-if="props.authMode === 'login' || props.authMode === 'register'"
         class="grid gap-3"
         @submit.prevent="emit('submitAuth')"
       >
+        <div class="mb-1">
+          <p class="text-xs tracking-[0.16em] text-zinc-500">{{ props.authMode === 'login' ? 'SIGN IN' : 'CREATE ACCOUNT' }}</p>
+          <h2 class="mt-1 text-lg font-semibold tracking-tight text-zinc-900">
+            {{ props.authMode === 'login' ? '邮箱密码登录' : '创建新账号' }}
+          </h2>
+        </div>
+
         <label class="grid gap-2">
           <span class="text-sm font-medium text-zinc-700">邮箱地址</span>
           <input
@@ -95,7 +177,7 @@ const onResetNewPasswordInput = (event: Event) => {
         </label>
 
         <label class="grid gap-2">
-          <span class="text-sm font-medium text-zinc-700">登录密码（至少 8 位）</span>
+          <span class="text-sm font-medium text-zinc-700">密码（至少 8 位）</span>
           <input
             :value="props.authPassword"
             type="password"
@@ -113,30 +195,25 @@ const onResetNewPasswordInput = (event: Event) => {
           type="submit"
           :disabled="props.authLoading"
         >
-          {{
-            props.authLoading
-              ? '提交中...'
-              : props.authMode === 'login'
-                ? props.redirectOnSuccess
-                  ? '登录并进入工作台'
-                  : '登录'
-                : props.redirectOnSuccess
-                  ? '创建账号并进入工作台'
-                  : '创建账号'
-          }}
+          {{ props.authLoading ? '提交中...' : props.authMode === 'login' ? '登录' : '创建账号' }}
         </button>
 
         <button
           v-if="props.authMode === 'login'"
-          class="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm font-medium text-zinc-700 transition duration-300 hover:-translate-y-0.5 hover:border-zinc-400 hover:text-zinc-900 active:translate-y-[1px]"
+          class="mt-1 inline-flex w-fit items-center justify-center rounded-lg px-1 py-1 text-sm font-medium text-zinc-600 transition hover:text-zinc-900"
           type="button"
-          @click="emit('toggleResetPanel')"
+          @click="emit('openResetPanel')"
         >
-          {{ props.showResetPanel ? '收起密码重置' : '忘记密码' }}
+          忘记密码？
         </button>
       </form>
 
       <form v-else class="grid gap-3" @submit.prevent="emit('verifyLoginCode')">
+        <div class="mb-1">
+          <p class="text-xs tracking-[0.16em] text-zinc-500">EMAIL OTP</p>
+          <h2 class="mt-1 text-lg font-semibold tracking-tight text-zinc-900">邮箱验证码登录</h2>
+        </div>
+
         <label class="grid gap-2">
           <span class="text-sm font-medium text-zinc-700">邮箱地址</span>
           <input
@@ -154,11 +231,21 @@ const onResetNewPasswordInput = (event: Event) => {
         <button
           class="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm font-medium text-zinc-700 transition duration-300 hover:-translate-y-0.5 hover:border-zinc-400 hover:text-zinc-900 active:translate-y-[1px] disabled:cursor-not-allowed disabled:opacity-60"
           type="button"
-          :disabled="props.codeSending"
+          :disabled="props.codeSending || !props.loginCodeCanResend"
           @click="emit('sendLoginCode')"
         >
-          {{ props.codeSending ? '发送中...' : '发送邮箱验证码' }}
+          {{
+            props.codeSending
+              ? '发送中...'
+              : props.loginCodeCanResend
+                ? '发送邮箱验证码'
+                : `请等待 ${props.loginCodeCooldownSeconds} 秒后重发`
+          }}
         </button>
+
+        <p class="text-xs text-zinc-500">
+          验证码通常在 1 分钟内送达，若未收到请检查垃圾邮件目录。
+        </p>
 
         <label class="grid gap-2">
           <span class="text-sm font-medium text-zinc-700">6 位登录验证码</span>
@@ -179,78 +266,7 @@ const onResetNewPasswordInput = (event: Event) => {
           type="submit"
           :disabled="props.codeVerifying"
         >
-          {{ props.codeVerifying ? '验证中...' : props.redirectOnSuccess ? '验证并进入工作台' : '验证码登录' }}
-        </button>
-      </form>
-    </article>
-
-    <article v-if="props.showResetPanel" class="grid gap-3 rounded-2xl border border-zinc-200/80 bg-zinc-50/60 p-4">
-      <div class="flex items-center justify-between gap-3">
-        <h2 class="text-base font-semibold tracking-tight text-zinc-900">密码重置</h2>
-        <button
-          class="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition duration-300 hover:-translate-y-0.5 hover:border-zinc-400 hover:text-zinc-900 active:translate-y-[1px]"
-          type="button"
-          @click="emit('toggleResetPanel')"
-        >
-          收起面板
-        </button>
-      </div>
-
-      <form class="grid gap-3" @submit.prevent="emit('sendResetEmail')">
-        <h3 class="text-sm font-semibold tracking-tight text-zinc-900">申请重置链接</h3>
-        <label class="grid gap-2">
-          <span class="text-sm font-medium text-zinc-700">邮箱地址</span>
-          <input
-            :value="props.resetEmail"
-            type="email"
-            autocomplete="email"
-            placeholder="you@example.com"
-            required
-            class="w-full rounded-xl border border-zinc-300/80 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
-            @input="onResetEmailInput"
-            @blur="emit('syncPrimaryEmail', props.resetEmail)"
-          />
-        </label>
-        <button
-          class="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm font-medium text-zinc-700 transition duration-300 hover:-translate-y-0.5 hover:border-zinc-400 hover:text-zinc-900 active:translate-y-[1px] disabled:cursor-not-allowed disabled:opacity-60"
-          type="submit"
-          :disabled="props.resetSending"
-        >
-          {{ props.resetSending ? '发送中...' : '发送重置邮件' }}
-        </button>
-      </form>
-
-      <form class="grid gap-3" @submit.prevent="emit('resetPassword')">
-        <h3 class="text-sm font-semibold tracking-tight text-zinc-900">完成密码重置</h3>
-        <label class="grid gap-2">
-          <span class="text-sm font-medium text-zinc-700">重置令牌</span>
-          <input
-            :value="props.resetToken"
-            type="text"
-            placeholder="粘贴邮件中的重置令牌"
-            required
-            class="w-full rounded-xl border border-zinc-300/80 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
-            @input="onResetTokenInput"
-          />
-        </label>
-        <label class="grid gap-2">
-          <span class="text-sm font-medium text-zinc-700">新密码（至少 8 位）</span>
-          <input
-            :value="props.resetNewPassword"
-            type="password"
-            minlength="8"
-            placeholder="请输入新密码"
-            required
-            class="w-full rounded-xl border border-zinc-300/80 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
-            @input="onResetNewPasswordInput"
-          />
-        </label>
-        <button
-          class="inline-flex items-center justify-center rounded-xl border border-zinc-900 bg-zinc-900 px-3 py-2.5 text-sm font-medium text-white transition duration-300 hover:-translate-y-0.5 hover:bg-zinc-800 active:translate-y-[1px] disabled:cursor-not-allowed disabled:opacity-60"
-          type="submit"
-          :disabled="props.resetSubmitting"
-        >
-          {{ props.resetSubmitting ? '提交中...' : '完成重置' }}
+          {{ props.codeVerifying ? '验证中...' : '验证并登录' }}
         </button>
       </form>
     </article>

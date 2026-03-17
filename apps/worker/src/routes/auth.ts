@@ -247,16 +247,41 @@ router.post('/send-login-code', zValidator('json', emailSchema), async (c) => {
 
   const email = normalizeEmail(payload.email);
   const user = await findActiveUserByEmail(config, email);
+  const loginCodeCooldownSeconds = config.LOGIN_CODE_RESEND_COOLDOWN_SECONDS ?? 60;
 
   if (!user) {
-    return c.json({ ok: true });
+    return c.json({ ok: true, cooldownSeconds: loginCodeCooldownSeconds });
+  }
+
+  const db = getDb(config);
+  const [latestCode] = await db
+    .select({
+      createdAt: loginCodes.createdAt,
+    })
+    .from(loginCodes)
+    .where(eq(loginCodes.userId, user.id))
+    .orderBy(desc(loginCodes.createdAt))
+    .limit(1);
+
+  if (latestCode?.createdAt) {
+    const elapsedSeconds = Math.floor((Date.now() - latestCode.createdAt.getTime()) / 1000);
+    const retryAfterSeconds = loginCodeCooldownSeconds - elapsedSeconds;
+
+    if (retryAfterSeconds > 0) {
+      return c.json(
+        {
+          error: `Please wait ${retryAfterSeconds}s before requesting another code`,
+          retryAfterSeconds,
+        },
+        429,
+      );
+    }
   }
 
   const code = generateOtpCode();
   const codeHash = await hashSessionToken(`${user.id}:${code}`);
   const ttlMinutes = config.LOGIN_CODE_TTL_MINUTES ?? 10;
   const expiresAt = new Date(Date.now() + ttlMinutes * 60_000);
-  const db = getDb(config);
 
   await db.insert(loginCodes).values({
     userId: user.id,
@@ -271,7 +296,7 @@ router.post('/send-login-code', zValidator('json', emailSchema), async (c) => {
     return c.json({ error: 'Failed to send login code email' }, 503);
   }
 
-  return c.json({ ok: true });
+  return c.json({ ok: true, cooldownSeconds: loginCodeCooldownSeconds });
 });
 
 router.post('/verify-login-code', zValidator('json', verifyCodeSchema), async (c) => {

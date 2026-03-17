@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { clearStoredToken, getStoredToken, setStoredToken } from '../../lib/auth-session';
 import AuthCredentialForms from './components/AuthCredentialForms.vue';
@@ -16,6 +16,13 @@ type AuthResponse = {
   token: string;
   expiresAt: string;
   user: AuthUser;
+};
+
+type SendCodeResponse = {
+  ok: boolean;
+  cooldownSeconds?: number;
+  retryAfterSeconds?: number;
+  error?: string;
 };
 
 const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined)?.replace(/\/$/, '');
@@ -39,6 +46,10 @@ const emit = defineEmits<{
 const authMode = ref<'login' | 'register' | 'code'>('login');
 const showResetPanel = ref(false);
 const isPageMode = computed(() => props.mode === 'page');
+const loginCodeCooldownSeconds = ref(0);
+const loginCodeCanResend = computed(() => loginCodeCooldownSeconds.value <= 0);
+
+let loginCodeCooldownTimer: ReturnType<typeof setInterval> | null = null;
 
 const authForm = reactive({
   email: '',
@@ -77,9 +88,34 @@ const resetMessages = () => {
 
 const setAuthMode = (mode: 'login' | 'register' | 'code') => {
   authMode.value = mode;
-  if (mode !== 'login' && !resetForm.token.trim()) {
+  if (mode !== 'login') {
     showResetPanel.value = false;
   }
+};
+
+const clearLoginCodeCooldownTimer = () => {
+  if (loginCodeCooldownTimer) {
+    clearInterval(loginCodeCooldownTimer);
+    loginCodeCooldownTimer = null;
+  }
+};
+
+const startLoginCodeCooldown = (seconds: number) => {
+  clearLoginCodeCooldownTimer();
+
+  loginCodeCooldownSeconds.value = Math.max(0, Math.floor(seconds));
+
+  if (loginCodeCooldownSeconds.value <= 0) {
+    return;
+  }
+
+  loginCodeCooldownTimer = setInterval(() => {
+    loginCodeCooldownSeconds.value = Math.max(0, loginCodeCooldownSeconds.value - 1);
+
+    if (loginCodeCooldownSeconds.value <= 0) {
+      clearLoginCodeCooldownTimer();
+    }
+  }, 1000);
 };
 
 const setPrimaryEmail = (email: string) => {
@@ -240,16 +276,36 @@ const sendLoginCode = async () => {
     return;
   }
 
+  if (!loginCodeCanResend.value) {
+    errorText.value = `发送过于频繁，请在 ${loginCodeCooldownSeconds.value} 秒后重试。`;
+    return;
+  }
+
   codeSending.value = true;
 
   try {
-    await apiRequest<{ ok: boolean }>('/api/auth/send-login-code', {
+    const res = await fetch(buildApiUrl('/api/auth/send-login-code'), {
       method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+      },
       body: JSON.stringify({ email }),
     });
 
+    const payload = (await res.json().catch(() => ({}))) as SendCodeResponse;
+
+    if (!res.ok) {
+      if (res.status === 429 && payload.retryAfterSeconds) {
+        startLoginCodeCooldown(payload.retryAfterSeconds);
+      }
+
+      throw new Error(payload.error ?? `Request failed with status ${res.status}`);
+    }
+
     setPrimaryEmail(email);
-    successText.value = '登录验证码已发送，请前往邮箱查收。';
+    const cooldownSeconds = payload.cooldownSeconds ?? 60;
+    startLoginCodeCooldown(cooldownSeconds);
+    successText.value = `登录验证码已发送，请前往邮箱查收。${cooldownSeconds > 0 ? ` ${cooldownSeconds} 秒后可重新发送。` : ''}`;
   } catch (error) {
     errorText.value = error instanceof Error ? error.message : '验证码发送失败，请稍后重试。';
   } finally {
@@ -320,8 +376,13 @@ const sendResetEmail = async () => {
   }
 };
 
-const toggleResetPanel = () => {
-  showResetPanel.value = !showResetPanel.value;
+const openResetPanel = () => {
+  authMode.value = 'login';
+  showResetPanel.value = true;
+};
+
+const closeResetPanel = () => {
+  showResetPanel.value = false;
 };
 
 const resetPassword = async () => {
@@ -394,6 +455,10 @@ onMounted(async () => {
 
   await loadCurrentUser();
 });
+
+onBeforeUnmount(() => {
+  clearLoginCodeCooldownTimer();
+});
 </script>
 
 <template>
@@ -427,17 +492,18 @@ onMounted(async () => {
         />
 
         <template v-else>
-          <AuthModeSwitcher :mode="authMode" @change="setAuthMode" />
+          <AuthModeSwitcher v-if="!showResetPanel" :mode="authMode" @change="setAuthMode" />
 
           <AuthCredentialForms
             :auth-mode="authMode"
-            :redirect-on-success="props.redirectOnSuccess"
             :show-reset-panel="showResetPanel"
             :auth-loading="authLoading"
             :code-sending="codeSending"
             :code-verifying="codeVerifying"
             :reset-sending="resetSending"
             :reset-submitting="resetSubmitting"
+            :login-code-cooldown-seconds="loginCodeCooldownSeconds"
+            :login-code-can-resend="loginCodeCanResend"
             v-model:auth-email="authForm.email"
             v-model:auth-password="authForm.password"
             v-model:code-email="codeForm.email"
@@ -448,7 +514,8 @@ onMounted(async () => {
             @submit-auth="submitAuth"
             @send-login-code="sendLoginCode"
             @verify-login-code="verifyLoginCode"
-            @toggle-reset-panel="toggleResetPanel"
+            @open-reset-panel="openResetPanel"
+            @close-reset-panel="closeResetPanel"
             @send-reset-email="sendResetEmail"
             @reset-password="resetPassword"
             @sync-primary-email="setPrimaryEmail"
