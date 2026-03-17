@@ -432,13 +432,16 @@ export const changePassword = async (
     return buildServiceResponse(401, { error: 'Unauthorized' });
   }
 
-  const currentPasswordMatched = await verifyPassword(payload.currentPassword, user.passwordHash);
+  const otpOnlyAccount = isOtpOnlyPasswordHash(user.passwordHash);
+  const currentPasswordMatched = otpOnlyAccount
+    ? true
+    : await verifyPassword(payload.currentPassword, user.passwordHash);
 
   if (!currentPasswordMatched) {
     return buildServiceResponse(401, { error: 'Current password is incorrect' });
   }
 
-  if (payload.currentPassword === payload.newPassword) {
+  if (!otpOnlyAccount && payload.currentPassword === payload.newPassword) {
     return buildServiceResponse(400, {
       error: 'New password must be different from current password',
     });

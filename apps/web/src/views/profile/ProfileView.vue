@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AuthUser, HistoryPayload, SubscriptionItem, WatchStats } from './types'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { COUNTRY_OPTIONS, resolveCountryLabel } from '../../constants/countries'
 import { clearStoredToken, getStoredToken } from '../../lib/auth-session'
 import { formatDateTime, formatMoney } from '../../lib/format'
@@ -15,11 +15,18 @@ import ProfileSubscriptionListCard from './components/ProfileSubscriptionListCar
 import ProfileWatchFormCard from './components/ProfileWatchFormCard.vue'
 
 const router = useRouter()
+const route = useRoute()
 const countryOptions = COUNTRY_OPTIONS
 const COUNTRY_CODE_PATTERN = /^[A-Z]{2}$/
+type ProfileTab = 'workspace' | 'security'
+type ProfileRouteName = 'profile' | 'profile-security'
 
 function countryLabel(countryCode: string): string {
   return resolveCountryLabel(countryCode)
+}
+
+function resolveProfileTabByRouteName(name: string | null): ProfileTab {
+  return name === 'profile-security' ? 'security' : 'workspace'
 }
 
 const token = ref(getStoredToken())
@@ -70,6 +77,39 @@ watch(errorText, (next): void => {
 
   toast.error(next)
 })
+
+const activeProfileTab = computed<ProfileTab>(() => {
+  const routeName = typeof route.name === 'string' ? route.name : null
+  return resolveProfileTabByRouteName(routeName)
+})
+
+function isProfileTabActive(tab: ProfileTab): boolean {
+  return activeProfileTab.value === tab
+}
+
+async function switchProfileTab(tab: ProfileTab): Promise<void> {
+  const nextRouteName: ProfileRouteName = tab === 'security' ? 'profile-security' : 'profile'
+
+  if (route.name === nextRouteName) {
+    return
+  }
+
+  await router.replace({
+    name: nextRouteName,
+  })
+}
+
+function mapChangePasswordError(message: string): string {
+  if (message === 'Current password is incorrect') {
+    return '当前密码不正确。若你刚完成重置密码，请输入最新密码。'
+  }
+
+  if (message === 'Unauthorized') {
+    return '登录状态已失效，请重新登录后再试。'
+  }
+
+  return message
+}
 
 function resetMessages(): void {
   successText.value = ''
@@ -271,7 +311,7 @@ async function changePassword(): Promise<void> {
     successText.value = '密码已更新，其他设备会话已失效，当前设备保持登录。'
   }
   catch (error) {
-    errorText.value = error instanceof Error ? error.message : '密码修改失败，请稍后重试。'
+    errorText.value = error instanceof Error ? mapChangePasswordError(error.message) : '密码修改失败，请稍后重试。'
   }
   finally {
     changingPassword.value = false
@@ -496,7 +536,39 @@ onMounted(async (): Promise<void> => {
           @logout="logout"
         />
 
-        <section class="reveal reveal-delay-1 mt-4 grid gap-4 lg:grid-cols-[0.98fr_1.02fr]">
+        <section class="reveal reveal-delay-1 mt-4 rounded-[1.5rem] border border-zinc-200/75 bg-white/85 p-2 shadow-[0_18px_38px_-16px_rgba(7,13,20,0.12)]">
+          <div class="grid gap-2 sm:grid-cols-2">
+            <button
+              class="inline-flex items-center justify-center rounded-xl border px-3 py-2.5 text-sm font-medium transition duration-300"
+              :class="
+                isProfileTabActive('workspace')
+                  ? 'border-zinc-900 bg-zinc-900 text-white'
+                  : 'border-zinc-300 bg-white text-zinc-700 hover:-translate-y-0.5 hover:border-zinc-400 hover:text-zinc-900'
+              "
+              type="button"
+              @click="switchProfileTab('workspace')"
+            >
+              监控工作台
+            </button>
+            <button
+              class="inline-flex items-center justify-center rounded-xl border px-3 py-2.5 text-sm font-medium transition duration-300"
+              :class="
+                isProfileTabActive('security')
+                  ? 'border-zinc-900 bg-zinc-900 text-white'
+                  : 'border-zinc-300 bg-white text-zinc-700 hover:-translate-y-0.5 hover:border-zinc-400 hover:text-zinc-900'
+              "
+              type="button"
+              @click="switchProfileTab('security')"
+            >
+              账号安全
+            </button>
+          </div>
+        </section>
+
+        <section
+          v-if="isProfileTabActive('workspace')"
+          class="reveal reveal-delay-1 mt-4 grid gap-4 lg:grid-cols-[0.98fr_1.02fr]"
+        >
           <ProfileWatchFormCard
             v-model:app-id="form.appId"
             v-model:country="form.country"
@@ -519,6 +591,7 @@ onMounted(async (): Promise<void> => {
         </section>
 
         <ProfileHistorySection
+          v-if="isProfileTabActive('workspace')"
           v-model:history-target-price="historyTargetPrice"
           :selected-history="selectedHistory"
           :selected-subscription="selectedSubscription"
@@ -531,6 +604,7 @@ onMounted(async (): Promise<void> => {
         />
 
         <ProfileSecurityCard
+          v-else
           v-model:current-password="securityForm.currentPassword"
           v-model:new-password="securityForm.newPassword"
           v-model:confirm-password="securityForm.confirmPassword"
@@ -539,6 +613,27 @@ onMounted(async (): Promise<void> => {
           @submit="changePassword"
         />
       </template>
+
+      <section
+        v-else
+        class="reveal rounded-[2rem] border border-zinc-200/70 bg-white/92 p-6 shadow-[0_20px_40px_-15px_rgba(7,13,20,0.1)]"
+      >
+        <p class="metric-mono text-xs tracking-[0.2em] text-zinc-500">
+          AUTH
+        </p>
+        <h2 class="mt-2 text-2xl font-semibold tracking-tight text-zinc-900">
+          登录状态已失效
+        </h2>
+        <p class="mt-2 text-sm text-zinc-600">
+          请重新登录后再进入工作台或账号安全页面。
+        </p>
+        <RouterLink
+          to="/auth"
+          class="mt-4 inline-flex items-center justify-center rounded-xl border border-zinc-900 bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition duration-300 hover:-translate-y-0.5 hover:bg-zinc-800 active:translate-y-[1px]"
+        >
+          前往登录
+        </RouterLink>
+      </section>
     </div>
   </main>
 </template>

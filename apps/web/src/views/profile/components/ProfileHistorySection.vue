@@ -163,7 +163,7 @@ const currentPoint = computed<ChartPoint | null>(() => {
     return null
   }
 
-  return points[points.length - 1]
+  return points.at(-1) ?? null
 })
 
 const highestPoint = computed<ChartPoint | null>(() => {
@@ -286,19 +286,19 @@ function dayChangeClass(value: number | null): string {
             {{ selectedTargetRule }}
           </p>
         </div>
-        <form class="grid w-full gap-2 sm:grid-cols-[1fr_auto] lg:w-auto" @submit.prevent="emit('saveTargetPrice')">
+        <form class="grid w-full gap-2 sm:grid-cols-[minmax(20rem,1fr)_auto] lg:w-auto" @submit.prevent="emit('saveTargetPrice')">
           <input
             :value="historyTargetPrice"
             type="number"
             min="0.01"
             step="0.01"
             placeholder="设置目标价格，留空表示任意降价"
-            class="w-full min-w-[240px] rounded-xl border border-zinc-300/80 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+            class="w-full min-w-0 sm:min-w-[320px] lg:min-w-[380px] rounded-xl border border-zinc-300/80 bg-white px-4 py-3 text-base text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
             :disabled="!props.selectedSubscription || props.updatingHistoryTarget"
             @input="onTargetPriceInput"
           >
           <button
-            class="inline-flex items-center justify-center rounded-xl border border-zinc-900 bg-zinc-900 px-3 py-2.5 text-sm font-medium text-white transition duration-300 hover:-translate-y-0.5 hover:bg-zinc-800 active:translate-y-[1px] disabled:cursor-not-allowed disabled:opacity-60"
+            class="inline-flex items-center justify-center rounded-xl border border-zinc-900 bg-zinc-900 px-4 py-3 text-sm font-medium text-white transition duration-300 hover:-translate-y-0.5 hover:bg-zinc-800 active:translate-y-[1px] disabled:cursor-not-allowed disabled:opacity-60"
             type="submit"
             :disabled="!props.selectedSubscription || props.updatingHistoryTarget"
           >

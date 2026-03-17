@@ -90,11 +90,13 @@ const list = computed(() => {
           </div>
           <button
             type="button"
-            class="inline-flex h-8 w-8 flex-none items-center justify-center rounded-lg border border-current/20 bg-white/45 text-sm font-bold opacity-85 transition hover:bg-white/80 hover:opacity-100 active:scale-[0.96]"
+            class="inline-flex h-9 w-9 flex-none items-center justify-center rounded-lg border border-current/25 bg-white/60 text-zinc-700 opacity-90 transition hover:bg-white/90 hover:opacity-100 active:scale-[0.96]"
             aria-label="关闭提示"
             @click="toast.remove(item.id)"
           >
-            ×
+            <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" class="h-[18px] w-[18px]" stroke="currentColor" stroke-width="2.2">
+              <path d="M5.5 5.5l9 9m0-9l-9 9" stroke-linecap="round" />
+            </svg>
           </button>
         </div>
       </li>

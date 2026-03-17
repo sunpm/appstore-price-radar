@@ -17,6 +17,7 @@ import { useCooldownTimer } from './composables/useCooldownTimer'
 import {
   DEFAULT_LOGIN_CODE_COOLDOWN_SECONDS,
   MIN_PASSWORD_LENGTH,
+  OPEN_RESET_PANEL_QUERY_PARAM,
   OTP_CODE_PATTERN,
   RESET_TOKEN_QUERY_PARAM,
 } from './constants'
@@ -403,6 +404,10 @@ function closeResetPanel(): void {
   showResetPanel.value = false
 }
 
+function shouldOpenResetPanel(value: string | null): boolean {
+  return value === '1' || value === 'true'
+}
+
 async function resetPassword(): Promise<void> {
   resetMessages()
 
@@ -427,6 +432,8 @@ async function resetPassword(): Promise<void> {
       body: JSON.stringify({ token: tokenText, password: newPassword }),
     })
 
+    clearSession()
+    resetForm.token = ''
     resetForm.newPassword = ''
     authMode.value = 'login'
     loginMethod.value = 'password'
@@ -464,12 +471,23 @@ async function logout(): Promise<void> {
 onMounted(async (): Promise<void> => {
   if (isPageMode.value) {
     const url = new URL(window.location.href)
+    const openResetPanel = shouldOpenResetPanel(url.searchParams.get(OPEN_RESET_PANEL_QUERY_PARAM))
     const resetToken = url.searchParams.get(RESET_TOKEN_QUERY_PARAM)
+
+    if (openResetPanel || resetToken) {
+      showResetPanel.value = true
+    }
 
     if (resetToken) {
       resetForm.token = resetToken
-      showResetPanel.value = true
       successText.value = '已识别重置令牌，请填写新密码后提交。'
+    }
+    else if (openResetPanel) {
+      successText.value = '请输入注册邮箱并完成密码重置流程。'
+    }
+
+    if (openResetPanel || resetToken) {
+      url.searchParams.delete(OPEN_RESET_PANEL_QUERY_PARAM)
       url.searchParams.delete(RESET_TOKEN_QUERY_PARAM)
       window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
     }
@@ -502,7 +520,7 @@ onMounted(async (): Promise<void> => {
         </div>
 
         <AuthSessionPanel
-          v-else-if="currentUser"
+          v-else-if="currentUser && !showResetPanel"
           :current-user="currentUser"
           :session-expires-at="sessionExpiresAt"
           :to-time="toTime"

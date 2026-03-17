@@ -27,6 +27,14 @@ const router = createRouter({
           },
         },
         {
+          path: 'profile/security',
+          name: 'profile-security',
+          component: ProfileView,
+          meta: {
+            requiresAuth: true,
+          },
+        },
+        {
           path: 'auth',
           name: 'auth',
           component: AuthView,
@@ -41,6 +49,18 @@ const router = createRouter({
 })
 
 router.beforeEach((to) => {
+  const tabQuery = Array.isArray(to.query.tab) ? to.query.tab[0] : to.query.tab
+
+  if (to.path === '/profile' && tabQuery === 'security') {
+    const { tab: _tab, ...restQuery } = to.query
+
+    return {
+      path: '/profile/security',
+      query: restQuery,
+      hash: to.hash,
+    }
+  }
+
   if (to.meta.requiresAuth && !getStoredToken()) {
     return { path: '/auth' }
   }
