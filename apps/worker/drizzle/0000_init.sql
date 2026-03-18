@@ -115,6 +115,24 @@ CREATE TABLE IF NOT EXISTS app_price_history (
 CREATE INDEX IF NOT EXISTS app_price_history_app_time_idx
   ON app_price_history (app_id, country, fetched_at DESC);
 
+CREATE TABLE IF NOT EXISTS app_price_change_events (
+  id serial PRIMARY KEY,
+  app_id varchar(32) NOT NULL,
+  country char(2) NOT NULL,
+  currency char(3) NOT NULL,
+  old_amount numeric(10, 2) NOT NULL,
+  new_amount numeric(10, 2) NOT NULL,
+  changed_at timestamptz NOT NULL DEFAULT now(),
+  source varchar(32) NOT NULL DEFAULT 'scheduled',
+  request_id varchar(96) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS app_price_change_events_app_changed_idx
+  ON app_price_change_events (app_id, country, changed_at DESC);
+
+CREATE UNIQUE INDEX IF NOT EXISTS app_price_change_events_app_request_uniq
+  ON app_price_change_events (app_id, country, request_id);
+
 CREATE TABLE IF NOT EXISTS app_drop_events (
   id serial PRIMARY KEY,
   app_id varchar(32) NOT NULL,
