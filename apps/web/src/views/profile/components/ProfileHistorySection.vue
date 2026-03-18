@@ -2,21 +2,21 @@
 import type { HistoryPayload, SelectedSubscription } from '../types'
 import { computed } from 'vue'
 
-interface DailyPoint {
-  day: string
+interface TrendPoint {
+  key: string
+  occurredAt: string
   price: number
   currency: string
-  sampleCount: number
-  fetchedAt: string
 }
 
-type ChartPoint = DailyPoint & {
-  x: number
-  y: number
-}
-
-type DailyRow = ChartPoint & {
-  dayChangePct: number | null
+interface ChangeRow {
+  id: number
+  occurredAt: string
+  oldAmount: number
+  newAmount: number
+  currency: string
+  source: string
+  changePct: number | null
 }
 
 const props = defineProps<{
@@ -35,18 +35,6 @@ const emit = defineEmits<{
 
 const historyTargetPrice = defineModel<string>('historyTargetPrice', { required: true })
 
-function dayKey(iso: string): string {
-  const date = new Date(iso)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-function dayLabel(value: string): string {
-  return new Date(`${value}T00:00:00`).toLocaleDateString()
-}
-
 function toPercent(value: number | null | undefined): string {
   if (value === null || value === undefined || Number.isNaN(value)) {
     return '-'
@@ -56,60 +44,77 @@ function toPercent(value: number | null | undefined): string {
   return `${sign}${value.toFixed(2)}%`
 }
 
+function toTime(value: string): string {
+  return new Date(value).toLocaleString()
+}
+
 function onTargetPriceInput(event: Event): void {
   const value = (event.target as HTMLInputElement).value
   historyTargetPrice.value = value
 }
 
-const dailySeries = computed<DailyPoint[]>(() => {
+const changeRows = computed<ChangeRow[]>(() => {
+  const raw = props.selectedHistory?.history ?? []
+
+  return raw
+    .slice()
+    .reverse()
+    .map(row => ({
+      id: row.id,
+      occurredAt: row.changedAt,
+      oldAmount: row.oldAmount,
+      newAmount: row.newAmount,
+      currency: row.currency,
+      source: row.source,
+      changePct: row.oldAmount > 0 ? ((row.newAmount - row.oldAmount) / row.oldAmount) * 100 : null,
+    }))
+})
+
+const trendPoints = computed<TrendPoint[]>(() => {
   const raw = props.selectedHistory?.history ?? []
 
   if (raw.length === 0) {
-    return []
+    const snapshot = props.selectedHistory?.snapshot
+
+    if (!snapshot) {
+      return []
+    }
+
+    return [{
+      key: 'snapshot-only',
+      occurredAt: snapshot.updatedAt,
+      price: snapshot.lastPrice,
+      currency: snapshot.currency,
+    }]
   }
 
-  const byDay = new Map<string, DailyPoint>()
+  const first = raw[0]
+  const points: TrendPoint[] = [{
+    key: `baseline-${first.id}`,
+    occurredAt: first.changedAt,
+    price: first.oldAmount,
+    currency: first.currency,
+  }]
 
-  for (const row of raw) {
-    const key = dayKey(row.fetchedAt)
-    const price = Number(row.price)
-    const existing = byDay.get(key)
-
-    if (!existing) {
-      byDay.set(key, {
-        day: key,
-        price,
-        currency: row.currency,
-        sampleCount: 1,
-        fetchedAt: row.fetchedAt,
-      })
-      continue
-    }
-
-    existing.sampleCount += 1
-
-    if (price < existing.price) {
-      existing.price = price
-      existing.currency = row.currency
-    }
-
-    if (new Date(row.fetchedAt).getTime() > new Date(existing.fetchedAt).getTime()) {
-      existing.fetchedAt = row.fetchedAt
-    }
+  for (const item of raw) {
+    points.push({
+      key: `change-${item.id}`,
+      occurredAt: item.changedAt,
+      price: item.newAmount,
+      currency: item.currency,
+    })
   }
 
-  return Array.from(byDay.values()).sort((a, b) => a.day.localeCompare(b.day))
+  return points
 })
 
 const chartGeometry = computed(() => {
-  const list = dailySeries.value
+  const list = trendPoints.value
 
   if (list.length === 0) {
     return {
       path: '',
-      points: [] as ChartPoint[],
-      min: 0,
-      max: 0,
+      points: [] as Array<TrendPoint & { x: number, y: number }>,
     }
   }
 
@@ -136,12 +141,10 @@ const chartGeometry = computed(() => {
   return {
     path,
     points,
-    min,
-    max,
   }
 })
 
-const lowestMarker = computed<ChartPoint | null>(() => {
+const lowestMarker = computed(() => {
   const points = chartGeometry.value.points
 
   if (points.length === 0) {
@@ -157,8 +160,9 @@ const lowestMarker = computed<ChartPoint | null>(() => {
   }, points[0])
 })
 
-const currentPoint = computed<ChartPoint | null>(() => {
+const currentPoint = computed(() => {
   const points = chartGeometry.value.points
+
   if (points.length === 0) {
     return null
   }
@@ -166,7 +170,7 @@ const currentPoint = computed<ChartPoint | null>(() => {
   return points.at(-1) ?? null
 })
 
-const highestPoint = computed<ChartPoint | null>(() => {
+const highestPoint = computed(() => {
   const points = chartGeometry.value.points
 
   if (points.length === 0) {
@@ -182,11 +186,6 @@ const highestPoint = computed<ChartPoint | null>(() => {
   }, points[0])
 })
 
-const firstPoint = computed<ChartPoint | null>(() => {
-  const points = chartGeometry.value.points
-  return points.length === 0 ? null : points[0]
-})
-
 const dropFromHighestPct = computed<number | null>(() => {
   const current = currentPoint.value
   const highest = highestPoint.value
@@ -198,21 +197,8 @@ const dropFromHighestPct = computed<number | null>(() => {
   return ((highest.price - current.price) / highest.price) * 100
 })
 
-const dropFromFirstPct = computed<number | null>(() => {
-  const current = currentPoint.value
-  const first = firstPoint.value
-
-  if (!current || !first || first.price <= 0) {
-    return null
-  }
-
-  return ((first.price - current.price) / first.price) * 100
-})
-
 const historyCurrency = computed<string>(() => {
-  return (
-    props.selectedHistory?.snapshot?.currency ?? currentPoint.value?.currency ?? lowestMarker.value?.currency ?? 'USD'
-  )
+  return props.selectedHistory?.snapshot?.currency ?? currentPoint.value?.currency ?? 'USD'
 })
 
 const selectedTargetRule = computed<string>(() => {
@@ -223,30 +209,7 @@ const selectedTargetRule = computed<string>(() => {
   return props.targetRuleText(props.selectedSubscription.targetPrice, props.selectedSubscription.currency ?? historyCurrency.value)
 })
 
-const dailyRows = computed<DailyRow[]>(() => {
-  const points = chartGeometry.value.points
-
-  return points
-    .map((point, index) => {
-      if (index === 0) {
-        return {
-          ...point,
-          dayChangePct: null,
-        }
-      }
-
-      const previous = points[index - 1]
-      const dayChangePct = previous.price > 0 ? ((point.price - previous.price) / previous.price) * 100 : null
-
-      return {
-        ...point,
-        dayChangePct,
-      }
-    })
-    .reverse()
-})
-
-function dayChangeClass(value: number | null): string {
+function changeClass(value: number | null): string {
   if (value === null || value === undefined) {
     return 'text-zinc-700'
   }
@@ -261,6 +224,19 @@ function dayChangeClass(value: number | null): string {
 
   return 'text-zinc-700'
 }
+
+function sourceLabel(source: string): string {
+  switch (source) {
+    case 'scheduled':
+      return '定时任务'
+    case 'manual':
+      return '手动刷新'
+    case 'migration':
+      return '迁移数据'
+    default:
+      return source
+  }
+}
 </script>
 
 <template>
@@ -269,7 +245,7 @@ function dayChangeClass(value: number | null): string {
   >
     <div class="flex flex-wrap items-center justify-between gap-3">
       <h2 class="text-lg font-semibold tracking-tight text-zinc-900">
-        价格趋势分析（按日最低价聚合）
+        价格变化趋势（仅记录发生变化时）
       </h2>
       <p v-if="props.selectedHistory" class="text-sm text-zinc-500">
         {{ props.selectedAppLabel }}
@@ -307,7 +283,7 @@ function dayChangeClass(value: number | null): string {
         </form>
       </div>
       <p class="mt-2 text-xs text-zinc-500">
-        可在此直接更新当前应用的通知阈值，规则为“当前价 &lt;= 目标价格”。
+        仅在观测到价格变化时写入事件，因此不会按天产生无意义记录。
       </p>
     </div>
 
@@ -324,7 +300,7 @@ function dayChangeClass(value: number | null): string {
     </div>
 
     <div
-      v-else-if="dailySeries.length === 0"
+      v-else-if="trendPoints.length === 0"
       class="mt-4 rounded-2xl border border-dashed border-zinc-300 bg-zinc-50/70 p-4 text-sm font-medium text-zinc-500"
     >
       暂无可用历史数据。
@@ -334,7 +310,7 @@ function dayChangeClass(value: number | null): string {
       <div class="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <article class="rounded-2xl border border-zinc-200/80 bg-zinc-50/80 p-3">
           <p class="text-xs font-medium uppercase tracking-[0.16em] text-zinc-500">
-            最新价（日聚合）
+            最新价
           </p>
           <strong class="metric-mono mt-2 block text-lg text-zinc-900">{{ props.toMoney(currentPoint?.price, historyCurrency) }}</strong>
         </article>
@@ -352,9 +328,9 @@ function dayChangeClass(value: number | null): string {
         </article>
         <article class="rounded-2xl border border-zinc-200/80 bg-zinc-50/80 p-3">
           <p class="text-xs font-medium uppercase tracking-[0.16em] text-zinc-500">
-            相对首日降幅
+            累计变化事件
           </p>
-          <strong class="metric-mono mt-2 block text-lg text-emerald-700">{{ toPercent(dropFromFirstPct) }}</strong>
+          <strong class="metric-mono mt-2 block text-lg text-zinc-900">{{ props.selectedHistory.history.length }}</strong>
         </article>
       </div>
 
@@ -386,32 +362,37 @@ function dayChangeClass(value: number | null): string {
           <thead>
             <tr>
               <th class="sticky top-0 border-b border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-medium uppercase tracking-[0.12em] text-zinc-600">
-                日期
+                变化时间
               </th>
               <th class="sticky top-0 border-b border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-medium uppercase tracking-[0.12em] text-zinc-600">
-                当日最低价
+                价格变化
               </th>
               <th class="sticky top-0 border-b border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-medium uppercase tracking-[0.12em] text-zinc-600">
-                日变动
+                变化幅度
               </th>
               <th class="sticky top-0 border-b border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-medium uppercase tracking-[0.12em] text-zinc-600">
-                采样次数
+                来源
               </th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="row in dailyRows" :key="`${row.day}-${row.price}`" class="border-b border-zinc-100">
+            <tr v-if="changeRows.length === 0" class="border-b border-zinc-100">
+              <td colspan="4" class="px-3 py-3 text-zinc-500">
+                目前仅有最新快照，还没有出现价格变化事件。
+              </td>
+            </tr>
+            <tr v-for="row in changeRows" :key="row.id" class="border-b border-zinc-100">
               <td class="px-3 py-2">
-                {{ dayLabel(row.day) }}
+                {{ toTime(row.occurredAt) }}
               </td>
               <td class="px-3 py-2">
-                {{ props.toMoney(row.price, row.currency) }}
+                {{ props.toMoney(row.oldAmount, row.currency) }} → {{ props.toMoney(row.newAmount, row.currency) }}
               </td>
-              <td class="px-3 py-2 font-medium" :class="[dayChangeClass(row.dayChangePct)]">
-                {{ toPercent(row.dayChangePct) }}
+              <td class="px-3 py-2 font-medium" :class="changeClass(row.changePct)">
+                {{ toPercent(row.changePct) }}
               </td>
-              <td class="metric-mono px-3 py-2">
-                {{ row.sampleCount }}
+              <td class="px-3 py-2 text-zinc-600">
+                {{ sourceLabel(row.source) }}
               </td>
             </tr>
           </tbody>

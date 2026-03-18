@@ -17,6 +17,16 @@ RESET_PASSWORD_TTL_MINUTES=30
 LOGIN_CODE_TTL_MINUTES=10
 # Login code resend cooldown in seconds (10-600, default 60)
 LOGIN_CODE_RESEND_COOLDOWN_SECONDS=60
+# Price check pace guard: maximum App Store calls per minute in one run (1-60, default 12)
+PRICE_CHECK_MAX_CALLS_PER_MINUTE=12
+# Retry base delay in seconds for transient App Store failures (1-300, default 15)
+PRICE_CHECK_RETRY_BASE_SECONDS=15
+# Retry delay cap in seconds for exponential backoff (1-900, default 90)
+PRICE_CHECK_RETRY_MAX_SECONDS=90
+# Random jitter in seconds added to each retry delay (0-180, default 5)
+PRICE_CHECK_RETRY_JITTER_SECONDS=5
+# Max retry attempts per app when status is 429/5xx (0-8, default 2)
+PRICE_CHECK_MAX_RETRIES=2
 # Frontend URL (used in reset-password links)
 APP_BASE_URL=http://localhost:5173
 # CORS allow origin for API

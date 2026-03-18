@@ -13,7 +13,14 @@ import { LEGACY_PASSWORD_HASH_ITERATIONS } from './auth';
 import { sendDropAlertEmail } from './alerts';
 import { fetchAppStorePrice } from './appstore';
 import { countLegacyPasswordHashUsers } from '../services/auth';
-import type { CheckReport, RefreshOptions, RefreshResult } from './checker.types';
+import type {
+  CheckReport,
+  RefreshOptions,
+  RefreshResult,
+  RefreshSingleAppFn,
+  RunPriceCheckOptions,
+  SleepFn,
+} from './checker.types';
 
 export const refreshSingleApp = async (
   env: EnvConfig,
@@ -182,9 +189,89 @@ export const refreshSingleApp = async (
   };
 };
 
-export const runPriceCheck = async (env: EnvConfig): Promise<CheckReport> => {
+const RETRYABLE_STATUS_CODE_RE = /status\s+(\d{3})/i;
+const RETRYABLE_STATUS_CODES = new Set([429, 500, 502, 503, 504]);
+
+const defaultSleep: SleepFn = async (ms) => {
+  await new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+};
+
+const isRetryableError = (error: unknown): boolean => {
+  const message = error instanceof Error ? error.message : '';
+  const match = message.match(RETRYABLE_STATUS_CODE_RE);
+
+  if (!match) {
+    return false;
+  }
+
+  const statusCode = Number(match[1]);
+  return RETRYABLE_STATUS_CODES.has(statusCode);
+};
+
+const resolveRetryDelayMs = (
+  env: EnvConfig,
+  attempt: number,
+  random: () => number,
+): number => {
+  const baseMs = (env.PRICE_CHECK_RETRY_BASE_SECONDS ?? 15) * 1000;
+  const maxMs = (env.PRICE_CHECK_RETRY_MAX_SECONDS ?? 90) * 1000;
+  const jitterMs = (env.PRICE_CHECK_RETRY_JITTER_SECONDS ?? 5) * 1000;
+  const exponentialMs = Math.min(baseMs * 2 ** attempt, maxMs);
+  return Math.round(exponentialMs + random() * jitterMs);
+};
+
+const refreshWithRetry = async (
+  env: EnvConfig,
+  appId: string,
+  country: string,
+  requestId: string,
+  runOptions: {
+    random: () => number;
+    sleep: SleepFn;
+    refreshSingleApp: RefreshSingleAppFn;
+  },
+): Promise<RefreshResult | null> => {
+  let attempt = 0;
+  const maxRetries = env.PRICE_CHECK_MAX_RETRIES ?? 2;
+
+  while (true) {
+    try {
+      return await runOptions.refreshSingleApp(appId, country, {
+        notifyDrops: true,
+        source: 'scheduled',
+        requestId,
+      });
+    } catch (error) {
+      if (!isRetryableError(error) || attempt >= maxRetries) {
+        throw error;
+      }
+
+      const delayMs = resolveRetryDelayMs(env, attempt, runOptions.random);
+      await runOptions.sleep(delayMs);
+      attempt += 1;
+    }
+  }
+};
+
+const resolvePacingDelayMs = (env: EnvConfig): number => {
+  const callsPerMinute = Math.max(1, env.PRICE_CHECK_MAX_CALLS_PER_MINUTE ?? 12);
+  return Math.ceil(60_000 / callsPerMinute);
+};
+
+export const runPriceCheck = async (
+  env: EnvConfig,
+  options: RunPriceCheckOptions = {},
+): Promise<CheckReport> => {
   const startedAt = new Date();
   const db = getDb(env);
+  const sleep = options.sleep ?? defaultSleep;
+  const random = options.random ?? Math.random;
+  const refreshSingleAppFn: RefreshSingleAppFn = options.refreshSingleApp
+    ? options.refreshSingleApp
+    : (appId, country, refreshOptions) =>
+        refreshSingleApp(env, appId, country, refreshOptions);
 
   try {
     const legacyPasswordUsers = await countLegacyPasswordHashUsers(env);
@@ -213,13 +300,19 @@ export const runPriceCheck = async (env: EnvConfig): Promise<CheckReport> => {
     emailsSent: 0,
     errors: [],
   };
+  const pacingDelayMs = resolvePacingDelayMs(env);
 
   for (const [index, pair] of watchedPairs.entries()) {
     try {
-      const result = await refreshSingleApp(env, pair.appId, pair.country, {
-        notifyDrops: true,
-        source: 'scheduled',
-        requestId: `scheduled:${startedAt.getTime()}:${index}:${pair.appId}:${pair.country}`,
+      if (index > 0) {
+        await sleep(pacingDelayMs);
+      }
+
+      const requestId = `scheduled:${startedAt.getTime()}:${index}:${pair.appId}:${pair.country}`;
+      const result = await refreshWithRetry(env, pair.appId, pair.country, requestId, {
+        random,
+        sleep,
+        refreshSingleApp: refreshSingleAppFn,
       });
 
       if (!result) {

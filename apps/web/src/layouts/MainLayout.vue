@@ -16,7 +16,7 @@ function navClass(active: boolean) {
 
 function isRouteActive(path: string) {
   if (path === '/') {
-    return route.path === '/'
+    return route.path === '/' || route.path.startsWith('/apps/')
   }
 
   return route.path === path || route.path.startsWith(`${path}/`)

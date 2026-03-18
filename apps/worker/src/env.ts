@@ -3,6 +3,11 @@ import { z } from 'zod';
 import {
   DEFAULT_LOGIN_CODE_RESEND_COOLDOWN_SECONDS,
   DEFAULT_LOGIN_CODE_TTL_MINUTES,
+  DEFAULT_PRICE_CHECK_MAX_CALLS_PER_MINUTE,
+  DEFAULT_PRICE_CHECK_MAX_RETRIES,
+  DEFAULT_PRICE_CHECK_RETRY_BASE_SECONDS,
+  DEFAULT_PRICE_CHECK_RETRY_JITTER_SECONDS,
+  DEFAULT_PRICE_CHECK_RETRY_MAX_SECONDS,
   DEFAULT_RESET_PASSWORD_TTL_MINUTES,
   DEFAULT_SESSION_TTL_DAYS,
 } from './constants/env';
@@ -34,6 +39,31 @@ const envSchema = z.object({
     defaultValue: DEFAULT_LOGIN_CODE_RESEND_COOLDOWN_SECONDS,
     min: 10,
     max: 600,
+  }),
+  PRICE_CHECK_MAX_CALLS_PER_MINUTE: createOptionalIntWithDefault({
+    defaultValue: DEFAULT_PRICE_CHECK_MAX_CALLS_PER_MINUTE,
+    min: 1,
+    max: 60,
+  }),
+  PRICE_CHECK_RETRY_BASE_SECONDS: createOptionalIntWithDefault({
+    defaultValue: DEFAULT_PRICE_CHECK_RETRY_BASE_SECONDS,
+    min: 1,
+    max: 300,
+  }),
+  PRICE_CHECK_RETRY_MAX_SECONDS: createOptionalIntWithDefault({
+    defaultValue: DEFAULT_PRICE_CHECK_RETRY_MAX_SECONDS,
+    min: 1,
+    max: 900,
+  }),
+  PRICE_CHECK_RETRY_JITTER_SECONDS: createOptionalIntWithDefault({
+    defaultValue: DEFAULT_PRICE_CHECK_RETRY_JITTER_SECONDS,
+    min: 0,
+    max: 180,
+  }),
+  PRICE_CHECK_MAX_RETRIES: createOptionalIntWithDefault({
+    defaultValue: DEFAULT_PRICE_CHECK_MAX_RETRIES,
+    min: 0,
+    max: 8,
   }),
 });
 

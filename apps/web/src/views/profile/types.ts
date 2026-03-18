@@ -1,3 +1,4 @@
+import type { PriceHistoryPayload } from '../../types/prices'
 import type { AuthUser } from '../auth/types'
 
 export type { AuthUser }
@@ -18,25 +19,7 @@ export interface SubscriptionItem {
   updatedAt: string
 }
 
-export interface PricePoint {
-  id: number
-  appId: string
-  country: string
-  price: number
-  currency: string
-  fetchedAt: string
-}
-
-export interface HistoryPayload {
-  snapshot: {
-    appName: string
-    storeUrl: string | null
-    iconUrl: string | null
-    currency: string
-    lastPrice: number
-  } | null
-  history: PricePoint[]
-}
+export type HistoryPayload = PriceHistoryPayload
 
 export type SelectedSubscription = Pick<SubscriptionItem, 'targetPrice' | 'currency'>
 

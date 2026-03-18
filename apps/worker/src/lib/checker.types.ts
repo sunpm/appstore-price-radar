@@ -4,6 +4,21 @@ export type RefreshOptions = {
   requestId?: string;
 };
 
+export type SleepFn = (ms: number) => Promise<void>;
+export type RandomFn = () => number;
+
+export type RefreshSingleAppFn = (
+  appId: string,
+  country: string,
+  options?: RefreshOptions,
+) => Promise<RefreshResult | null>;
+
+export type RunPriceCheckOptions = {
+  sleep?: SleepFn;
+  random?: RandomFn;
+  refreshSingleApp?: RefreshSingleAppFn;
+};
+
 export type RefreshResult = {
   appId: string;
   country: string;

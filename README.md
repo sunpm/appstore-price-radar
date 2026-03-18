@@ -5,9 +5,9 @@
 核心能力：
 - 用户登录与独立订阅管理
 - 按国家/地区监听 App 价格
-- 价格历史入库（Neon Postgres）
+- 价格变化事件入库（仅在价格变化时写入）
 - 触发降价后邮件提醒（Resend）
-- 前端管理页（Vue3）：订阅、历史、降价动态
+- 前端管理页（Vue3）：订阅、变化历史、降价动态、App 详情页
 
 ## 技术栈
 
@@ -63,6 +63,11 @@ Worker 常用可选：
 - `RESET_PASSWORD_TTL_MINUTES`（默认 30）
 - `LOGIN_CODE_TTL_MINUTES`（默认 10）
 - `LOGIN_CODE_RESEND_COOLDOWN_SECONDS`（默认 60）
+- `PRICE_CHECK_MAX_CALLS_PER_MINUTE`（默认 12）
+- `PRICE_CHECK_RETRY_BASE_SECONDS`（默认 15）
+- `PRICE_CHECK_RETRY_MAX_SECONDS`（默认 90）
+- `PRICE_CHECK_RETRY_JITTER_SECONDS`（默认 5）
+- `PRICE_CHECK_MAX_RETRIES`（默认 2）
 - `APP_BASE_URL`（默认 `http://localhost:5173`）
 - `CORS_ORIGIN`（默认建议 `http://localhost:5173`）
 
@@ -124,6 +129,7 @@ pnpm --filter @appstore-price-radar/worker deploy
 
 关键说明：
 - `apps/worker/wrangler.toml` 已设置 `keep_vars = true`，避免每次部署覆盖 Dashboard 里的普通变量。
+- `apps/worker/wrangler.toml` 默认 cron 为 `0 */6 * * *`（每 6 小时），降低对 App Store API 的请求压力。
 - 本项目不在 `wrangler.toml` 里写 `[vars]`，线上变量以 Dashboard 为准。
 
 ### Web（Netlify）
@@ -194,6 +200,6 @@ npx wrangler tail
 
 1. 定时任务拉取全部 active 订阅 `(appId, country)` 去重列表。
 2. 调用 iTunes Lookup API 查询最新价格。
-3. 写入快照表与历史表。
+3. 写入快照表；仅当价格变化时写入变化事件表。
 4. 若 `newPrice < oldPrice`，按订阅规则筛选并发邮件。
-5. 前端按天聚合历史价格并展示关键跌幅指标。
+5. 前端基于变化事件展示趋势与关键跌幅指标，并提供每个 App 的详情页。

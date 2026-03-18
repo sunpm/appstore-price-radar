@@ -10,6 +10,16 @@ defineProps<{
   toRelativeText: (iso: string) => string
   toTime: (iso: string) => string
 }>()
+
+function appDetailTo(item: DropEventItem) {
+  return {
+    name: 'app-detail',
+    params: {
+      appId: item.appId,
+      country: item.country,
+    },
+  }
+}
 </script>
 
 <template>
@@ -78,21 +88,30 @@ defineProps<{
           </p>
         </div>
 
-        <a
-          v-if="item.storeUrl"
-          :href="item.storeUrl"
-          target="_blank"
-          rel="noreferrer"
-          class="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs font-medium text-zinc-700 transition duration-300 hover:-translate-y-0.5 hover:border-zinc-400 hover:text-zinc-900 active:translate-y-[1px]"
-        >
-          查看 App Store 页
-        </a>
-        <span
-          v-else
-          class="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-zinc-100 px-3 py-2 text-xs font-medium text-zinc-500"
-        >
-          暂无商店链接
-        </span>
+        <div class="grid gap-2 md:w-[7.5rem]">
+          <RouterLink
+            :to="appDetailTo(item)"
+            class="inline-flex items-center justify-center rounded-xl border border-zinc-900 bg-zinc-900 px-3 py-2 text-xs font-medium text-white transition duration-300 hover:-translate-y-0.5 hover:bg-zinc-800 active:translate-y-[1px]"
+          >
+            查看详情页
+          </RouterLink>
+
+          <a
+            v-if="item.storeUrl"
+            :href="item.storeUrl"
+            target="_blank"
+            rel="noreferrer"
+            class="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs font-medium text-zinc-700 transition duration-300 hover:-translate-y-0.5 hover:border-zinc-400 hover:text-zinc-900 active:translate-y-[1px]"
+          >
+            App Store
+          </a>
+          <span
+            v-else
+            class="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-zinc-100 px-3 py-2 text-xs font-medium text-zinc-500"
+          >
+            暂无商店链接
+          </span>
+        </div>
       </li>
     </ul>
   </section>

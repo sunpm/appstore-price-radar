@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 import MainLayout from './layouts/MainLayout.vue'
 import { getStoredToken } from './lib/auth-session'
+import AppDetailView from './views/app/AppDetailView.vue'
 import AuthView from './views/auth/AuthView.vue'
 import HomeView from './views/home/HomeView.vue'
 import ProfileView from './views/profile/ProfileView.vue'
@@ -18,6 +19,11 @@ const router = createRouter({
           path: '',
           name: 'home',
           component: HomeView,
+        },
+        {
+          path: 'apps/:appId/:country',
+          name: 'app-detail',
+          component: AppDetailView,
         },
         {
           path: 'profile',
