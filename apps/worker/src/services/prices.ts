@@ -1,8 +1,8 @@
 import { and, asc, desc, eq } from 'drizzle-orm';
 
 import {
-  PRICE_HISTORY_DEFAULT_LIMIT,
-  PRICE_HISTORY_MAX_LIMIT,
+  PRICE_HISTORY_PAGE_SIZE_DEFAULT,
+  PRICE_HISTORY_PAGE_SIZE_MAX,
 } from '../constants/routes';
 import type { EnvConfig } from '../env';
 import { getDb } from '../db/client';
@@ -13,17 +13,30 @@ import {
 } from '../db/schema';
 import { extractAppId } from '../lib/appstore';
 import type {
+  AppSnapshotRecord,
   GetPriceHistoryPayload,
+  HistorySummaryDto,
+  MetadataDto,
+  PriceChangeEventRecord,
+  PriceEventDto,
   PriceHistoryErrorResponse,
   PriceHistorySuccessResponse,
   PricesHttpStatus,
   PricesServiceResponse,
+  SnapshotDto,
 } from './prices.types';
 
 type PriceHistoryBody = PriceHistorySuccessResponse | PriceHistoryErrorResponse;
-type PriceHistoryEvent = PriceHistorySuccessResponse['history'][number];
+type PriceHistoryEvent = PriceChangeEventRecord;
 
 const LEGACY_HISTORY_FETCH_MULTIPLIER = 8;
+const PRICE_HISTORY_FETCH_CAP = PRICE_HISTORY_PAGE_SIZE_MAX * 40;
+const WINDOW_TO_DAYS = {
+  '30d': 30,
+  '90d': 90,
+  '1y': 365,
+  all: null,
+} as const;
 
 const getErrorMessages = (error: unknown): string[] => {
   const messages: string[] = [];
@@ -88,7 +101,7 @@ const loadChangeEventHistory = async (
     .orderBy(desc(appPriceChangeEvents.changedAt))
     .limit(limit);
 
-  return historyRaw.slice().reverse();
+  return historyRaw;
 };
 
 const loadChangeEventHistoryWithoutRequestId = async (
@@ -118,7 +131,7 @@ const loadChangeEventHistoryWithoutRequestId = async (
     .orderBy(desc(appPriceChangeEvents.changedAt))
     .limit(limit);
 
-  return historyRaw.slice().reverse().map(item => ({
+  return historyRaw.map(item => ({
     ...item,
     requestId: `legacy-change-event:${item.id}`,
   }));
@@ -134,7 +147,7 @@ const loadLegacySnapshotHistory = async (
   // reconstruct enough actual change events for detail pages.
   const fetchLimit = Math.min(
     Math.max(limit * LEGACY_HISTORY_FETCH_MULTIPLIER, limit + 1),
-    PRICE_HISTORY_MAX_LIMIT * LEGACY_HISTORY_FETCH_MULTIPLIER,
+    PRICE_HISTORY_FETCH_CAP * LEGACY_HISTORY_FETCH_MULTIPLIER,
   );
 
   const historyRows = await db
@@ -174,7 +187,18 @@ const loadLegacySnapshotHistory = async (
     });
   }
 
-  return changeEvents.slice(-limit);
+  return changeEvents
+    .slice()
+    .sort((a, b) => {
+      const timeDelta = b.changedAt.getTime() - a.changedAt.getTime();
+
+      if (timeDelta !== 0) {
+        return timeDelta;
+      }
+
+      return b.id - a.id;
+    })
+    .slice(0, limit);
 };
 
 const loadPriceHistory = async (
@@ -205,6 +229,146 @@ const buildServiceResponse = <TBody>(
   return { status, body };
 };
 
+const getWindowStart = (
+  window: GetPriceHistoryPayload['window'],
+  now: Date,
+): Date | null => {
+  const days = WINDOW_TO_DAYS[window];
+
+  if (days === null) {
+    return null;
+  }
+
+  const start = new Date(now);
+  start.setUTCDate(start.getUTCDate() - days);
+  return start;
+};
+
+const parseCursor = (
+  cursor: string | undefined,
+): { changedAt: Date; id: number } | null => {
+  if (!cursor) {
+    return null;
+  }
+
+  const [changedAtText, idText] = cursor.split('__');
+  const changedAt = changedAtText ? new Date(changedAtText) : null;
+  const id = idText ? Number(idText) : NaN;
+
+  if (!changedAt || Number.isNaN(changedAt.getTime()) || !Number.isInteger(id) || id <= 0) {
+    return null;
+  }
+
+  return { changedAt, id };
+};
+
+const buildCursor = (event: PriceHistoryEvent): string => {
+  return `${event.changedAt.toISOString()}__${event.id}`;
+};
+
+const isWithinWindow = (event: PriceHistoryEvent, windowStart: Date | null): boolean => {
+  if (!windowStart) {
+    return true;
+  }
+
+  return event.changedAt.getTime() >= windowStart.getTime();
+};
+
+const isAfterCursor = (
+  event: PriceHistoryEvent,
+  cursor: { changedAt: Date; id: number } | null,
+): boolean => {
+  if (!cursor) {
+    return true;
+  }
+
+  const eventTime = event.changedAt.getTime();
+  const cursorTime = cursor.changedAt.getTime();
+
+  if (eventTime < cursorTime) {
+    return true;
+  }
+
+  if (eventTime > cursorTime) {
+    return false;
+  }
+
+  return event.id < cursor.id;
+};
+
+const sortEventsDescending = (events: PriceHistoryEvent[]): PriceHistoryEvent[] => {
+  return events
+    .slice()
+    .sort((left, right) => {
+      const timeDelta = right.changedAt.getTime() - left.changedAt.getTime();
+
+      if (timeDelta !== 0) {
+        return timeDelta;
+      }
+
+      return right.id - left.id;
+    });
+};
+
+const toPriceHistorySummaryDto = (
+  history: PriceHistoryEvent[],
+): HistorySummaryDto => {
+  const sorted = sortEventsDescending(history);
+  const latest = sorted[0] ?? null;
+  const earliest = sorted.at(-1) ?? null;
+
+  return {
+    totalChanges: sorted.length,
+    latestChangeAt: latest ? latest.changedAt.toISOString() : null,
+    earliestChangeAt: earliest ? earliest.changedAt.toISOString() : null,
+  };
+};
+
+export const toAppSnapshotDto = (snapshot: AppSnapshotRecord): SnapshotDto => {
+  return {
+    appId: snapshot.appId,
+    country: snapshot.country,
+    appName: snapshot.appName,
+    storeUrl: snapshot.storeUrl,
+    iconUrl: snapshot.iconUrl,
+    currency: snapshot.currency,
+    lastPrice: snapshot.lastPrice,
+    updatedAt: snapshot.updatedAt.toISOString(),
+  };
+};
+
+export const toAppDecisionMetadataDto = (
+  snapshot: AppSnapshotRecord,
+): MetadataDto => {
+  return {
+    sellerName: snapshot.sellerName ?? null,
+    primaryGenreName: snapshot.primaryGenreName ?? null,
+    description: snapshot.description ?? null,
+    averageUserRating: snapshot.averageUserRating ?? null,
+    userRatingCount: snapshot.userRatingCount ?? null,
+    bundleId: snapshot.bundleId ?? null,
+    version: snapshot.version ?? null,
+    minimumOsVersion: snapshot.minimumOsVersion ?? null,
+    releaseNotes: snapshot.releaseNotes ?? null,
+  };
+};
+
+export const toPriceChangeEventDto = (
+  event: PriceChangeEventRecord,
+): PriceEventDto => {
+  return {
+    id: event.id,
+    appId: event.appId,
+    country: event.country,
+    currency: event.currency,
+    oldAmount: event.oldAmount,
+    newAmount: event.newAmount,
+    changedAt: event.changedAt.toISOString(),
+    source: event.source,
+    requestId: event.requestId,
+  };
+};
+
 export const getPriceHistory = async (
   config: EnvConfig,
   payload: GetPriceHistoryPayload,
@@ -216,8 +380,19 @@ export const getPriceHistory = async (
   }
 
   const countryCode = payload.country.toUpperCase();
+  const cursor = parseCursor(payload.cursor);
+
+  if (payload.cursor && !cursor) {
+    return buildServiceResponse(400, { error: 'Invalid cursor' });
+  }
+
   const db = getDb(config);
-  const historyLimit = payload.limit ?? PRICE_HISTORY_DEFAULT_LIMIT;
+  const pageSize = Math.min(
+    Math.max(payload.pageSize ?? PRICE_HISTORY_PAGE_SIZE_DEFAULT, 1),
+    PRICE_HISTORY_PAGE_SIZE_MAX,
+  );
+  const fetchLimit = Math.max(PRICE_HISTORY_FETCH_CAP, pageSize + 1);
+  const windowStart = getWindowStart(payload.window, new Date());
 
   const [snapshot] = await db
     .select()
@@ -225,10 +400,33 @@ export const getPriceHistory = async (
     .where(and(eq(appSnapshots.appId, appId), eq(appSnapshots.country, countryCode)))
     .limit(1);
 
-  const history = await loadPriceHistory(db, appId, countryCode, historyLimit);
+  const historyRecords = await loadPriceHistory(db, appId, countryCode, fetchLimit);
+  const windowedHistory = sortEventsDescending(historyRecords).filter(event => {
+    return isWithinWindow(event, windowStart);
+  });
+  const pagedHistoryDesc = windowedHistory.filter(event => isAfterCursor(event, cursor));
+  const pageItemsDesc = pagedHistoryDesc.slice(0, pageSize);
+  const hasMore = pagedHistoryDesc.length > pageSize;
+  const nextCursor = hasMore && pageItemsDesc.length > 0
+    ? buildCursor(pageItemsDesc[pageItemsDesc.length - 1] as PriceHistoryEvent)
+    : null;
+  const history = pageItemsDesc
+    .slice()
+    .reverse()
+    .map(toPriceChangeEventDto);
+  const snapshotDto = snapshot ? toAppSnapshotDto(snapshot) : null;
+  const metadataDto = snapshot ? toAppDecisionMetadataDto(snapshot) : null;
 
   return buildServiceResponse(200, {
-    snapshot: snapshot ?? null,
+    snapshot: snapshotDto,
     history,
+    page: {
+      window: payload.window,
+      pageSize,
+      nextCursor,
+      hasMore,
+    },
+    summary: toPriceHistorySummaryDto(windowedHistory),
+    metadata: metadataDto,
   });
 };

@@ -1,22 +1,22 @@
 <script setup lang="ts">
-import type { AuthUser, SecurityPasswordForm } from './types'
+import type { SecurityPasswordForm } from './types'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { clearStoredToken, getStoredToken } from '../../lib/auth-session'
+import { useAuthedApi } from '../../composables/useAuthedApi'
+import { useAuthSession } from '../../composables/useAuthSession'
 import { formatDateTime } from '../../lib/format'
-import { buildApiUrl, parseApiErrorText } from '../../lib/http'
 import { useToast } from '../../lib/toast'
 import { MIN_PASSWORD_LENGTH } from '../auth/constants'
 import SecurityPasswordCard from './components/SecurityPasswordCard.vue'
 
 const router = useRouter()
 const route = useRoute()
+const UNAUTHORIZED_MESSAGE = '登录状态已失效，请重新登录。'
 
 type AccountSection = 'profile' | 'security'
 
-const token = ref(getStoredToken())
-const currentUser = ref<AuthUser | null>(null)
-const sessionExpiresAt = ref('')
+const { currentUser, sessionExpiresAt, restoreSession, clearSession } = useAuthSession()
+const { request: authedRequest, toAuthedErrorMessage } = useAuthedApi()
 const restoringSession = ref(true)
 const changingPassword = ref(false)
 const successText = ref('')
@@ -62,90 +62,36 @@ function resetMessages(): void {
   errorText.value = ''
 }
 
-function clearSession(): void {
-  token.value = ''
-  currentUser.value = null
-  sessionExpiresAt.value = ''
-  clearStoredToken()
-}
-
 function mapChangePasswordError(message: string): string {
   if (message === 'Current password is incorrect') {
     return '当前密码不正确。若你刚完成重置密码，请输入最新密码。'
   }
 
-  if (message === 'Unauthorized') {
-    return '登录状态已失效，请重新登录后再试。'
+  if (message === 'Unauthorized' || message === UNAUTHORIZED_MESSAGE) {
+    return UNAUTHORIZED_MESSAGE
   }
 
   return message
 }
 
-async function apiRequest<T>(path: string, init: RequestInit = {}, options: { auth?: boolean } = {}): Promise<T> {
-  const headers = new Headers(init.headers ?? {})
-
-  if (init.body && !headers.has('content-type')) {
-    headers.set('content-type', 'application/json')
-  }
-
-  if (options.auth) {
-    if (!token.value) {
-      throw new Error('Please login first')
-    }
-
-    headers.set('authorization', `Bearer ${token.value}`)
-  }
-
-  const res = await fetch(buildApiUrl(path), {
-    ...init,
-    headers,
-  })
-
-  if (!res.ok) {
-    if (options.auth && res.status === 401) {
-      clearSession()
-    }
-
-    throw new Error(await parseApiErrorText(res))
-  }
-
-  if (res.status === 204) {
-    return undefined as T
-  }
-
-  return (await res.json()) as T
-}
-
 async function loadCurrentUser(): Promise<void> {
-  if (!token.value) {
+  await restoreSession()
+
+  if (!currentUser.value) {
+    errorText.value = UNAUTHORIZED_MESSAGE
     restoringSession.value = false
+    await router.replace('/auth')
     return
   }
 
-  try {
-    const me = await apiRequest<{ user: AuthUser }>('/api/auth/me', {}, { auth: true })
-    currentUser.value = me.user
-  }
-  catch {
-    clearSession()
-    await router.replace('/auth')
-  }
-  finally {
-    restoringSession.value = false
-  }
+  restoringSession.value = false
 }
 
 async function logout(): Promise<void> {
   resetMessages()
 
   try {
-    await apiRequest<{ ok: boolean }>(
-      '/api/auth/logout',
-      {
-        method: 'POST',
-      },
-      { auth: true },
-    )
+    await authedRequest<{ ok: boolean }>('/api/auth/logout', { method: 'POST' })
   }
   catch {
     // Ignore server logout errors and clear local session anyway.
@@ -190,7 +136,7 @@ async function changePassword(): Promise<void> {
   changingPassword.value = true
 
   try {
-    await apiRequest<{ ok: boolean }>(
+    await authedRequest<{ ok: boolean }>(
       '/api/auth/change-password',
       {
         method: 'POST',
@@ -199,7 +145,6 @@ async function changePassword(): Promise<void> {
           newPassword,
         }),
       },
-      { auth: true },
     )
 
     form.currentPassword = ''
@@ -208,7 +153,9 @@ async function changePassword(): Promise<void> {
     successText.value = '密码已更新，其他设备会话已失效，当前设备保持登录。'
   }
   catch (error) {
-    errorText.value = error instanceof Error ? mapChangePasswordError(error.message) : '密码修改失败，请稍后重试。'
+    errorText.value = mapChangePasswordError(
+      toAuthedErrorMessage(error, '密码修改失败，请稍后重试。'),
+    )
   }
   finally {
     changingPassword.value = false

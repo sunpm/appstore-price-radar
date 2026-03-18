@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import type { AuthUser, HistoryPayload, SubscriptionItem, WatchStats } from './types'
+import type { HistoryPayload, SubscriptionItem, WatchStats } from './types'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useAuthedApi } from '../../composables/useAuthedApi'
+import { useAuthSession } from '../../composables/useAuthSession'
+import { usePriceHistory } from '../../composables/usePriceHistory'
 import { COUNTRY_OPTIONS, resolveCountryLabel } from '../../constants/countries'
-import { clearStoredToken, getStoredToken } from '../../lib/auth-session'
 import { formatDateTime, formatMoney } from '../../lib/format'
-import { buildApiUrl, parseApiErrorText } from '../../lib/http'
 import { useToast } from '../../lib/toast'
 import ProfileDashboardHeader from './components/ProfileDashboardHeader.vue'
 import ProfileHistorySection from './components/ProfileHistorySection.vue'
@@ -23,9 +24,9 @@ function countryLabel(countryCode: string): string {
   return resolveCountryLabel(countryCode)
 }
 
-const token = ref(getStoredToken())
-const currentUser = ref<AuthUser | null>(null)
-const sessionExpiresAt = ref('')
+const { currentUser, sessionExpiresAt, restoreSession, clearSession, isAuthenticated } = useAuthSession()
+const { request: authedRequest, toAuthedErrorMessage, unauthorizedMessage } = useAuthedApi()
+const unauthorizedHint = '登录状态已失效，请重新登录。'
 const restoringSession = ref(true)
 const toast = useToast()
 
@@ -36,14 +37,24 @@ const form = reactive({
 })
 
 const subscriptions = ref<SubscriptionItem[]>([])
-const selectedHistory = ref<HistoryPayload | null>(null)
 const selectedSubscription = ref<SubscriptionItem | null>(null)
 const selectedAppLabel = ref('')
 const historyTargetPrice = ref('')
+const {
+  history,
+  snapshot,
+  page,
+  summary,
+  loading: loadingHistory,
+  loadingMore,
+  selectedWindow,
+  loadInitial,
+  loadMore,
+  abortActiveRequest,
+} = usePriceHistory({ auth: true })
 
 const loadingList = ref(false)
 const creating = ref(false)
-const loadingHistory = ref(false)
 const updatingHistoryTarget = ref(false)
 
 const successText = ref('')
@@ -78,17 +89,35 @@ function resetMessages(): void {
   errorText.value = ''
 }
 
-function clearSession(): void {
-  token.value = ''
-  currentUser.value = null
-  sessionExpiresAt.value = ''
+function resetDashboardState(): void {
   subscriptions.value = []
-  selectedHistory.value = null
   selectedSubscription.value = null
   selectedAppLabel.value = ''
   historyTargetPrice.value = ''
-  clearStoredToken()
+  abortActiveRequest()
 }
+
+async function handleAuthedError(error: unknown, fallback: string): Promise<void> {
+  const message = toAuthedErrorMessage(error, fallback)
+  errorText.value = message
+
+  if (message === unauthorizedMessage || message === unauthorizedHint) {
+    resetDashboardState()
+  }
+}
+
+const selectedHistory = computed<HistoryPayload | null>(() => {
+  if (!selectedSubscription.value) {
+    return null
+  }
+
+  return {
+    snapshot: snapshot.value,
+    history: history.value,
+    page: page.value,
+    summary: summary.value,
+  }
+})
 
 function parsePrice(value: unknown): number | null {
   if (value === null || value === undefined || value === '') {
@@ -130,41 +159,6 @@ function targetRuleText(targetPrice: number | null, currency = 'USD'): string {
   return `当价格 <= ${toMoney(targetPrice, currency)} 时通知`
 }
 
-async function apiRequest<T>(path: string, init: RequestInit = {}, options: { auth?: boolean } = {}): Promise<T> {
-  const headers = new Headers(init.headers ?? {})
-
-  if (init.body && !headers.has('content-type')) {
-    headers.set('content-type', 'application/json')
-  }
-
-  if (options.auth) {
-    if (!token.value) {
-      throw new Error('Please login first')
-    }
-
-    headers.set('authorization', `Bearer ${token.value}`)
-  }
-
-  const res = await fetch(buildApiUrl(path), {
-    ...init,
-    headers,
-  })
-
-  if (!res.ok) {
-    if (options.auth && res.status === 401) {
-      clearSession()
-    }
-
-    throw new Error(await parseApiErrorText(res))
-  }
-
-  if (res.status === 204) {
-    return undefined as T
-  }
-
-  return (await res.json()) as T
-}
-
 function syncSelectedSubscription(): void {
   if (!selectedSubscription.value) {
     return
@@ -181,42 +175,39 @@ function syncSelectedSubscription(): void {
 }
 
 async function loadCurrentUser(): Promise<void> {
-  if (!token.value) {
+  if (!isAuthenticated.value) {
     restoringSession.value = false
     return
   }
 
-  try {
-    const me = await apiRequest<{ user: AuthUser }>('/api/auth/me', {}, { auth: true })
-    currentUser.value = me.user
-    await loadSubscriptions({ silent: true })
-  }
-  catch {
-    clearSession()
+  await restoreSession()
+
+  if (!currentUser.value) {
+    errorText.value = unauthorizedHint
+    resetDashboardState()
     await router.replace('/auth')
-  }
-  finally {
     restoringSession.value = false
+    return
   }
+
+  await loadSubscriptions({ silent: true })
+  restoringSession.value = false
 }
 
 async function logout(): Promise<void> {
   resetMessages()
 
   try {
-    await apiRequest<{ ok: boolean }>(
-      '/api/auth/logout',
-      {
-        method: 'POST',
-      },
-      { auth: true },
-    )
+    await authedRequest<{ ok: boolean }>('/api/auth/logout', {
+      method: 'POST',
+    })
   }
   catch {
     // Ignore server logout errors and clear local session anyway.
   }
 
   clearSession()
+  resetDashboardState()
   await router.push('/auth')
 }
 
@@ -232,7 +223,7 @@ async function loadSubscriptions(options: { silent?: boolean } = {}): Promise<vo
   loadingList.value = true
 
   try {
-    const data = await apiRequest<{ items: SubscriptionItem[] }>('/api/subscriptions', {}, { auth: true })
+    const data = await authedRequest<{ items: SubscriptionItem[] }>('/api/subscriptions')
 
     subscriptions.value = data.items
     syncSelectedSubscription()
@@ -242,7 +233,7 @@ async function loadSubscriptions(options: { silent?: boolean } = {}): Promise<vo
     }
   }
   catch (error) {
-    errorText.value = error instanceof Error ? error.message : '监控任务加载失败，请稍后重试。'
+    await handleAuthedError(error, '监控任务加载失败，请稍后重试。')
   }
   finally {
     loadingList.value = false
@@ -278,13 +269,12 @@ async function createSubscription(): Promise<void> {
   }
 
   try {
-    const data = await apiRequest<{ subscription: SubscriptionItem }>(
+    const data = await authedRequest<{ subscription: SubscriptionItem }>(
       '/api/subscriptions',
       {
         method: 'POST',
         body: JSON.stringify(payload),
       },
-      { auth: true },
     )
 
     successText.value = `监控任务已创建：${data.subscription.appId}（${countryLabel(data.subscription.country)}）`
@@ -295,7 +285,7 @@ async function createSubscription(): Promise<void> {
     await loadSubscriptions({ silent: true })
   }
   catch (error) {
-    errorText.value = error instanceof Error ? error.message : '监控任务创建失败，请稍后重试。'
+    await handleAuthedError(error, '监控任务创建失败，请稍后重试。')
   }
   finally {
     creating.value = false
@@ -306,51 +296,66 @@ async function removeSubscription(id: string): Promise<void> {
   resetMessages()
 
   try {
-    await apiRequest<{ ok: boolean }>(
+    await authedRequest<{ ok: boolean }>(
       `/api/subscriptions/${id}`,
       {
         method: 'DELETE',
       },
-      { auth: true },
     )
 
     if (selectedSubscription.value?.id === id) {
       selectedSubscription.value = null
-      selectedHistory.value = null
       selectedAppLabel.value = ''
       historyTargetPrice.value = ''
+      abortActiveRequest()
     }
 
     successText.value = '监控任务已移除。'
     await loadSubscriptions({ silent: true })
   }
   catch (error) {
-    errorText.value = error instanceof Error ? error.message : '任务移除失败，请稍后重试。'
+    await handleAuthedError(error, '任务移除失败，请稍后重试。')
   }
 }
 
 async function loadHistory(item: SubscriptionItem): Promise<void> {
   resetMessages()
-  loadingHistory.value = true
 
   selectedSubscription.value = item
   historyTargetPrice.value = item.targetPrice === null ? '' : String(item.targetPrice)
   selectedAppLabel.value = `${item.appName ?? `App ${item.appId}`} · ${countryLabel(item.country)}`
 
   try {
-    const data = await apiRequest<HistoryPayload>(
-      `/api/prices/${encodeURIComponent(item.appId)}?country=${item.country}&limit=3650`,
-      {},
-      { auth: true },
-    )
-
-    selectedHistory.value = data
+    await loadInitial(item.appId, item.country, selectedWindow.value)
   }
   catch (error) {
-    errorText.value = error instanceof Error ? error.message : '历史数据加载失败，请稍后重试。'
+    await handleAuthedError(error, '历史数据加载失败，请稍后重试。')
   }
-  finally {
-    loadingHistory.value = false
+}
+
+async function changeHistoryWindow(window: HistoryPayload['page']['window']): Promise<void> {
+  const selected = selectedSubscription.value
+
+  if (!selected) {
+    return
+  }
+
+  resetMessages()
+
+  try {
+    await loadInitial(selected.appId, selected.country, window)
+  }
+  catch (error) {
+    await handleAuthedError(error, '历史数据加载失败，请稍后重试。')
+  }
+}
+
+async function loadMoreHistory(): Promise<void> {
+  try {
+    await loadMore()
+  }
+  catch (error) {
+    await handleAuthedError(error, '更多历史数据加载失败，请稍后重试。')
   }
 }
 
@@ -368,7 +373,7 @@ async function saveHistoryTargetPrice(): Promise<void> {
 
   try {
     const targetPrice = parsePrice(historyTargetPrice.value)
-    const data = await apiRequest<{ subscription: SubscriptionItem }>(
+    const data = await authedRequest<{ subscription: SubscriptionItem }>(
       '/api/subscriptions',
       {
         method: 'POST',
@@ -378,7 +383,6 @@ async function saveHistoryTargetPrice(): Promise<void> {
           targetPrice,
         }),
       },
-      { auth: true },
     )
 
     selectedSubscription.value = {
@@ -397,7 +401,7 @@ async function saveHistoryTargetPrice(): Promise<void> {
     await loadSubscriptions({ silent: true })
   }
   catch (error) {
-    errorText.value = error instanceof Error ? error.message : '通知规则更新失败，请稍后重试。'
+    await handleAuthedError(error, '通知规则更新失败，请稍后重试。')
   }
   finally {
     updatingHistoryTarget.value = false
@@ -495,8 +499,12 @@ onMounted(async (): Promise<void> => {
           :selected-app-label="selectedAppLabel"
           :updating-history-target="updatingHistoryTarget"
           :loading-history="loadingHistory"
+          :loading-more="loadingMore"
+          :selected-window="selectedWindow"
           :target-rule-text="targetRuleText"
           :to-money="toMoney"
+          @change-window="changeHistoryWindow($event)"
+          @load-more="loadMoreHistory"
           @save-target-price="saveHistoryTargetPrice"
         />
       </template>

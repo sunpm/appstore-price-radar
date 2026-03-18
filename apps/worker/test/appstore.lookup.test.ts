@@ -3,6 +3,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fetchAppStorePrice } from '../src/lib/appstore';
 
 const fetchMock = vi.fn();
+const EMPTY_METADATA = {
+  sellerName: null,
+  primaryGenreName: null,
+  description: null,
+  averageUserRating: null,
+  userRatingCount: null,
+  bundleId: null,
+  version: null,
+  minimumOsVersion: null,
+  releaseNotes: null,
+};
 
 describe('fetchAppStorePrice', () => {
   beforeEach(() => {
@@ -14,7 +25,7 @@ describe('fetchAppStorePrice', () => {
     vi.unstubAllGlobals();
   });
 
-  it('returns found when App Store includes a numeric price', async () => {
+  it('maps metadata fields when App Store lookup succeeds', async () => {
     fetchMock.mockResolvedValueOnce(
       new Response(
         JSON.stringify({
@@ -28,6 +39,15 @@ describe('fetchAppStorePrice', () => {
               trackViewUrl: 'https://apps.apple.com/us/app/id123456789',
               artworkUrl100: 'https://example.com/icon.png',
               formattedPrice: '$9.99',
+              sellerName: 'Sunset Studio',
+              primaryGenreName: 'Productivity',
+              description: 'Track prices with confidence.',
+              averageUserRating: 4.7,
+              userRatingCount: 1820,
+              bundleId: 'com.example.radarpro',
+              version: '3.2.1',
+              minimumOsVersion: '15.0',
+              releaseNotes: 'Bug fixes and chart refinements.',
             },
           ],
         }),
@@ -52,6 +72,15 @@ describe('fetchAppStorePrice', () => {
       storeUrl: 'https://apps.apple.com/us/app/id123456789',
       iconUrl: 'https://example.com/icon.png',
       formattedPrice: '$9.99',
+      sellerName: 'Sunset Studio',
+      primaryGenreName: 'Productivity',
+      description: 'Track prices with confidence.',
+      averageUserRating: 4.7,
+      userRatingCount: 1820,
+      bundleId: 'com.example.radarpro',
+      version: '3.2.1',
+      minimumOsVersion: '15.0',
+      releaseNotes: 'Bug fixes and chart refinements.',
     });
   });
 
@@ -92,6 +121,7 @@ describe('fetchAppStorePrice', () => {
       storeUrl: 'https://apps.apple.com/us/app/id123456789',
       iconUrl: 'https://example.com/icon.png',
       formattedPrice: '$9.99',
+      ...EMPTY_METADATA,
     });
   });
 });

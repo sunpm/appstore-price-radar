@@ -14,6 +14,7 @@
     "db:push": "drizzle-kit push"
   },
   "dependencies": {
+    "@appstore-price-radar/contracts": "workspace:*",
     "@hono/zod-validator": "^0.4.3",
     "@neondatabase/serverless": "^0.10.4",
     "@noble/hashes": "^2.0.1",

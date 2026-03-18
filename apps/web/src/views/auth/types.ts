@@ -1,21 +1,14 @@
+import type {
+  AuthErrorDto,
+  AuthResponseDto,
+  AuthUserDto,
+  SendLoginCodeResponseDto,
+} from '@appstore-price-radar/contracts'
+
 export type AuthMode = 'login' | 'register'
 export type LoginMethod = 'password' | 'code'
 export type AuthViewMode = 'page' | 'modal'
 
-export interface AuthUser {
-  id: string
-  email: string
-}
-
-export interface AuthResponse {
-  token: string
-  expiresAt: string
-  user: AuthUser
-}
-
-export interface SendCodeResponse {
-  ok: boolean
-  cooldownSeconds?: number
-  retryAfterSeconds?: number
-  error?: string
-}
+export type AuthUser = AuthUserDto
+export type AuthResponse = AuthResponseDto
+export type SendCodeResponse = SendLoginCodeResponseDto | AuthErrorDto

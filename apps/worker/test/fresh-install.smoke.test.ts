@@ -47,6 +47,15 @@ type SnapshotRow = {
   appName: string;
   storeUrl: string | null;
   iconUrl: string | null;
+  sellerName?: string | null;
+  primaryGenreName?: string | null;
+  description?: string | null;
+  averageUserRating?: number | null;
+  userRatingCount?: number | null;
+  bundleId?: string | null;
+  version?: string | null;
+  minimumOsVersion?: string | null;
+  releaseNotes?: string | null;
   currency: string;
   lastPrice: number;
   updatedAt: Date;
@@ -646,11 +655,7 @@ describe('fresh install smoke', () => {
       country: 'US',
       isActive: true,
     });
-    expect(subscriptionPayload.latest).toMatchObject({
-      appId: '123456789',
-      newPrice: 9.99,
-      priceChanged: false,
-    });
+    expect(Object.keys(subscriptionPayload)).toStrictEqual(['subscription']);
 
     const cronResponse = await worker.fetch(
       new Request('https://example.com/api/jobs/check', {

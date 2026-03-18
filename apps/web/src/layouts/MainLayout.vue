@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
-import { AUTH_TOKEN_CHANGED_EVENT, getStoredToken, TOKEN_STORAGE_KEY } from '../lib/auth-session'
+import { useAuthSession } from '../composables/useAuthSession'
 import AuthView from '../views/auth/AuthView.vue'
 
 const route = useRoute()
-const token = ref('')
+const { token } = useAuthSession()
 const showAuthModal = ref(false)
 
 function navClass(active: boolean) {
@@ -24,26 +24,6 @@ function isRouteActive(path: string) {
 
 function isWorkbenchRouteActive() {
   return isRouteActive('/profile') || isRouteActive('/security')
-}
-
-function syncToken() {
-  token.value = getStoredToken()
-}
-
-function loadCurrentToken() {
-  syncToken()
-}
-
-function handleAuthChanged() {
-  loadCurrentToken()
-}
-
-function handleStorage(event: StorageEvent) {
-  if (event.key !== TOKEN_STORAGE_KEY) {
-    return
-  }
-
-  loadCurrentToken()
 }
 
 function openAuthModal() {
@@ -69,15 +49,10 @@ function loginEntryActive() {
 }
 
 onMounted(() => {
-  loadCurrentToken()
-  window.addEventListener(AUTH_TOKEN_CHANGED_EVENT, handleAuthChanged)
-  window.addEventListener('storage', handleStorage)
   window.addEventListener('keydown', handleWindowKeydown)
 })
 
 onBeforeUnmount(() => {
-  window.removeEventListener(AUTH_TOKEN_CHANGED_EVENT, handleAuthChanged)
-  window.removeEventListener('storage', handleStorage)
   window.removeEventListener('keydown', handleWindowKeydown)
 })
 

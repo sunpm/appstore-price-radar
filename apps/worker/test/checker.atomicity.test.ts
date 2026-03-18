@@ -16,6 +16,15 @@ type SnapshotRow = {
   appName: string;
   storeUrl: string | null;
   iconUrl: string | null;
+  sellerName?: string | null;
+  primaryGenreName?: string | null;
+  description?: string | null;
+  averageUserRating?: number | null;
+  userRatingCount?: number | null;
+  bundleId?: string | null;
+  version?: string | null;
+  minimumOsVersion?: string | null;
+  releaseNotes?: string | null;
   currency: string;
   lastPrice: number;
   updatedAt: Date;
@@ -70,6 +79,18 @@ const testHooks = vi.hoisted(() => ({
   fetchAppStorePriceMock: vi.fn(),
   sendDropAlertEmailMock: vi.fn(),
 }));
+
+const EMPTY_LOOKUP_METADATA = {
+  sellerName: null,
+  primaryGenreName: null,
+  description: null,
+  averageUserRating: null,
+  userRatingCount: null,
+  bundleId: null,
+  version: null,
+  minimumOsVersion: null,
+  releaseNotes: null,
+};
 
 vi.mock('../src/db/client', () => ({
   getDb: () => testHooks.dbRef.current,
@@ -318,6 +339,7 @@ describe('refreshSingleApp atomicity', () => {
       storeUrl: 'https://apps.apple.com/us/app/id123456789',
       iconUrl: null,
       formattedPrice: '$7.99',
+      ...EMPTY_LOOKUP_METADATA,
     });
 
     await expect(
@@ -371,6 +393,7 @@ describe('refreshSingleApp atomicity', () => {
       storeUrl: 'https://apps.apple.com/us/app/id123456789',
       iconUrl: null,
       formattedPrice: '$7.99',
+      ...EMPTY_LOOKUP_METADATA,
     });
 
     const result = await refreshSingleApp(createEnv(), '123456789', 'US', {

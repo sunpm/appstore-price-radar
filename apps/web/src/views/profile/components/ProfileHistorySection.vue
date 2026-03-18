@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { PriceHistoryWindow } from '@appstore-price-radar/contracts'
 import type { HistoryPayload, SelectedSubscription } from '../types'
 import { computed } from 'vue'
 
@@ -19,21 +20,37 @@ interface ChangeRow {
   changePct: number | null
 }
 
+interface WindowOption {
+  value: PriceHistoryWindow
+  label: string
+}
+
 const props = defineProps<{
   selectedHistory: HistoryPayload | null
   selectedSubscription: SelectedSubscription | null
   selectedAppLabel: string
   updatingHistoryTarget: boolean
   loadingHistory: boolean
+  loadingMore: boolean
+  selectedWindow: PriceHistoryWindow
   targetRuleText: (targetPrice: number | null, currency?: string) => string
   toMoney: (value: number | null | undefined, currency?: string) => string
 }>()
 
 const emit = defineEmits<{
   saveTargetPrice: []
+  changeWindow: [window: PriceHistoryWindow]
+  loadMore: []
 }>()
 
 const historyTargetPrice = defineModel<string>('historyTargetPrice', { required: true })
+
+const WINDOW_OPTIONS: WindowOption[] = [
+  { value: '30d', label: '30 天' },
+  { value: '90d', label: '90 天' },
+  { value: '1y', label: '1 年' },
+  { value: 'all', label: '全部' },
+]
 
 function toPercent(value: number | null | undefined): string {
   if (value === null || value === undefined || Number.isNaN(value)) {
@@ -209,6 +226,18 @@ const selectedTargetRule = computed<string>(() => {
   return props.targetRuleText(props.selectedSubscription.targetPrice, props.selectedSubscription.currency ?? historyCurrency.value)
 })
 
+const loadedEventsCount = computed(() => {
+  return props.selectedHistory?.history.length ?? 0
+})
+
+const totalEventsCount = computed(() => {
+  return props.selectedHistory?.summary.totalChanges ?? 0
+})
+
+const canLoadMore = computed(() => {
+  return Boolean(props.selectedHistory?.page.hasMore)
+})
+
 function changeClass(value: number | null): string {
   if (value === null || value === undefined) {
     return 'text-zinc-700'
@@ -246,12 +275,28 @@ function sourceLabel(source: string): string {
     class="reveal reveal-delay-2 mt-4 rounded-[2rem] border border-zinc-200/70 bg-white/92 p-5 shadow-[0_20px_40px_-15px_rgba(7,13,20,0.1)] md:p-6"
   >
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <h2 class="text-lg font-semibold tracking-tight text-zinc-900">
-        价格变化趋势（仅记录发生变化时）
-      </h2>
-      <p v-if="props.selectedHistory" class="text-sm text-zinc-500">
-        {{ props.selectedAppLabel }}
-      </p>
+      <div>
+        <h2 class="text-lg font-semibold tracking-tight text-zinc-900">
+          价格变化趋势（仅记录发生变化时）
+        </h2>
+        <p v-if="props.selectedHistory" class="mt-1 text-sm text-zinc-500">
+          {{ props.selectedAppLabel }}
+        </p>
+      </div>
+
+      <div class="flex flex-wrap gap-2">
+        <button
+          v-for="option in WINDOW_OPTIONS"
+          :key="option.value"
+          type="button"
+          class="inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold tracking-[0.08em] transition duration-300"
+          :class="props.selectedWindow === option.value ? 'border-zinc-900 bg-zinc-900 text-white' : 'border-zinc-300 bg-white text-zinc-600 hover:border-zinc-400 hover:text-zinc-900'"
+          :disabled="!props.selectedSubscription || props.loadingHistory || props.loadingMore"
+          @click="emit('changeWindow', option.value)"
+        >
+          {{ option.label }}
+        </button>
+      </div>
     </div>
 
     <div class="mt-4 rounded-2xl border border-zinc-200/80 bg-zinc-50/70 p-4">
@@ -284,9 +329,14 @@ function sourceLabel(source: string): string {
           </button>
         </form>
       </div>
-      <p class="mt-2 text-xs text-zinc-500">
-        仅在观测到价格变化时写入事件，因此不会按天产生无意义记录。
-      </p>
+      <div class="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-500">
+        <p>
+          仅在观测到价格变化时写入事件，因此不会按天产生无意义记录。
+        </p>
+        <p v-if="props.selectedHistory">
+          已加载 {{ loadedEventsCount }} / {{ totalEventsCount }} 条变化事件
+        </p>
+      </div>
     </div>
 
     <div v-if="props.loadingHistory" class="mt-4 grid gap-3">
@@ -332,7 +382,7 @@ function sourceLabel(source: string): string {
           <p class="text-xs font-medium uppercase tracking-[0.16em] text-zinc-500">
             累计变化事件
           </p>
-          <strong class="metric-mono mt-2 block text-lg text-zinc-900">{{ props.selectedHistory.history.length }}</strong>
+          <strong class="metric-mono mt-2 block text-lg text-zinc-900">{{ totalEventsCount }}</strong>
         </article>
       </div>
 
@@ -399,6 +449,24 @@ function sourceLabel(source: string): string {
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <p class="text-xs text-zinc-500">
+          当前窗口：{{ WINDOW_OPTIONS.find(item => item.value === props.selectedWindow)?.label ?? props.selectedWindow }}
+          <span v-if="props.selectedHistory.summary.latestChangeAt">
+            ，最近一次变化 {{ toTime(props.selectedHistory.summary.latestChangeAt) }}
+          </span>
+        </p>
+        <button
+          v-if="canLoadMore"
+          type="button"
+          class="inline-flex items-center justify-center rounded-xl border border-zinc-900 bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition duration-300 hover:-translate-y-0.5 hover:bg-zinc-800 active:translate-y-[1px] disabled:cursor-not-allowed disabled:opacity-60"
+          :disabled="props.loadingMore"
+          @click="emit('loadMore')"
+        >
+          {{ props.loadingMore ? '加载中...' : '加载更多' }}
+        </button>
       </div>
     </div>
   </section>

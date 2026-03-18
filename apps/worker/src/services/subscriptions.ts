@@ -11,7 +11,10 @@ import type {
   DeleteSubscriptionPayload,
   DeleteSubscriptionResponse,
   ListSubscriptionsResponse,
+  SubscriptionCoreRecord,
+  SubscriptionDto,
   SubscriptionErrorResponse,
+  SubscriptionMapperInput,
   SubscriptionsAuthUser,
   SubscriptionsHttpStatus,
   SubscriptionsServiceResponse,
@@ -25,6 +28,26 @@ const buildServiceResponse = <TBody>(
   body: TBody,
 ): SubscriptionsServiceResponse<TBody> => {
   return { status, body };
+};
+
+export const toSubscriptionItemDto = (
+  item: SubscriptionMapperInput,
+): SubscriptionDto => {
+  return {
+    id: item.id,
+    appId: item.appId,
+    country: item.country,
+    targetPrice: item.targetPrice,
+    lastNotifiedPrice: item.lastNotifiedPrice ?? null,
+    isActive: item.isActive,
+    appName: item.appName ?? null,
+    storeUrl: item.storeUrl ?? null,
+    iconUrl: item.iconUrl ?? null,
+    currentPrice: item.currentPrice ?? null,
+    currency: item.currency ?? null,
+    createdAt: item.createdAt.toISOString(),
+    updatedAt: item.updatedAt.toISOString(),
+  };
 };
 
 export const createUserSubscription = async (
@@ -66,10 +89,8 @@ export const createUserSubscription = async (
     })
     .returning();
 
-  let latest = null;
-
   try {
-    latest = await refreshSingleApp(
+    await refreshSingleApp(
       config,
       appId,
       country,
@@ -82,9 +103,17 @@ export const createUserSubscription = async (
     console.error('refreshSingleApp failed after subscription created', error);
   }
 
+  const subscriptionDto = toSubscriptionItemDto({
+    ...(subscription as SubscriptionCoreRecord),
+    appName: null,
+    storeUrl: null,
+    iconUrl: null,
+    currentPrice: null,
+    currency: null,
+  });
+
   return buildServiceResponse(200, {
-    subscription,
-    latest,
+    subscription: subscriptionDto,
   });
 };
 
@@ -93,7 +122,7 @@ export const listUserSubscriptions = async (
   userId: string,
 ): Promise<SubscriptionsServiceResponse<ListSubscriptionsResponse>> => {
   const db = getDb(config);
-  const items = await db
+  const rows = await db
     .select({
       id: subscriptions.id,
       appId: subscriptions.appId,
@@ -119,6 +148,8 @@ export const listUserSubscriptions = async (
     )
     .where(and(eq(subscriptions.userId, userId), eq(subscriptions.isActive, true)))
     .orderBy(desc(subscriptions.createdAt));
+
+  const items = rows.map(toSubscriptionItemDto);
 
   return buildServiceResponse(200, { items });
 };

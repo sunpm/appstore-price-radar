@@ -1,6 +1,12 @@
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod';
+import type {
+  CreateSubscriptionResponseDto,
+  DeleteSubscriptionResponseDto,
+  ListSubscriptionsResponseDto,
+  SubscriptionErrorDto,
+} from '@appstore-price-radar/contracts';
 
 import { DEFAULT_COUNTRY_CODE } from '../constants/routes';
 import { requireAuth } from '../middleware/auth';
@@ -31,17 +37,20 @@ router.post('/', zValidator('json', createSubscriptionSchema), async (c) => {
     c.get('authUser'),
     c.req.valid('json'),
   );
-  return c.json(result.body, result.status);
+  const body: CreateSubscriptionResponseDto | SubscriptionErrorDto = result.body;
+  return c.json(body, result.status);
 });
 
 router.get('/', async (c) => {
   const result = await listUserSubscriptions(c.get('config'), c.get('authUser').id);
-  return c.json(result.body, result.status);
+  const body: ListSubscriptionsResponseDto = result.body;
+  return c.json(body, result.status);
 });
 
 router.delete('/:id', zValidator('param', deleteParamsSchema), async (c) => {
   const result = await deleteUserSubscription(c.get('config'), c.get('authUser').id, c.req.valid('param'));
-  return c.json(result.body, result.status);
+  const body: DeleteSubscriptionResponseDto | SubscriptionErrorDto = result.body;
+  return c.json(body, result.status);
 });
 
 export default router;

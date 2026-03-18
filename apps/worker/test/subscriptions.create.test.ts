@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { SubscriptionItemDto } from '@appstore-price-radar/contracts';
 
 import type { EnvConfig } from '../src/env';
 import { createUserSubscription } from '../src/services/subscriptions';
@@ -19,6 +20,7 @@ const testHooks = vi.hoisted(() => ({
   dbRef: { current: null as unknown },
   refreshSingleAppMock: vi.fn(),
 }));
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 
 vi.mock('../src/db/client', () => ({
   getDb: () => testHooks.dbRef.current,
@@ -77,7 +79,7 @@ describe('createUserSubscription refresh contract', () => {
   it('passes the shared manual refresh contract after subscription upsert', async () => {
     const env = createEnv();
 
-    await createUserSubscription(
+    const result = await createUserSubscription(
       env,
       {
         id: 'user-1',
@@ -86,6 +88,7 @@ describe('createUserSubscription refresh contract', () => {
       {
         appId: '123456789',
         country: 'us',
+        targetPrice: 6.66,
       },
     );
 
@@ -99,5 +102,44 @@ describe('createUserSubscription refresh contract', () => {
         requestId: 'subscription-create:sub-1',
       },
     );
+
+    expect(result.status).toBe(200);
+    expect('error' in result.body).toBe(false);
+    if ('error' in result.body) {
+      throw new Error(result.body.error);
+    }
+
+    expect(Object.keys(result.body)).toStrictEqual(['subscription']);
+    const dto = result.body.subscription as SubscriptionItemDto;
+    expect(Object.keys(dto)).toStrictEqual([
+      'id',
+      'appId',
+      'country',
+      'targetPrice',
+      'lastNotifiedPrice',
+      'isActive',
+      'appName',
+      'storeUrl',
+      'iconUrl',
+      'currentPrice',
+      'currency',
+      'createdAt',
+      'updatedAt',
+    ]);
+    expect(dto).toMatchObject({
+      id: 'sub-1',
+      appId: '123456789',
+      country: 'US',
+      targetPrice: 6.66,
+      lastNotifiedPrice: null,
+      isActive: true,
+      appName: null,
+      storeUrl: null,
+      iconUrl: null,
+      currentPrice: null,
+      currency: null,
+    });
+    expect(dto.createdAt).toMatch(ISO_DATE_RE);
+    expect(dto.updatedAt).toMatch(ISO_DATE_RE);
   });
 });
