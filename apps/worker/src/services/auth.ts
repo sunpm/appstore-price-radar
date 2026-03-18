@@ -40,6 +40,12 @@ import type {
   ResetPasswordPayload,
   VerifyLoginCodePayload,
 } from './auth.types';
+import {
+  assertAuthRateLimit,
+  clearAuthRateLimit,
+  recordAuthRateLimitFailure,
+  type AuthRateLimitInput,
+} from './auth-rate-limit';
 
 type AuthOrErrorBody = AuthResponsePayload | AuthErrorResponse;
 type OkOrErrorBody = AuthOkResponse | AuthErrorResponse;
@@ -59,6 +65,39 @@ const buildServiceResponse = <TBody>(
   body: TBody,
 ): AuthServiceResponse<TBody> => {
   return { status, body };
+};
+
+const buildRateLimitErrorBody = (retryAfterSeconds: number): AuthErrorResponse => {
+  return {
+    error: `Too many attempts. Please wait ${retryAfterSeconds}s before retrying`,
+    retryAfterSeconds,
+  };
+};
+
+const assertRateLimitOrBuildResponse = async (
+  config: EnvConfig,
+  input: AuthRateLimitInput,
+): Promise<AuthServiceResponse<AuthErrorResponse> | null> => {
+  const assertion = await assertAuthRateLimit(config, input);
+
+  if (!assertion.limited) {
+    return null;
+  }
+
+  return buildServiceResponse(429, buildRateLimitErrorBody(assertion.retryAfterSeconds));
+};
+
+const recordFailureOrBuildRateLimitResponse = async (
+  config: EnvConfig,
+  input: AuthRateLimitInput,
+): Promise<AuthServiceResponse<AuthErrorResponse> | null> => {
+  const assertion = await recordAuthRateLimitFailure(config, input);
+
+  if (!assertion.limited) {
+    return null;
+  }
+
+  return buildServiceResponse(429, buildRateLimitErrorBody(assertion.retryAfterSeconds));
 };
 
 const isEmailServiceConfigured = (config: EnvConfig): boolean => {
@@ -297,9 +336,25 @@ export const registerWithLoginCode = async (
 ): Promise<AuthServiceResponse<AuthOrErrorBody>> => {
   const db = getDb(config);
   const email = normalizeEmail(payload.email);
+  const verifyScopeInput: AuthRateLimitInput = {
+    scope: 'verify-login-code',
+    subjectKey: email,
+  };
+  const rateLimitResponse = await assertRateLimitOrBuildResponse(config, verifyScopeInput);
+
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   const exists = await findUserByEmail(config, email);
 
   if (!exists) {
+    const blocked = await recordFailureOrBuildRateLimitResponse(config, verifyScopeInput);
+
+    if (blocked) {
+      return blocked;
+    }
+
     return buildServiceResponse(400, { error: 'Please request a login code first' });
   }
 
@@ -310,6 +365,12 @@ export const registerWithLoginCode = async (
   const codeMatched = await consumeLoginCode(config, exists.id, payload.code);
 
   if (!codeMatched) {
+    const blocked = await recordFailureOrBuildRateLimitResponse(config, verifyScopeInput);
+
+    if (blocked) {
+      return blocked;
+    }
+
     return buildServiceResponse(401, { error: 'Invalid code' });
   }
 
@@ -325,6 +386,8 @@ export const registerWithLoginCode = async (
     })
     .where(eq(users.id, exists.id));
 
+  await clearAuthRateLimit(config, verifyScopeInput);
+
   const session = await createSession(config, exists.id);
   return buildServiceResponse(200, buildAuthResponse(exists, session));
 };
@@ -334,17 +397,41 @@ export const loginWithPassword = async (
   payload: AuthWithPasswordPayload,
 ): Promise<AuthServiceResponse<AuthOrErrorBody>> => {
   const email = normalizeEmail(payload.email);
+  const loginScopeInput: AuthRateLimitInput = {
+    scope: 'login-password',
+    subjectKey: email,
+  };
+  const rateLimitResponse = await assertRateLimitOrBuildResponse(config, loginScopeInput);
+
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   const user = await findActiveUserByEmail(config, email);
 
   if (!user) {
+    const blocked = await recordFailureOrBuildRateLimitResponse(config, loginScopeInput);
+
+    if (blocked) {
+      return blocked;
+    }
+
     return buildServiceResponse(401, { error: 'Invalid credentials' });
   }
 
   const valid = await verifyPassword(payload.password, user.passwordHash);
 
   if (!valid) {
+    const blocked = await recordFailureOrBuildRateLimitResponse(config, loginScopeInput);
+
+    if (blocked) {
+      return blocked;
+    }
+
     return buildServiceResponse(401, { error: 'Invalid credentials' });
   }
+
+  await clearAuthRateLimit(config, loginScopeInput);
 
   const session = await createSession(config, user.id);
   return buildServiceResponse(200, buildAuthResponse(user, session));
@@ -359,17 +446,42 @@ export const requestPasswordReset = async (
   }
 
   const email = normalizeEmail(payload.email);
+  const forgotScopeInput: AuthRateLimitInput = {
+    scope: 'forgot-password',
+    subjectKey: email,
+  };
+  const rateLimitResponse = await assertRateLimitOrBuildResponse(config, forgotScopeInput);
+
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   const user = await findActiveUserByEmail(config, email);
 
   if (!user) {
+    await recordAuthRateLimitFailure(config, forgotScopeInput);
     return buildServiceResponse(200, { ok: true });
   }
 
+  const now = new Date();
   const resetToken = generateSessionToken();
   const tokenHash = await hashSessionToken(resetToken);
   const ttlMinutes = config.RESET_PASSWORD_TTL_MINUTES ?? DEFAULT_RESET_PASSWORD_TTL_MINUTES;
-  const expiresAt = new Date(Date.now() + ttlMinutes * 60_000);
+  const expiresAt = new Date(now.getTime() + ttlMinutes * 60_000);
   const db = getDb(config);
+
+  await db
+    .update(passwordResetTokens)
+    .set({
+      usedAt: now,
+    })
+    .where(
+      and(
+        eq(passwordResetTokens.userId, user.id),
+        isNull(passwordResetTokens.usedAt),
+        gt(passwordResetTokens.expiresAt, now),
+      ),
+    );
 
   await db.insert(passwordResetTokens).values({
     userId: user.id,
@@ -384,6 +496,8 @@ export const requestPasswordReset = async (
     return buildServiceResponse(503, { error: 'Failed to send reset email' });
   }
 
+  await recordAuthRateLimitFailure(config, forgotScopeInput);
+
   return buildServiceResponse(200, { ok: true });
 };
 
@@ -393,6 +507,16 @@ export const resetPassword = async (
 ): Promise<AuthServiceResponse<OkOrErrorBody>> => {
   const db = getDb(config);
   const tokenHash = await hashSessionToken(payload.token);
+  const resetScopeInput: AuthRateLimitInput = {
+    scope: 'reset-password',
+    subjectKey: tokenHash,
+  };
+  const rateLimitResponse = await assertRateLimitOrBuildResponse(config, resetScopeInput);
+
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   const now = new Date();
 
   const [tokenRow] = await db
@@ -413,6 +537,12 @@ export const resetPassword = async (
     .limit(1);
 
   if (!tokenRow) {
+    const blocked = await recordFailureOrBuildRateLimitResponse(config, resetScopeInput);
+
+    if (blocked) {
+      return blocked;
+    }
+
     return buildServiceResponse(400, { error: 'Invalid or expired reset token' });
   }
 
@@ -434,6 +564,7 @@ export const resetPassword = async (
     .where(eq(passwordResetTokens.id, tokenRow.id));
 
   await db.delete(userSessions).where(eq(userSessions.userId, tokenRow.userId));
+  await clearAuthRateLimit(config, resetScopeInput);
 
   return buildServiceResponse(200, { ok: true });
 };
@@ -493,6 +624,16 @@ export const sendLoginCode = async (
   }
 
   const email = normalizeEmail(payload.email);
+  const sendCodeScopeInput: AuthRateLimitInput = {
+    scope: 'send-login-code',
+    subjectKey: email,
+  };
+  const rateLimitResponse = await assertRateLimitOrBuildResponse(config, sendCodeScopeInput);
+
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   const loginCodeCooldownSeconds = config.LOGIN_CODE_RESEND_COOLDOWN_SECONDS
     ?? DEFAULT_LOGIN_CODE_RESEND_COOLDOWN_SECONDS;
 
@@ -530,7 +671,21 @@ export const sendLoginCode = async (
   const code = generateOtpCode();
   const codeHash = await hashSessionToken(`${user.id}:${code}`);
   const ttlMinutes = config.LOGIN_CODE_TTL_MINUTES ?? DEFAULT_LOGIN_CODE_TTL_MINUTES;
-  const expiresAt = new Date(Date.now() + ttlMinutes * 60_000);
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + ttlMinutes * 60_000);
+
+  await db
+    .update(loginCodes)
+    .set({
+      usedAt: now,
+    })
+    .where(
+      and(
+        eq(loginCodes.userId, user.id),
+        isNull(loginCodes.usedAt),
+        gt(loginCodes.expiresAt, now),
+      ),
+    );
 
   const [createdCode] = await db
     .insert(loginCodes)
@@ -558,6 +713,8 @@ export const sendLoginCode = async (
     return buildServiceResponse(503, { error: 'Failed to send login code email' });
   }
 
+  await recordAuthRateLimitFailure(config, sendCodeScopeInput);
+
   return buildServiceResponse(200, {
     ok: true,
     cooldownSeconds: loginCodeCooldownSeconds,
@@ -569,17 +726,41 @@ export const verifyLoginCode = async (
   payload: VerifyLoginCodePayload,
 ): Promise<AuthServiceResponse<AuthOrErrorBody>> => {
   const email = normalizeEmail(payload.email);
+  const verifyScopeInput: AuthRateLimitInput = {
+    scope: 'verify-login-code',
+    subjectKey: email,
+  };
+  const rateLimitResponse = await assertRateLimitOrBuildResponse(config, verifyScopeInput);
+
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   const user = await findActiveUserByEmail(config, email);
 
   if (!user) {
+    const blocked = await recordFailureOrBuildRateLimitResponse(config, verifyScopeInput);
+
+    if (blocked) {
+      return blocked;
+    }
+
     return buildServiceResponse(401, { error: 'Invalid code' });
   }
 
   const codeMatched = await consumeLoginCode(config, user.id, payload.code);
 
   if (!codeMatched) {
+    const blocked = await recordFailureOrBuildRateLimitResponse(config, verifyScopeInput);
+
+    if (blocked) {
+      return blocked;
+    }
+
     return buildServiceResponse(401, { error: 'Invalid code' });
   }
+
+  await clearAuthRateLimit(config, verifyScopeInput);
 
   const session = await createSession(config, user.id);
   return buildServiceResponse(200, buildAuthResponse(user, session));
