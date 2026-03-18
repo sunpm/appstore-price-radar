@@ -8,6 +8,7 @@
     "deploy": "wrangler deploy",
     "build": "wrangler deploy --dry-run",
     "test": "vitest run",
+    "test:smoke": "vitest run test/schema.bootstrap.test.ts test/fresh-install.smoke.test.ts",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push"
