@@ -58,7 +58,7 @@ Web 必填：
 
 Worker 常用可选：
 - `RESEND_API_KEY`、`RESEND_FROM_EMAIL`（邮件能力）
-- `CRON_SECRET`（手动触发巡检鉴权）
+- `CRON_SECRET`（手动触发巡检鉴权；如果生产环境保留 `POST /api/jobs/check`，则为 required in production）
 - `SESSION_TTL_DAYS`（默认 30）
 - `RESET_PASSWORD_TTL_MINUTES`（默认 30）
 - `LOGIN_CODE_TTL_MINUTES`（默认 10）
@@ -73,16 +73,23 @@ Worker 常用可选：
 
 ### 4) 初始化数据库
 
-首次建议直接执行 SQL：
-- `apps/worker/drizzle/0000_init.sql`
-
-或使用 Drizzle：
-
 ```bash
 pnpm --filter @appstore-price-radar/worker db:push
 ```
 
-### 5) 启动开发环境
+这是 fresh install 的唯一官方建库路径。`apps/worker/drizzle/0000_init.sql` 和 `apps/worker/drizzle/0001_price_change_events.sql` 作为 baseline / legacy migration 资产保留，但不再作为 README 推荐的首要初始化步骤。
+
+### 5) 运行 smoke verification
+
+```bash
+pnpm --filter @appstore-price-radar/worker test:smoke
+```
+
+这条命令会验证：
+- baseline SQL 资产仍与运行时代码契约一致
+- Worker 的最小请求闭环（健康检查、订阅创建、巡检触发、价格历史读取）仍可 deterministic 通过
+
+### 6) 启动开发环境
 
 ```bash
 pnpm dev
@@ -131,6 +138,7 @@ pnpm --filter @appstore-price-radar/worker deploy
 - `apps/worker/wrangler.toml` 已设置 `keep_vars = true`，避免每次部署覆盖 Dashboard 里的普通变量。
 - `apps/worker/wrangler.toml` 默认 cron 为 `0 */6 * * *`（每 6 小时），降低对 App Store API 的请求压力。
 - 本项目不在 `wrangler.toml` 里写 `[vars]`，线上变量以 Dashboard 为准。
+- 只要生产环境保留 `POST /api/jobs/check`，`CRON_SECRET` 就是 required in production，不能留空后直接暴露到公网。
 
 ### Web（Netlify）
 
