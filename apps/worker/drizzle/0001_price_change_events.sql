@@ -16,39 +16,44 @@ CREATE INDEX IF NOT EXISTS app_price_change_events_app_changed_idx
 CREATE UNIQUE INDEX IF NOT EXISTS app_price_change_events_app_request_uniq
   ON app_price_change_events (app_id, country, request_id);
 
-INSERT INTO app_price_change_events (
-  app_id,
-  country,
-  currency,
-  old_amount,
-  new_amount,
-  changed_at,
-  source,
-  request_id
-)
-SELECT
-  staged.app_id,
-  staged.country,
-  staged.currency,
-  staged.previous_price AS old_amount,
-  staged.price AS new_amount,
-  staged.fetched_at AS changed_at,
-  'migration' AS source,
-  concat('migration-', staged.app_id, '-', staged.country, '-', staged.id) AS request_id
-FROM (
-  SELECT
-    id,
-    app_id,
-    country,
-    currency,
-    price,
-    fetched_at,
-    lag(price) OVER (
-      PARTITION BY app_id, country
-      ORDER BY fetched_at, id
-    ) AS previous_price
-  FROM app_price_history
-) AS staged
-WHERE staged.previous_price IS NOT NULL
-  AND staged.previous_price <> staged.price
-ON CONFLICT (app_id, country, request_id) DO NOTHING;
+DO $$
+BEGIN
+  IF to_regclass('app_price_history') IS NOT NULL THEN
+    INSERT INTO app_price_change_events (
+      app_id,
+      country,
+      currency,
+      old_amount,
+      new_amount,
+      changed_at,
+      source,
+      request_id
+    )
+    SELECT
+      staged.app_id,
+      staged.country,
+      staged.currency,
+      staged.previous_price AS old_amount,
+      staged.price AS new_amount,
+      staged.fetched_at AS changed_at,
+      'migration' AS source,
+      concat('migration-', staged.app_id, '-', staged.country, '-', staged.id) AS request_id
+    FROM (
+      SELECT
+        id,
+        app_id,
+        country,
+        currency,
+        price,
+        fetched_at,
+        lag(price) OVER (
+          PARTITION BY app_id, country
+          ORDER BY fetched_at, id
+        ) AS previous_price
+      FROM app_price_history
+    ) AS staged
+    WHERE staged.previous_price IS NOT NULL
+      AND staged.previous_price <> staged.price
+    ON CONFLICT (app_id, country, request_id) DO NOTHING;
+  END IF;
+END $$;
