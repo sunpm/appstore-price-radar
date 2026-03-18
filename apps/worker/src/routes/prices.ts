@@ -1,7 +1,7 @@
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod';
-import type { PriceHistoryResponseDto } from '@appstore-price-radar/contracts';
+import type { AppDetailResponseDto } from '@appstore-price-radar/contracts';
 
 import {
   DEFAULT_COUNTRY_CODE,
@@ -43,7 +43,7 @@ router.get(
       appId,
     });
 
-    const body: PriceHistoryResponseDto | PriceHistoryErrorResponse = result.body;
+    const body: AppDetailResponseDto | PriceHistoryErrorResponse = result.body;
     return c.json(body, result.status);
   },
 );

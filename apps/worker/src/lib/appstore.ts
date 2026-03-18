@@ -14,6 +14,15 @@ const lookupResponseSchema = z.object({
         trackViewUrl: z.string().url().optional(),
         artworkUrl100: z.string().url().optional(),
         formattedPrice: z.string().optional(),
+        sellerName: z.string().optional(),
+        primaryGenreName: z.string().optional(),
+        description: z.string().optional(),
+        averageUserRating: z.number().nullable().optional(),
+        userRatingCount: z.number().nullable().optional(),
+        bundleId: z.string().optional(),
+        version: z.string().optional(),
+        minimumOsVersion: z.string().optional(),
+        releaseNotes: z.string().optional(),
       }),
     )
     .default([]),
@@ -77,6 +86,17 @@ export const fetchAppStorePrice = async (
     `https://apps.apple.com/${countryCode.toLowerCase()}/app/id${resolvedAppId}`;
   const iconUrl = item.artworkUrl100 ?? null;
   const formattedPrice = item.formattedPrice ?? null;
+  const metadata = {
+    sellerName: item.sellerName ?? null,
+    primaryGenreName: item.primaryGenreName ?? null,
+    description: item.description ?? null,
+    averageUserRating: item.averageUserRating ?? null,
+    userRatingCount: item.userRatingCount ?? null,
+    bundleId: item.bundleId ?? null,
+    version: item.version ?? null,
+    minimumOsVersion: item.minimumOsVersion ?? null,
+    releaseNotes: item.releaseNotes ?? null,
+  };
 
   if (typeof item.price !== 'number' || Number.isNaN(item.price)) {
     return {
@@ -89,6 +109,7 @@ export const fetchAppStorePrice = async (
       storeUrl,
       iconUrl,
       formattedPrice,
+      ...metadata,
     };
   }
 
@@ -102,5 +123,6 @@ export const fetchAppStorePrice = async (
     storeUrl,
     iconUrl,
     formattedPrice,
+    ...metadata,
   };
 };

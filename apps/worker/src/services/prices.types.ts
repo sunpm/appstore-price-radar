@@ -1,7 +1,8 @@
 import type {
+  AppDecisionMetadataDto,
+  AppDetailResponseDto,
   AppSnapshotDto,
   PriceChangeEventDto,
-  PriceHistoryResponseDto,
   PriceHistorySummaryDto,
   PriceHistoryWindow,
 } from '@appstore-price-radar/contracts';
@@ -27,6 +28,15 @@ export type AppSnapshotRecord = {
   appName: string;
   storeUrl: string | null;
   iconUrl: string | null;
+  sellerName: string | null;
+  primaryGenreName: string | null;
+  description: string | null;
+  averageUserRating: number | null;
+  userRatingCount: number | null;
+  bundleId: string | null;
+  version: string | null;
+  minimumOsVersion: string | null;
+  releaseNotes: string | null;
   currency: string;
   lastPrice: number;
   updatedAt: Date;
@@ -44,7 +54,7 @@ export type PriceChangeEventRecord = {
   requestId: string;
 };
 
-export type PriceHistorySuccessResponse = PriceHistoryResponseDto;
+export type PriceHistorySuccessResponse = AppDetailResponseDto;
 
 export type PriceHistoryErrorResponse = {
   error: string;
@@ -53,3 +63,4 @@ export type PriceHistoryErrorResponse = {
 export type PriceEventDto = PriceChangeEventDto;
 export type SnapshotDto = AppSnapshotDto;
 export type HistorySummaryDto = PriceHistorySummaryDto;
+export type MetadataDto = AppDecisionMetadataDto;

@@ -16,6 +16,15 @@ type SnapshotRow = {
   appName: string;
   storeUrl: string | null;
   iconUrl: string | null;
+  sellerName?: string | null;
+  primaryGenreName?: string | null;
+  description?: string | null;
+  averageUserRating?: number | null;
+  userRatingCount?: number | null;
+  bundleId?: string | null;
+  version?: string | null;
+  minimumOsVersion?: string | null;
+  releaseNotes?: string | null;
   currency: string;
   lastPrice: number;
   updatedAt: Date;
@@ -58,6 +67,18 @@ type BatchOperation = {
 
 let dbState: DbState;
 let dbMock: ReturnType<typeof createDbMock>;
+
+const EMPTY_LOOKUP_METADATA = {
+  sellerName: null,
+  primaryGenreName: null,
+  description: null,
+  averageUserRating: null,
+  userRatingCount: null,
+  bundleId: null,
+  version: null,
+  minimumOsVersion: null,
+  releaseNotes: null,
+};
 
 const testHooks = vi.hoisted(() => ({
   dbRef: { current: null as unknown },
@@ -364,6 +385,7 @@ describe('refreshSingleApp change-event persistence', () => {
       storeUrl: 'https://apps.apple.com/us/app/id123456789',
       iconUrl: null,
       formattedPrice: '$9.99',
+      ...EMPTY_LOOKUP_METADATA,
     });
 
     await refreshSingleApp(createEnv(), '123456789', 'US', {
@@ -409,6 +431,15 @@ describe('refreshSingleApp change-event persistence', () => {
       storeUrl: 'https://apps.apple.com/us/app/id123456789',
       iconUrl: null,
       formattedPrice: '$7.99',
+      sellerName: 'Sunset Studio',
+      primaryGenreName: 'Productivity',
+      description: 'Track prices with confidence.',
+      averageUserRating: 4.7,
+      userRatingCount: 1820,
+      bundleId: 'com.example.radarpro',
+      version: '3.2.1',
+      minimumOsVersion: '15.0',
+      releaseNotes: 'Bug fixes and chart refinements.',
     });
 
     await refreshSingleApp(createEnv(), '123456789', 'US', {
@@ -428,6 +459,15 @@ describe('refreshSingleApp change-event persistence', () => {
       requestId: 'req-change-1',
     });
     expect(dbState.events[1]?.changedAt.toISOString()).toBe('2026-03-18T00:00:00.000Z');
+    expect(dbState.snapshot).toMatchObject({
+      sellerName: 'Sunset Studio',
+      primaryGenreName: 'Productivity',
+      averageUserRating: 4.7,
+      userRatingCount: 1820,
+      bundleId: 'com.example.radarpro',
+      version: '3.2.1',
+      minimumOsVersion: '15.0',
+    });
   });
 
   it('skips snapshot and history writes when App Store price is invalid', async () => {
@@ -464,6 +504,7 @@ describe('refreshSingleApp change-event persistence', () => {
       storeUrl: 'https://apps.apple.com/us/app/id123456789',
       iconUrl: null,
       formattedPrice: '$9.99',
+      ...EMPTY_LOOKUP_METADATA,
     });
 
     await refreshSingleApp(createEnv(), '123456789', 'US', {

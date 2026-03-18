@@ -42,3 +42,19 @@ export interface PriceHistoryResponseDto {
   page: PriceHistoryPageDto
   summary: PriceHistorySummaryDto
 }
+
+export interface AppDecisionMetadataDto {
+  sellerName: string | null
+  primaryGenreName: string | null
+  description: string | null
+  averageUserRating: number | null
+  userRatingCount: number | null
+  bundleId: string | null
+  version: string | null
+  minimumOsVersion: string | null
+  releaseNotes: string | null
+}
+
+export interface AppDetailResponseDto extends PriceHistoryResponseDto {
+  metadata: AppDecisionMetadataDto | null
+}

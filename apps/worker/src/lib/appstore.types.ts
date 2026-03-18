@@ -6,6 +6,15 @@ type AppStoreLookupBase = {
   storeUrl: string | null;
   iconUrl: string | null;
   formattedPrice: string | null;
+  sellerName: string | null;
+  primaryGenreName: string | null;
+  description: string | null;
+  averageUserRating: number | null;
+  userRatingCount: number | null;
+  bundleId: string | null;
+  version: string | null;
+  minimumOsVersion: string | null;
+  releaseNotes: string | null;
 };
 
 export type AppStorePrice = AppStoreLookupBase & {

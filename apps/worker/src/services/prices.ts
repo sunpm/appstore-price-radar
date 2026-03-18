@@ -16,6 +16,7 @@ import type {
   AppSnapshotRecord,
   GetPriceHistoryPayload,
   HistorySummaryDto,
+  MetadataDto,
   PriceChangeEventRecord,
   PriceEventDto,
   PriceHistoryErrorResponse,
@@ -336,6 +337,22 @@ export const toAppSnapshotDto = (snapshot: AppSnapshotRecord): SnapshotDto => {
   };
 };
 
+export const toAppDecisionMetadataDto = (
+  snapshot: AppSnapshotRecord,
+): MetadataDto => {
+  return {
+    sellerName: snapshot.sellerName ?? null,
+    primaryGenreName: snapshot.primaryGenreName ?? null,
+    description: snapshot.description ?? null,
+    averageUserRating: snapshot.averageUserRating ?? null,
+    userRatingCount: snapshot.userRatingCount ?? null,
+    bundleId: snapshot.bundleId ?? null,
+    version: snapshot.version ?? null,
+    minimumOsVersion: snapshot.minimumOsVersion ?? null,
+    releaseNotes: snapshot.releaseNotes ?? null,
+  };
+};
+
 export const toPriceChangeEventDto = (
   event: PriceChangeEventRecord,
 ): PriceEventDto => {
@@ -398,6 +415,7 @@ export const getPriceHistory = async (
     .reverse()
     .map(toPriceChangeEventDto);
   const snapshotDto = snapshot ? toAppSnapshotDto(snapshot) : null;
+  const metadataDto = snapshot ? toAppDecisionMetadataDto(snapshot) : null;
 
   return buildServiceResponse(200, {
     snapshot: snapshotDto,
@@ -409,5 +427,6 @@ export const getPriceHistory = async (
       hasMore,
     },
     summary: toPriceHistorySummaryDto(windowedHistory),
+    metadata: metadataDto,
   });
 };

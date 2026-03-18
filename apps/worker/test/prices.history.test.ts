@@ -16,6 +16,15 @@ type SnapshotRow = {
   appName: string;
   storeUrl: string | null;
   iconUrl: string | null;
+  sellerName?: string | null;
+  primaryGenreName?: string | null;
+  description?: string | null;
+  averageUserRating?: number | null;
+  userRatingCount?: number | null;
+  bundleId?: string | null;
+  version?: string | null;
+  minimumOsVersion?: string | null;
+  releaseNotes?: string | null;
   currency: string;
   lastPrice: number;
   updatedAt: Date;
@@ -51,6 +60,18 @@ type DbState = {
 const testHooks = vi.hoisted(() => ({
   dbRef: { current: null as unknown },
 }));
+
+const EMPTY_SNAPSHOT_METADATA = {
+  sellerName: null,
+  primaryGenreName: null,
+  description: null,
+  averageUserRating: null,
+  userRatingCount: null,
+  bundleId: null,
+  version: null,
+  minimumOsVersion: null,
+  releaseNotes: null,
+};
 
 vi.mock('../src/db/client', () => ({
   getDb: () => testHooks.dbRef.current,
@@ -193,6 +214,15 @@ describe('prices history route', () => {
       appName: 'Radar Pro',
       storeUrl: 'https://apps.apple.com/us/app/id123456789',
       iconUrl: null,
+      sellerName: 'Sunset Studio',
+      primaryGenreName: 'Productivity',
+      description: 'Track prices with confidence.',
+      averageUserRating: 4.7,
+      userRatingCount: 1820,
+      bundleId: 'com.example.radarpro',
+      version: '3.2.1',
+      minimumOsVersion: '15.0',
+      releaseNotes: 'Bug fixes and chart refinements.',
       currency: 'USD',
       lastPrice: 8.99,
       updatedAt: new Date('2026-03-18T00:00:00.000Z'),
@@ -239,6 +269,15 @@ describe('prices history route', () => {
       latestChangeAt: '2026-01-20T00:00:00.000Z',
       earliestChangeAt: '2026-01-20T00:00:00.000Z',
     });
+    expect(payload.metadata).toMatchObject({
+      sellerName: 'Sunset Studio',
+      primaryGenreName: 'Productivity',
+      averageUserRating: 4.7,
+      userRatingCount: 1820,
+      bundleId: 'com.example.radarpro',
+      version: '3.2.1',
+      minimumOsVersion: '15.0',
+    });
   });
 
   it('returns hasMore and nextCursor when page is truncated', async () => {
@@ -248,6 +287,7 @@ describe('prices history route', () => {
       appName: 'Radar Pro',
       storeUrl: 'https://apps.apple.com/us/app/id123456789',
       iconUrl: null,
+      ...EMPTY_SNAPSHOT_METADATA,
       currency: 'USD',
       lastPrice: 7.99,
       updatedAt: new Date('2026-03-18T00:00:00.000Z'),
