@@ -1,8 +1,9 @@
 import type {
+  AppDecisionMetadataDto,
+  AppDetailResponseDto,
   AppSnapshotDto,
   PriceChangeEventDto,
   PriceHistoryPageDto,
-  PriceHistoryResponseDto,
   PriceHistorySummaryDto,
   PriceHistoryWindow,
 } from '@appstore-price-radar/contracts'
@@ -20,6 +21,7 @@ interface CachedHistoryState {
   snapshot: AppSnapshotDto | null
   page: PriceHistoryPageDto
   summary: PriceHistorySummaryDto
+  metadata: AppDecisionMetadataDto | null
 }
 
 const DEFAULT_WINDOW: PriceHistoryWindow = '90d'
@@ -49,6 +51,7 @@ function cloneCachedState(state: CachedHistoryState): CachedHistoryState {
     snapshot: state.snapshot,
     page: { ...state.page },
     summary: { ...state.summary },
+    metadata: state.metadata ? { ...state.metadata } : null,
   }
 }
 
@@ -67,6 +70,7 @@ export function usePriceHistory(options: UsePriceHistoryOptions = {}) {
   const snapshot = ref<AppSnapshotDto | null>(null)
   const page = ref<PriceHistoryPageDto>(buildEmptyPage(pageSize, DEFAULT_WINDOW))
   const summary = ref<PriceHistorySummaryDto>(buildEmptySummary())
+  const metadata = ref<AppDecisionMetadataDto | null>(null)
   const loading = ref(false)
   const loadingMore = ref(false)
   const selectedWindow = ref<PriceHistoryWindow>(DEFAULT_WINDOW)
@@ -84,11 +88,12 @@ export function usePriceHistory(options: UsePriceHistoryOptions = {}) {
     snapshot.value = payload.snapshot
     page.value = { ...payload.page }
     summary.value = { ...payload.summary }
+    metadata.value = payload.metadata ? { ...payload.metadata } : null
   }
 
   function writeCache(
     key: string,
-    payload: PriceHistoryResponseDto | CachedHistoryState,
+    payload: AppDetailResponseDto | CachedHistoryState,
   ): void {
     historyCache.set(key, cloneCachedState(payload))
   }
@@ -98,6 +103,7 @@ export function usePriceHistory(options: UsePriceHistoryOptions = {}) {
     snapshot.value = null
     page.value = buildEmptyPage(pageSize, window)
     summary.value = buildEmptySummary()
+    metadata.value = null
   }
 
   function abortActiveRequest(): void {
@@ -108,12 +114,12 @@ export function usePriceHistory(options: UsePriceHistoryOptions = {}) {
   async function requestHistory(
     path: string,
     signal: AbortSignal,
-  ): Promise<PriceHistoryResponseDto> {
+  ): Promise<AppDetailResponseDto> {
     if (auth) {
-      return authedRequest<PriceHistoryResponseDto>(path, {}, { signal })
+      return authedRequest<AppDetailResponseDto>(path, {}, { signal })
     }
 
-    return apiRequest<PriceHistoryResponseDto>(path, {}, { signal })
+    return apiRequest<AppDetailResponseDto>(path, {}, { signal })
   }
 
   async function loadInitial(
@@ -195,6 +201,7 @@ export function usePriceHistory(options: UsePriceHistoryOptions = {}) {
         snapshot: payload.snapshot,
         page: payload.page,
         summary: payload.summary,
+        metadata: payload.metadata,
       }
 
       applyPayload(nextState)
@@ -218,6 +225,7 @@ export function usePriceHistory(options: UsePriceHistoryOptions = {}) {
     snapshot,
     page,
     summary,
+    metadata,
     loading,
     loadingMore,
     selectedWindow,

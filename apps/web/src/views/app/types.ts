@@ -1,6 +1,10 @@
-import type { PriceChangeEventDto, PriceHistoryResponseDto } from '@appstore-price-radar/contracts'
+import type {
+  AppDecisionMetadataDto,
+  AppDetailResponseDto,
+  PriceChangeEventDto,
+} from '@appstore-price-radar/contracts'
 
-export type AppDetailPayload = PriceHistoryResponseDto
+export type AppDetailPayload = AppDetailResponseDto
 
 export interface AppTrendPoint {
   key: string
@@ -19,4 +23,15 @@ export interface AppChangeRow {
   changePct: number | null
 }
 
+export interface AppDecisionStatsState {
+  averageUserRating: number | null
+  userRatingCount: number | null
+  primaryGenreName: string | null
+  dropFromPeakPct: number | null
+  lowestPrice: number | null
+  totalChanges: number
+  currency: string
+}
+
+export type { AppDecisionMetadataDto }
 export type { PriceChangeEventDto }
