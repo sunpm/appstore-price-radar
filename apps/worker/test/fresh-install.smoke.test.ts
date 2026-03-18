@@ -698,4 +698,20 @@ describe('fresh install smoke', () => {
       source: 'scheduled',
     });
   });
+
+  it('returns 401 for manual check when missing secret header', async () => {
+    const env = createBindings();
+    const ctx = createExecutionContext();
+
+    const response = await worker.fetch(
+      new Request('https://example.com/api/jobs/check', {
+        method: 'POST',
+      }),
+      env,
+      ctx,
+    );
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({ error: 'Unauthorized' });
+  });
 });

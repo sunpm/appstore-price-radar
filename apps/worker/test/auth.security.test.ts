@@ -2,10 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { authRateLimits, loginCodes, passwordResetTokens, users } from '../src/db/schema';
 import type { EnvConfig } from '../src/env';
-import { hashPassword } from '../src/lib/auth';
+import { hashPassword, hashSessionToken } from '../src/lib/auth';
 import {
   loginWithPassword,
   requestPasswordReset,
+  resetPassword,
   sendLoginCode,
   verifyLoginCode,
 } from '../src/services/auth';
@@ -60,6 +61,7 @@ const testHooks = vi.hoisted(() => ({
   dbRef: { current: null as unknown },
   sendLoginCodeEmailMock: vi.fn(async () => ({ sent: true })),
   sendPasswordResetEmailMock: vi.fn(async () => ({ sent: true })),
+  loginCodeConsumeHashRef: { current: null as string | null },
 }));
 
 vi.mock('../src/db/client', () => ({
@@ -110,24 +112,46 @@ const createDbMock = (state: DbState) => ({
       const rows = buildRows();
 
       return {
-        where: () => ({
-          limit: async (limitValue: number) => {
-            return rows
+        where: () => {
+          const selectedKeys = Object.keys(selection ?? {});
+          const consumeHash = testHooks.loginCodeConsumeHashRef.current;
+          const isLoginCodeConsumeQuery = table === loginCodes
+            && selectedKeys.includes('id')
+            && !selectedKeys.includes('createdAt');
+
+          const toSelectedRows = (source: Array<Record<string, unknown>>, limitValue: number) => {
+            const filtered = isLoginCodeConsumeQuery && consumeHash
+              ? source.filter(
+                  row =>
+                    row.codeHash === consumeHash
+                    && row.usedAt === null
+                    && ((row.expiresAt as Date | undefined)?.getTime() ?? 0) > Date.now(),
+                )
+              : source;
+
+            return filtered
               .slice(0, limitValue)
               .map(row => mapSelection(selection, row));
-          },
-          orderBy: () => ({
-            limit: async (limitValue: number) => {
-              const sorted = [...rows].sort((a, b) => {
-                const aTime = (a.createdAt as Date | undefined)?.getTime() ?? 0;
-                const bTime = (b.createdAt as Date | undefined)?.getTime() ?? 0;
-                return bTime - aTime;
-              });
+          };
 
-              return sorted
-                .slice(0, limitValue)
-                .map(row => mapSelection(selection, row));
-            },
+          return {
+            limit: async (limitValue: number) => toSelectedRows(rows, limitValue),
+            orderBy: () => ({
+              limit: async (limitValue: number) => {
+                const sorted = [...rows].sort((a, b) => {
+                  const aTime = (a.createdAt as Date | undefined)?.getTime() ?? 0;
+                  const bTime = (b.createdAt as Date | undefined)?.getTime() ?? 0;
+                  return bTime - aTime;
+                });
+
+                return toSelectedRows(sorted, limitValue);
+              },
+            }),
+          };
+        },
+        innerJoin: () => ({
+          where: () => ({
+            limit: async () => [],
           }),
         }),
       };
@@ -274,6 +298,7 @@ describe('auth security guardrails', () => {
 
     testHooks.sendLoginCodeEmailMock.mockClear();
     testHooks.sendPasswordResetEmailMock.mockClear();
+    testHooks.loginCodeConsumeHashRef.current = null;
 
     const passwordHash = await hashPassword('Correct-Password-123');
     dbState = {
@@ -322,7 +347,38 @@ describe('auth security guardrails', () => {
     });
   });
 
-  it('revokes older login codes when issuing a new code', async () => {
+  it('clears the login-password rate-limit scope after a successful login', async () => {
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const response = await loginWithPassword(config, {
+        email: 'security@example.com',
+        password: 'wrong-password',
+      });
+
+      expect(response.status).toBe(401);
+    }
+
+    const success = await loginWithPassword(config, {
+      email: 'security@example.com',
+      password: 'Correct-Password-123',
+    });
+
+    expect(success.status).toBe(200);
+    expect(dbState.authRateLimits).toHaveLength(0);
+
+    const retry = await loginWithPassword(config, {
+      email: 'security@example.com',
+      password: 'wrong-password',
+    });
+
+    expect(retry.status).toBe(401);
+    expect(dbState.authRateLimits[0]).toMatchObject({
+      scope: 'login-password',
+      subjectKey: 'security@example.com',
+      attemptCount: 1,
+    });
+  });
+
+  it('rejects an older login code after a newer code is issued', async () => {
     const first = await sendLoginCode(config, { email: 'security@example.com' });
     const second = await sendLoginCode(config, { email: 'security@example.com' });
 
@@ -334,6 +390,25 @@ describe('auth security guardrails', () => {
     expect(activeCodes).toHaveLength(1);
     expect(dbState.loginCodes[0].usedAt).not.toBeNull();
     expect(activeCodes[0]?.id).toBe(dbState.loginCodes[1]?.id);
+
+    const firstCode = String(testHooks.sendLoginCodeEmailMock.mock.calls[0]?.[2] ?? '');
+    const secondCode = String(testHooks.sendLoginCodeEmailMock.mock.calls[1]?.[2] ?? '');
+    const firstCodeHash = await hashSessionToken(`${dbState.users[0].id}:${firstCode}`);
+    const secondCodeHash = await hashSessionToken(`${dbState.users[0].id}:${secondCode}`);
+
+    testHooks.loginCodeConsumeHashRef.current = firstCodeHash;
+    const staleAttempt = await verifyLoginCode(config, {
+      email: 'security@example.com',
+      code: firstCode,
+    });
+    expect(staleAttempt.status).toBe(401);
+
+    testHooks.loginCodeConsumeHashRef.current = secondCodeHash;
+    const latestAttempt = await verifyLoginCode(config, {
+      email: 'security@example.com',
+      code: secondCode,
+    });
+    expect(latestAttempt.status).toBe(200);
   });
 
   it('revokes older password reset tokens when issuing a new token', async () => {
@@ -372,6 +447,31 @@ describe('auth security guardrails', () => {
     expect(dbState.authRateLimits[0]).toMatchObject({
       scope: 'verify-login-code',
       subjectKey: 'security@example.com',
+      attemptCount: 5,
+    });
+  });
+
+  it('blocks repeated invalid reset token attempts', async () => {
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      const response = await resetPassword(config, {
+        token: 'invalid-reset-token',
+        password: 'New-Password-123',
+      });
+
+      expect(response.status).toBe(400);
+    }
+
+    const blocked = await resetPassword(config, {
+      token: 'invalid-reset-token',
+      password: 'New-Password-123',
+    });
+
+    expect(blocked.status).toBe(429);
+    expect(blocked.body).toMatchObject({
+      retryAfterSeconds: expect.any(Number),
+    });
+    expect(dbState.authRateLimits[0]).toMatchObject({
+      scope: 'reset-password',
       attemptCount: 5,
     });
   });
