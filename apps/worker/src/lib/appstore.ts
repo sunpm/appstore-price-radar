@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import type { AppStorePrice } from './appstore.types';
+import type { AppStoreLookupResult } from './appstore.types';
 
 const lookupResponseSchema = z.object({
   resultCount: z.number(),
@@ -36,7 +36,7 @@ export const extractAppId = (value: string): string | null => {
 export const fetchAppStorePrice = async (
   appId: string,
   country: string,
-): Promise<AppStorePrice | null> => {
+): Promise<AppStoreLookupResult | null> => {
   const countryCode = country.toUpperCase();
   const url = new URL('https://itunes.apple.com/lookup');
   url.searchParams.set('id', appId);
@@ -59,23 +59,48 @@ export const fetchAppStorePrice = async (
     throw new Error('App Store response schema validation failed');
   }
 
-  if (parsed.data.resultCount === 0 || parsed.data.results.length === 0) {
+  if (parsed.data.resultCount === 0) {
     return null;
   }
 
   const item = parsed.data.results[0];
+
+  if (!item) {
+    throw new Error('App Store lookup returned inconsistent results');
+  }
+
   const resolvedAppId = item.trackId ? String(item.trackId) : appId;
+  const appName = item.trackName ?? `App ${resolvedAppId}`;
+  const currency = item.currency ?? 'USD';
+  const storeUrl =
+    item.trackViewUrl ??
+    `https://apps.apple.com/${countryCode.toLowerCase()}/app/id${resolvedAppId}`;
+  const iconUrl = item.artworkUrl100 ?? null;
+  const formattedPrice = item.formattedPrice ?? null;
+
+  if (typeof item.price !== 'number' || Number.isNaN(item.price)) {
+    return {
+      kind: 'invalid-price',
+      reason: 'missing-price',
+      appId: resolvedAppId,
+      country: countryCode,
+      appName,
+      currency,
+      storeUrl,
+      iconUrl,
+      formattedPrice,
+    };
+  }
 
   return {
+    kind: 'found',
     appId: resolvedAppId,
     country: countryCode,
-    appName: item.trackName ?? `App ${resolvedAppId}`,
-    price: typeof item.price === 'number' ? item.price : 0,
-    currency: item.currency ?? 'USD',
-    storeUrl:
-      item.trackViewUrl ??
-      `https://apps.apple.com/${countryCode.toLowerCase()}/app/id${resolvedAppId}`,
-    iconUrl: item.artworkUrl100 ?? null,
-    formattedPrice: item.formattedPrice ?? null,
+    appName,
+    price: item.price,
+    currency,
+    storeUrl,
+    iconUrl,
+    formattedPrice,
   };
 };
