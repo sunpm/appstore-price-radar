@@ -1,4 +1,4 @@
-import type { AppPriceHistory, AppSnapshot } from '../db/schema';
+import type { AppPriceChangeEvent, AppSnapshot } from '../db/schema';
 
 export type PricesHttpStatus = 200 | 400;
 
@@ -15,7 +15,7 @@ export type GetPriceHistoryPayload = {
 
 export type PriceHistorySuccessResponse = {
   snapshot: AppSnapshot | null;
-  history: AppPriceHistory[];
+  history: AppPriceChangeEvent[];
 };
 
 export type PriceHistoryErrorResponse = {

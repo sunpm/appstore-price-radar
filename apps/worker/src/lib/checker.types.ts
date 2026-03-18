@@ -1,5 +1,7 @@
 export type RefreshOptions = {
   notifyDrops?: boolean;
+  source?: string;
+  requestId?: string;
 };
 
 export type RefreshResult = {
@@ -9,6 +11,7 @@ export type RefreshResult = {
   oldPrice?: number;
   newPrice?: number;
   currency?: string;
+  priceChanged: boolean;
   priceDropped: boolean;
   alertsSent: number;
 };

@@ -178,27 +178,39 @@ export const appSnapshots = pgTable(
   }),
 );
 
-export const appPriceHistory = pgTable(
-  'app_price_history',
+export const appPriceChangeEvents = pgTable(
+  'app_price_change_events',
   {
     id: serial('id').primaryKey(),
     appId: varchar('app_id', { length: 32 }).notNull(),
     country: char('country', { length: 2 }).notNull(),
-    price: numeric('price', {
+    currency: char('currency', { length: 3 }).notNull(),
+    oldAmount: numeric('old_amount', {
       precision: 10,
       scale: 2,
       mode: 'number',
     }).notNull(),
-    currency: char('currency', { length: 3 }).notNull(),
-    fetchedAt: timestamp('fetched_at', { withTimezone: true })
+    newAmount: numeric('new_amount', {
+      precision: 10,
+      scale: 2,
+      mode: 'number',
+    }).notNull(),
+    changedAt: timestamp('changed_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
+    source: varchar('source', { length: 32 }).notNull().default('scheduled'),
+    requestId: varchar('request_id', { length: 96 }).notNull(),
   },
   (table) => ({
-    appTimeIdx: index('app_price_history_app_time_idx').on(
+    appChangedIdx: index('app_price_change_events_app_changed_idx').on(
       table.appId,
       table.country,
-      table.fetchedAt,
+      table.changedAt,
+    ),
+    requestIdUniq: uniqueIndex('app_price_change_events_app_request_uniq').on(
+      table.appId,
+      table.country,
+      table.requestId,
     ),
   }),
 );
@@ -248,5 +260,5 @@ export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 export type LoginCode = typeof loginCodes.$inferSelect;
 export type Subscription = typeof subscriptions.$inferSelect;
 export type AppSnapshot = typeof appSnapshots.$inferSelect;
-export type AppPriceHistory = typeof appPriceHistory.$inferSelect;
+export type AppPriceChangeEvent = typeof appPriceChangeEvents.$inferSelect;
 export type AppDropEvent = typeof appDropEvents.$inferSelect;

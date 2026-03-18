@@ -1,10 +1,10 @@
-import { and, desc, eq, gt, gte, isNull, or } from 'drizzle-orm';
+import { and, eq, gt, gte, isNull, or } from 'drizzle-orm';
 
 import type { EnvConfig } from '../env';
 import { getDb } from '../db/client';
 import {
   appDropEvents,
-  appPriceHistory,
+  appPriceChangeEvents,
   appSnapshots,
   subscriptions,
   users,
@@ -33,17 +33,23 @@ export const refreshSingleApp = async (
 
   const [previous] = await db
     .select({
-      price: appPriceHistory.price,
+      price: appSnapshots.lastPrice,
     })
-    .from(appPriceHistory)
+    .from(appSnapshots)
     .where(
       and(
-        eq(appPriceHistory.appId, data.appId),
-        eq(appPriceHistory.country, data.country),
+        eq(appSnapshots.appId, data.appId),
+        eq(appSnapshots.country, data.country),
       ),
     )
-    .orderBy(desc(appPriceHistory.fetchedAt))
     .limit(1);
+
+  const oldPrice = previous?.price;
+  const priceChanged = oldPrice !== undefined && oldPrice !== data.price;
+  const source = options.source ?? (notifyDrops ? 'scheduled' : 'manual');
+  const requestId =
+    options.requestId ??
+    `${source}:${data.appId}:${data.country}:${now.getTime()}`;
 
   await db
     .insert(appSnapshots)
@@ -69,16 +75,29 @@ export const refreshSingleApp = async (
       },
     });
 
-  await db.insert(appPriceHistory).values({
-    appId: data.appId,
-    country: data.country,
-    price: data.price,
-    currency: data.currency,
-    fetchedAt: now,
-  });
-
-  const oldPrice = previous?.price;
   const priceDropped = oldPrice !== undefined && oldPrice > data.price;
+
+  if (priceChanged && oldPrice !== undefined) {
+    await db
+      .insert(appPriceChangeEvents)
+      .values({
+        appId: data.appId,
+        country: data.country,
+        currency: data.currency,
+        oldAmount: oldPrice,
+        newAmount: data.price,
+        changedAt: now,
+        source,
+        requestId,
+      })
+      .onConflictDoNothing({
+        target: [
+          appPriceChangeEvents.appId,
+          appPriceChangeEvents.country,
+          appPriceChangeEvents.requestId,
+        ],
+      });
+  }
 
   let alertsSent = 0;
 
@@ -157,6 +176,7 @@ export const refreshSingleApp = async (
     oldPrice,
     newPrice: data.price,
     currency: data.currency,
+    priceChanged,
     priceDropped,
     alertsSent,
   };
@@ -194,10 +214,12 @@ export const runPriceCheck = async (env: EnvConfig): Promise<CheckReport> => {
     errors: [],
   };
 
-  for (const pair of watchedPairs) {
+  for (const [index, pair] of watchedPairs.entries()) {
     try {
       const result = await refreshSingleApp(env, pair.appId, pair.country, {
         notifyDrops: true,
+        source: 'scheduled',
+        requestId: `scheduled:${startedAt.getTime()}:${index}:${pair.appId}:${pair.country}`,
       });
 
       if (!result) {

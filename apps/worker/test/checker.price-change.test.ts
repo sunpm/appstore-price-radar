@@ -125,7 +125,9 @@ const createDbMock = (state: DbState) => {
                   Object.fromEntries(
                     Object.keys(selection).map((key) => [
                       key,
-                      (state.snapshot as Record<string, unknown>)[key],
+                      key === 'price'
+                        ? state.snapshot?.lastPrice
+                        : (state.snapshot as Record<string, unknown>)[key],
                     ]),
                   ),
                 ];
@@ -237,6 +239,17 @@ describe('refreshSingleApp change-event persistence', () => {
   });
 
   it('does not insert history event when observed price does not change', async () => {
+    dbState.snapshot = {
+      appId: '123456789',
+      country: 'US',
+      appName: 'Radar Pro',
+      storeUrl: 'https://apps.apple.com/us/app/id123456789',
+      iconUrl: null,
+      currency: 'USD',
+      lastPrice: 9.99,
+      updatedAt: new Date('2026-03-17T00:00:00.000Z'),
+    };
+
     dbState.events.push({
       id: 1,
       appId: '123456789',
@@ -270,6 +283,17 @@ describe('refreshSingleApp change-event persistence', () => {
   });
 
   it('inserts one provenance-rich event when observed price changes', async () => {
+    dbState.snapshot = {
+      appId: '123456789',
+      country: 'US',
+      appName: 'Radar Pro',
+      storeUrl: 'https://apps.apple.com/us/app/id123456789',
+      iconUrl: null,
+      currency: 'USD',
+      lastPrice: 9.99,
+      updatedAt: new Date('2026-03-16T00:00:00.000Z'),
+    };
+
     dbState.events.push({
       id: 1,
       appId: '123456789',

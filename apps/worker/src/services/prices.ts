@@ -3,7 +3,7 @@ import { and, desc, eq } from 'drizzle-orm';
 import { PRICE_HISTORY_DEFAULT_LIMIT } from '../constants/routes';
 import type { EnvConfig } from '../env';
 import { getDb } from '../db/client';
-import { appPriceHistory, appSnapshots } from '../db/schema';
+import { appPriceChangeEvents, appSnapshots } from '../db/schema';
 import { extractAppId } from '../lib/appstore';
 import type {
   GetPriceHistoryPayload,
@@ -43,21 +43,24 @@ export const getPriceHistory = async (
 
   const historyRaw = await db
     .select({
-      id: appPriceHistory.id,
-      appId: appPriceHistory.appId,
-      country: appPriceHistory.country,
-      price: appPriceHistory.price,
-      currency: appPriceHistory.currency,
-      fetchedAt: appPriceHistory.fetchedAt,
+      id: appPriceChangeEvents.id,
+      appId: appPriceChangeEvents.appId,
+      country: appPriceChangeEvents.country,
+      currency: appPriceChangeEvents.currency,
+      oldAmount: appPriceChangeEvents.oldAmount,
+      newAmount: appPriceChangeEvents.newAmount,
+      changedAt: appPriceChangeEvents.changedAt,
+      source: appPriceChangeEvents.source,
+      requestId: appPriceChangeEvents.requestId,
     })
-    .from(appPriceHistory)
+    .from(appPriceChangeEvents)
     .where(
       and(
-        eq(appPriceHistory.appId, appId),
-        eq(appPriceHistory.country, countryCode),
+        eq(appPriceChangeEvents.appId, appId),
+        eq(appPriceChangeEvents.country, countryCode),
       ),
     )
-    .orderBy(desc(appPriceHistory.fetchedAt))
+    .orderBy(desc(appPriceChangeEvents.changedAt))
     .limit(payload.limit ?? PRICE_HISTORY_DEFAULT_LIMIT);
 
   return buildServiceResponse(200, {
