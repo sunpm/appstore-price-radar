@@ -7,7 +7,7 @@ DATABASE_URL=
 RESEND_API_KEY=
 # Sender email under a verified Resend domain
 RESEND_FROM_EMAIL=
-# Secret for POST /api/jobs/check authentication (recommended)
+# Secret for POST /api/jobs/check authentication (required in production for POST /api/jobs/check)
 CRON_SECRET=
 # Auth session ttl in days (1-90, default 30)
 SESSION_TTL_DAYS=30
@@ -27,7 +27,7 @@ PRICE_CHECK_RETRY_MAX_SECONDS=90
 PRICE_CHECK_RETRY_JITTER_SECONDS=5
 # Max retry attempts per app when status is 429/5xx (0-8, default 2)
 PRICE_CHECK_MAX_RETRIES=2
-# Frontend URL (used in reset-password links)
+# Frontend URL used in reset-password links and other worker-generated links
 APP_BASE_URL=http://localhost:5173
-# CORS allow origin for API
+# CORS allow origin for the web app calling this API
 CORS_ORIGIN=http://localhost:5173
