@@ -1,3 +1,19 @@
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
+status: executing
+stopped_at: Completed 03-03-PLAN.md
+last_updated: "2026-03-18T10:09:12.846Z"
+last_activity: 2026-03-18 — 完成 03-03，手动巡检入口改为默认关闭并增加严格 CRON_SECRET 门禁与 route/smoke 回归
+progress:
+  total_phases: 5
+  completed_phases: 2
+  total_plans: 10
+  completed_plans: 9
+  percent: 90
+---
+
 # Project State
 
 ## Project Reference
@@ -10,18 +26,18 @@ See: .planning/PROJECT.md (updated 2026-03-18)
 ## Current Position
 
 Phase: 3 of 5 (调度与认证安全)
-Plan: 2 of 4 in current phase
+Plan: 3 of 4 in current phase
 Status: In progress
-Last activity: 2026-03-18 — 完成 03-02，落地认证统一限流、失败计数与旧凭证淘汰策略，并补齐安全回归测试
+Last activity: 2026-03-18 — 完成 03-03，手动巡检入口改为默认关闭并增加严格 CRON_SECRET 门禁与 route/smoke 回归
 
-Progress: [█████░░░░░] 50%
+Progress: [█████████░] 90%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
-- Average duration: 4.9 min
-- Total execution time: 0.65 hours
+- Total plans completed: 9
+- Average duration: 5.0 min
+- Total execution time: 0.75 hours
 
 **By Phase:**
 
@@ -29,11 +45,12 @@ Progress: [█████░░░░░] 50%
 |-------|-------|-------|----------|
 | 1 | 3 | 4 min | 1.3 min |
 | 2 | 3 | 11 min | 3.7 min |
-| 3 | 2 | 24 min | 12.0 min |
+| 3 | 3 | 30 min | 10.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-02 (16 min), 03-01 (8 min), 02-03 (4 min), 02-02 (3 min), 02-01 (4 min)
-- Trend: Stable（Phase 3 安全与调度任务复杂度更高，耗时增长符合预期）
+- Last 5 plans: 03-03 (6 min), 03-02 (16 min), 03-01 (8 min), 02-03 (4 min), 02-02 (3 min)
+- Trend: Improving（在保持高风险门禁与测试覆盖的前提下，执行节奏更平稳）
+| Phase 03 P03 | 6 min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -58,6 +75,8 @@ Recent decisions affecting current work:
 - [2026-03-18]: smoke in-memory DB mock 需要同步覆盖 lease/run 表交互，避免调度能力新增后测试资产失真
 - [2026-03-18]: 认证入口统一采用 `auth_rate_limits(scope + subjectKey)` 作为数据库限流状态，避免 Worker 无状态带来的限流漂移
 - [2026-03-18]: 新签发 login code / reset token 前必须显式作废旧的未使用凭证，保证同类凭证单活
+- [Phase 03]: 手动巡检入口默认关闭（MANUAL_PRICE_CHECKS_ENABLED=false），避免 secret 漏配导致公网裸露 — 将高副作用入口从 opt-in secret 校验改为显式开关 + deny-by-default，可在配置缺失时直接不可达
+- [Phase 03]: 当手动巡检显式开启但缺少 CRON_SECRET 时返回 503 并给出明确错误文本 — 通过结构化错误暴露配置问题，避免 silent fallback 到不安全默认行为
 
 ### Pending Todos
 
@@ -65,11 +84,11 @@ None yet.
 
 ### Blockers/Concerns
 
-- Phase 3 剩余风险：手动巡检 route 生产门禁（03-03）与调度/认证高风险边界联测（03-04）仍待落地
+- Phase 3 剩余风险：调度/认证高风险边界联测（03-04）仍待落地
 - Phase 4 前置风险：前后端 DTO 与鉴权错误处理仍未统一，后续需要避免接口字段继续漂移
 
 ## Session Continuity
 
-Last session: 2026-03-18 17:56
-Stopped at: 完成 03-02 execute + verification，下一步进入 03-03（`/api/jobs/check` 生产门禁强化）
+Last session: 2026-03-18T10:09:12.843Z
+Stopped at: Completed 03-03-PLAN.md
 Resume file: None

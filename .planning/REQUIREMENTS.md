@@ -16,14 +16,14 @@
 - [ ] **PRICE-01**: 系统只会在拿到有效 App Store 价格时更新快照，不会把缺失价格当成 `0`
 - [ ] **PRICE-02**: 单个 `(appId, country)` 刷新过程中，快照、价格变化事件、降价事件和通知状态保持一致，不留下部分写入
 - [ ] **PRICE-03**: 同一时间最多只有一个巡检任务处理同一批价格检查，避免重复事件和重复通知
-- [ ] **PRICE-04**: 运维者可以看到一轮巡检的成功、跳过和失败统计，以及明确的失败原因
+- [x] **PRICE-04**: 运维者可以看到一轮巡检的成功、跳过和失败统计，以及明确的失败原因
 - [ ] **PRICE-05**: 订阅创建后的即时刷新与定时巡检共用一致的价格校验规则，并能区分是否允许发送提醒
 
 ### Auth & Task Security
 
 - [ ] **AUTH-01**: 用户的密码登录、验证码发送、验证码验证和密码重置流程具备失败次数或频率限制
 - [ ] **AUTH-02**: 用户同一时刻只保留符合策略的有效登录码或重置令牌，新发放会显式废弃旧凭证
-- [ ] **AUTH-03**: 生产环境中的手动巡检入口必须强制鉴权，缺失 `CRON_SECRET` 时不会对公网开放
+- [x] **AUTH-03**: 生产环境中的手动巡检入口必须强制鉴权，缺失 `CRON_SECRET` 时不会对公网开放
 - [ ] **AUTH-04**: 前端可以在会话失效或过期时稳定识别状态并引导用户重新登录，避免页面先出错后清理
 
 ### API & Frontend Stability
@@ -69,10 +69,10 @@
 | PRICE-02 | Phase 2 | Pending |
 | PRICE-05 | Phase 2 | Pending |
 | PRICE-03 | Phase 3 | Pending |
-| PRICE-04 | Phase 3 | Pending |
+| PRICE-04 | Phase 3 | Complete |
 | AUTH-01 | Phase 3 | Pending |
 | AUTH-02 | Phase 3 | Pending |
-| AUTH-03 | Phase 3 | Pending |
+| AUTH-03 | Phase 3 | Complete |
 | AUTH-04 | Phase 4 | Pending |
 | API-01 | Phase 4 | Pending |
 | API-02 | Phase 4 | Pending |
