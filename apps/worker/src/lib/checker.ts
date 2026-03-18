@@ -16,12 +16,32 @@ import { fetchAppStorePrice } from './appstore';
 import { countLegacyPasswordHashUsers } from '../services/auth';
 import type {
   CheckReport,
+  RefreshExecutionContext,
   RefreshOptions,
   RefreshResult,
   RefreshSingleAppFn,
   RunPriceCheckOptions,
   SleepFn,
 } from './checker.types';
+
+export const buildRefreshOptions = ({
+  trigger,
+  requestId,
+}: RefreshExecutionContext): RefreshOptions => {
+  if (trigger === 'subscription-create') {
+    return {
+      notifyDrops: false,
+      source: 'manual',
+      requestId,
+    };
+  }
+
+  return {
+    notifyDrops: true,
+    source: 'scheduled',
+    requestId,
+  };
+};
 
 export const refreshSingleApp = async (
   env: EnvConfig,
@@ -254,11 +274,14 @@ const refreshWithRetry = async (
 
   while (true) {
     try {
-      return await runOptions.refreshSingleApp(appId, country, {
-        notifyDrops: true,
-        source: 'scheduled',
-        requestId,
-      });
+      return await runOptions.refreshSingleApp(
+        appId,
+        country,
+        buildRefreshOptions({
+          trigger: 'scheduled',
+          requestId,
+        }),
+      );
     } catch (error) {
       if (!isRetryableError(error) || attempt >= maxRetries) {
         throw error;

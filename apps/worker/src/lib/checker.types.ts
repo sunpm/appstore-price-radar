@@ -4,6 +4,13 @@ export type RefreshOptions = {
   requestId?: string;
 };
 
+export type RefreshTrigger = 'subscription-create' | 'scheduled';
+
+export type RefreshExecutionContext = {
+  trigger: RefreshTrigger;
+  requestId: string;
+};
+
 export type SleepFn = (ms: number) => Promise<void>;
 export type RandomFn = () => number;
 
