@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: In progress
-stopped_at: Completed 04-03-PLAN.md
-last_updated: "2026-03-18T12:57:44Z"
-last_activity: 2026-03-18 — 完成 04-03，历史查询已支持窗口分页、缓存复用与旧请求取消
+stopped_at: Completed 04-04-PLAN.md
+last_updated: "2026-03-18T13:25:15Z"
+last_activity: 2026-03-18 — 完成 04-04，详情页 metadata 已从采集到展示全链路打通
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 17
-  completed_plans: 13
-  percent: 76
+  completed_plans: 14
+  percent: 82
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-18)
 
 **Core value:** 用户订阅的 App 必须能被持续、准确、可解释地监控，并在真实降价时收到可信且不重复的提醒。
-**Current focus:** Phase 4 - 契约与前端稳态（准备执行 04-04 详情页 metadata 与分层展示）
+**Current focus:** Phase 5 - Feed 性能与回归保障（准备执行 05-01 公开降价流查询优化）
 
 ## Current Position
 
 Phase: 4 of 5 (契约与前端稳态)
-Plan: 3 of 4 in current phase
-Status: In progress
-Last activity: 2026-03-18 — 完成 04-03，历史查询已支持窗口分页、缓存复用与旧请求取消
+Plan: 4 of 4 in current phase
+Status: Completed
+Last activity: 2026-03-18 — 完成 04-04，详情页 metadata 已从采集到展示全链路打通
 
-Progress: [████████░░] 76%
+Progress: [████████░░] 82%
 
 ## Performance Metrics
 
@@ -92,10 +92,10 @@ None yet.
 ### Blockers/Concerns
 
 - 当前无新增阻塞项
-- Phase 4 后续风险转移到 detail metadata 的采集、落库与 DTO 映射，执行 04-04 时需继续保持 shared contracts 与前端分层组件同步演进
+- Phase 5 后续风险集中在公开 feed 查询性能与回归测试资产扩张，需要继续保持 shared contracts 与测试 doubles 同步演进
 
 ## Session Continuity
 
-Last session: 2026-03-18T12:57:44Z
-Stopped at: Completed 04-03-PLAN.md
+Last session: 2026-03-18T13:25:15Z
+Stopped at: Completed 04-04-PLAN.md
 Resume file: None
