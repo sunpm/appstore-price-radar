@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 import MainLayout from './layouts/MainLayout.vue'
-import { getStoredToken } from './lib/auth-session'
+import { hasStoredAuthSession } from './lib/auth-session'
 import AppDetailView from './views/app/AppDetailView.vue'
 import AuthView from './views/auth/AuthView.vue'
 import HomeView from './views/home/HomeView.vue'
@@ -56,7 +56,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to) => {
-  if (to.meta.requiresAuth && !getStoredToken()) {
+  if (to.meta.requiresAuth && !hasStoredAuthSession()) {
     return { path: '/auth' }
   }
 

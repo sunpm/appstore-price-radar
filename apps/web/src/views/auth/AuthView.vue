@@ -1,12 +1,14 @@
 <script setup lang="ts">
 // @env browser
 
-import type { AuthMode, AuthResponse, AuthUser, AuthViewMode, LoginMethod, SendCodeResponse } from './types'
+import type { AuthMode, AuthResponse, AuthViewMode, LoginMethod, SendCodeResponse } from './types'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { clearStoredToken, getStoredToken, setStoredToken } from '../../lib/auth-session'
+import { useAuthedApi } from '../../composables/useAuthedApi'
+import { useAuthSession } from '../../composables/useAuthSession'
+import { apiRequest } from '../../lib/api-client'
 import { formatDateTime } from '../../lib/format'
-import { buildApiUrl, parseApiErrorText } from '../../lib/http'
+import { buildApiUrl } from '../../lib/http'
 import { useToast } from '../../lib/toast'
 import AuthCredentialForms from './components/AuthCredentialForms.vue'
 import AuthHeaderBlock from './components/AuthHeaderBlock.vue'
@@ -64,12 +66,11 @@ const resetForm = reactive({
   newPassword: '',
 })
 
-const token = ref(getStoredToken())
-const currentUser = ref<AuthUser | null>(null)
-const sessionExpiresAt = ref('')
+const { token, currentUser, sessionExpiresAt, applySession, clearSession, restoreSession } = useAuthSession()
+const { request: authedRequest } = useAuthedApi()
 const restoringSession = ref(true)
 const toast = useToast()
-const { successText, errorText, resetMessages } = useAuthFeedback(toast)
+const { successText, errorText, resetMessages, resolveErrorMessage } = useAuthFeedback(toast)
 
 const authLoading = ref(false)
 const codeSending = ref(false)
@@ -110,54 +111,9 @@ function toTime(value: string): string {
   return formatDateTime(value)
 }
 
-function clearSession(): void {
-  token.value = ''
-  currentUser.value = null
-  sessionExpiresAt.value = ''
-  clearStoredToken()
-}
-
-function applySession(next: AuthResponse): void {
-  token.value = next.token
-  currentUser.value = next.user
-  sessionExpiresAt.value = next.expiresAt
-  setStoredToken(next.token)
+function applyAuthSession(next: AuthResponse): void {
+  applySession(next)
   setPrimaryEmail(next.user.email)
-}
-
-async function apiRequest<T>(path: string, init: RequestInit = {}, options: { auth?: boolean } = {}): Promise<T> {
-  const headers = new Headers(init.headers ?? {})
-
-  if (init.body && !headers.has('content-type')) {
-    headers.set('content-type', 'application/json')
-  }
-
-  if (options.auth) {
-    if (!token.value) {
-      throw new Error('Please login first')
-    }
-
-    headers.set('authorization', `Bearer ${token.value}`)
-  }
-
-  const res = await fetch(buildApiUrl(path), {
-    ...init,
-    headers,
-  })
-
-  if (!res.ok) {
-    if (options.auth && res.status === 401) {
-      clearSession()
-    }
-
-    throw new Error(await parseApiErrorText(res))
-  }
-
-  if (res.status === 204) {
-    return undefined as T
-  }
-
-  return (await res.json()) as T
 }
 
 async function loadCurrentUser(): Promise<void> {
@@ -166,17 +122,13 @@ async function loadCurrentUser(): Promise<void> {
     return
   }
 
-  try {
-    const me = await apiRequest<{ user: AuthUser }>('/api/auth/me', {}, { auth: true })
-    currentUser.value = me.user
-    setPrimaryEmail(me.user.email)
+  await restoreSession()
+
+  if (currentUser.value) {
+    setPrimaryEmail(currentUser.value.email)
   }
-  catch {
-    clearSession()
-  }
-  finally {
-    restoringSession.value = false
-  }
+
+  restoringSession.value = false
 }
 
 async function onAuthenticated(): Promise<void> {
@@ -211,14 +163,14 @@ async function submitAuth(): Promise<void> {
       body: JSON.stringify({ email, password }),
     })
 
-    applySession(data)
+    applyAuthSession(data)
     authForm.password = ''
     successText.value = props.redirectOnSuccess ? '登录成功，正在进入工作台。' : '登录成功。'
 
     await onAuthenticated()
   }
   catch (error) {
-    errorText.value = error instanceof Error ? error.message : '登录失败，请稍后重试。'
+    errorText.value = resolveErrorMessage(error, '登录失败，请稍后重试。')
   }
   finally {
     authLoading.value = false
@@ -255,7 +207,7 @@ async function submitRegister(): Promise<void> {
       body: JSON.stringify({ email, password, code }),
     })
 
-    applySession(data)
+    applyAuthSession(data)
     authForm.password = ''
     registerCode.value = ''
     successText.value = props.redirectOnSuccess ? '账号创建成功，正在进入工作台。' : '账号创建成功。'
@@ -263,7 +215,7 @@ async function submitRegister(): Promise<void> {
     await onAuthenticated()
   }
   catch (error) {
-    errorText.value = error instanceof Error ? error.message : '账号创建失败，请稍后重试。'
+    errorText.value = resolveErrorMessage(error, '账号创建失败，请稍后重试。')
   }
   finally {
     authLoading.value = false
@@ -318,7 +270,7 @@ async function requestLoginCode(emailInput: string, sceneLabel: string): Promise
     successText.value = `${sceneLabel}验证码已发送，请前往邮箱查收。${cooldownSeconds > 0 ? ` ${cooldownSeconds} 秒后可重新发送。` : ''}`
   }
   catch (error) {
-    errorText.value = error instanceof Error ? error.message : '验证码发送失败，请稍后重试。'
+    errorText.value = resolveErrorMessage(error, '验证码发送失败，请稍后重试。')
   }
   finally {
     codeSending.value = false
@@ -359,14 +311,14 @@ async function verifyLoginCode(): Promise<void> {
       body: JSON.stringify({ email, code }),
     })
 
-    applySession(data)
+    applyAuthSession(data)
     codeForm.code = ''
     successText.value = props.redirectOnSuccess ? '验证成功，正在进入工作台。' : '验证成功，已完成登录。'
 
     await onAuthenticated()
   }
   catch (error) {
-    errorText.value = error instanceof Error ? error.message : '验证码登录失败，请稍后重试。'
+    errorText.value = resolveErrorMessage(error, '验证码登录失败，请稍后重试。')
   }
   finally {
     codeVerifying.value = false
@@ -395,7 +347,7 @@ async function sendResetEmail(): Promise<void> {
     successText.value = '若邮箱已注册，重置邮件已发送，请注意查收。'
   }
   catch (error) {
-    errorText.value = error instanceof Error ? error.message : '重置邮件发送失败，请稍后重试。'
+    errorText.value = resolveErrorMessage(error, '重置邮件发送失败，请稍后重试。')
   }
   finally {
     resetSending.value = false
@@ -449,7 +401,7 @@ async function resetPassword(): Promise<void> {
     successText.value = '密码已更新，请使用新密码重新登录。'
   }
   catch (error) {
-    errorText.value = error instanceof Error ? error.message : '密码重置失败，请稍后重试。'
+    errorText.value = resolveErrorMessage(error, '密码重置失败，请稍后重试。')
   }
   finally {
     resetSubmitting.value = false
@@ -460,13 +412,7 @@ async function logout(): Promise<void> {
   resetMessages()
 
   try {
-    await apiRequest<{ ok: boolean }>(
-      '/api/auth/logout',
-      {
-        method: 'POST',
-      },
-      { auth: true },
-    )
+    await authedRequest<{ ok: boolean }>('/api/auth/logout', { method: 'POST' })
   }
   catch {
     // Ignore server logout errors and clear local session anyway.

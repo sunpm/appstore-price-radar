@@ -38,6 +38,7 @@ export async function apiRequest<T>(
   if (!res.ok) {
     if (options.auth && res.status === 401) {
       await options.onUnauthorized?.()
+      throw new Error('Unauthorized')
     }
 
     throw new Error(await parseApiErrorText(res))

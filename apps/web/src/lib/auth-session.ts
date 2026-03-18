@@ -116,6 +116,10 @@ export function getStoredAuthSession(): StoredAuthSession {
   }
 }
 
+export function hasStoredAuthSession(): boolean {
+  return Boolean(getStoredAuthSession().token)
+}
+
 export function setStoredAuthSession(session: StoredAuthSession): void {
   setStoredSessionUser(session.user)
   setStoredSessionExpiresAt(session.expiresAt)
