@@ -4,6 +4,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthedApi } from '../../composables/useAuthedApi'
 import { useAuthSession } from '../../composables/useAuthSession'
+import { usePriceHistory } from '../../composables/usePriceHistory'
 import { COUNTRY_OPTIONS, resolveCountryLabel } from '../../constants/countries'
 import { formatDateTime, formatMoney } from '../../lib/format'
 import { useToast } from '../../lib/toast'
@@ -36,14 +37,24 @@ const form = reactive({
 })
 
 const subscriptions = ref<SubscriptionItem[]>([])
-const selectedHistory = ref<HistoryPayload | null>(null)
 const selectedSubscription = ref<SubscriptionItem | null>(null)
 const selectedAppLabel = ref('')
 const historyTargetPrice = ref('')
+const {
+  history,
+  snapshot,
+  page,
+  summary,
+  loading: loadingHistory,
+  loadingMore,
+  selectedWindow,
+  loadInitial,
+  loadMore,
+  abortActiveRequest,
+} = usePriceHistory({ auth: true })
 
 const loadingList = ref(false)
 const creating = ref(false)
-const loadingHistory = ref(false)
 const updatingHistoryTarget = ref(false)
 
 const successText = ref('')
@@ -80,10 +91,10 @@ function resetMessages(): void {
 
 function resetDashboardState(): void {
   subscriptions.value = []
-  selectedHistory.value = null
   selectedSubscription.value = null
   selectedAppLabel.value = ''
   historyTargetPrice.value = ''
+  abortActiveRequest()
 }
 
 async function handleAuthedError(error: unknown, fallback: string): Promise<void> {
@@ -94,6 +105,19 @@ async function handleAuthedError(error: unknown, fallback: string): Promise<void
     resetDashboardState()
   }
 }
+
+const selectedHistory = computed<HistoryPayload | null>(() => {
+  if (!selectedSubscription.value) {
+    return null
+  }
+
+  return {
+    snapshot: snapshot.value,
+    history: history.value,
+    page: page.value,
+    summary: summary.value,
+  }
+})
 
 function parsePrice(value: unknown): number | null {
   if (value === null || value === undefined || value === '') {
@@ -281,9 +305,9 @@ async function removeSubscription(id: string): Promise<void> {
 
     if (selectedSubscription.value?.id === id) {
       selectedSubscription.value = null
-      selectedHistory.value = null
       selectedAppLabel.value = ''
       historyTargetPrice.value = ''
+      abortActiveRequest()
     }
 
     successText.value = '监控任务已移除。'
@@ -296,24 +320,42 @@ async function removeSubscription(id: string): Promise<void> {
 
 async function loadHistory(item: SubscriptionItem): Promise<void> {
   resetMessages()
-  loadingHistory.value = true
 
   selectedSubscription.value = item
   historyTargetPrice.value = item.targetPrice === null ? '' : String(item.targetPrice)
   selectedAppLabel.value = `${item.appName ?? `App ${item.appId}`} · ${countryLabel(item.country)}`
 
   try {
-    const data = await authedRequest<HistoryPayload>(
-      `/api/prices/${encodeURIComponent(item.appId)}?country=${item.country}&limit=3650`,
-    )
-
-    selectedHistory.value = data
+    await loadInitial(item.appId, item.country, selectedWindow.value)
   }
   catch (error) {
     await handleAuthedError(error, '历史数据加载失败，请稍后重试。')
   }
-  finally {
-    loadingHistory.value = false
+}
+
+async function changeHistoryWindow(window: HistoryPayload['page']['window']): Promise<void> {
+  const selected = selectedSubscription.value
+
+  if (!selected) {
+    return
+  }
+
+  resetMessages()
+
+  try {
+    await loadInitial(selected.appId, selected.country, window)
+  }
+  catch (error) {
+    await handleAuthedError(error, '历史数据加载失败，请稍后重试。')
+  }
+}
+
+async function loadMoreHistory(): Promise<void> {
+  try {
+    await loadMore()
+  }
+  catch (error) {
+    await handleAuthedError(error, '更多历史数据加载失败，请稍后重试。')
   }
 }
 
@@ -457,8 +499,12 @@ onMounted(async (): Promise<void> => {
           :selected-app-label="selectedAppLabel"
           :updating-history-target="updatingHistoryTarget"
           :loading-history="loadingHistory"
+          :loading-more="loadingMore"
+          :selected-window="selectedWindow"
           :target-rule-text="targetRuleText"
           :to-money="toMoney"
+          @change-window="changeHistoryWindow($event)"
+          @load-more="loadMoreHistory"
           @save-target-price="saveHistoryTargetPrice"
         />
       </template>

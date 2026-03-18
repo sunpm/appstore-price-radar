@@ -1,18 +1,36 @@
 <script setup lang="ts">
+import type { PriceHistoryWindow } from '@appstore-price-radar/contracts'
 import type { AppChangeRow, AppDetailPayload, AppTrendPoint } from './types'
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { usePriceHistory } from '../../composables/usePriceHistory'
 import { formatDateTime, formatMoney } from '../../lib/format'
-import { buildApiUrl, parseApiErrorText } from '../../lib/http'
 import { useToast } from '../../lib/toast'
 
 const COUNTRY_CODE_RE = /^[A-Z]{2}$/
+const WINDOW_OPTIONS: Array<{ value: PriceHistoryWindow, label: string }> = [
+  { value: '30d', label: '30 天' },
+  { value: '90d', label: '90 天' },
+  { value: '1y', label: '1 年' },
+  { value: 'all', label: '全部' },
+]
 
 const route = useRoute()
 const toast = useToast()
-const loading = ref(false)
 const errorText = ref('')
-const detail = ref<AppDetailPayload | null>(null)
+const hasLoaded = ref(false)
+
+const {
+  history,
+  snapshot,
+  page,
+  summary,
+  loading,
+  loadingMore,
+  selectedWindow,
+  loadInitial,
+  loadMore,
+} = usePriceHistory()
 
 const appId = computed<string>(() => {
   const raw = route.params.appId
@@ -23,6 +41,19 @@ const country = computed<string>(() => {
   const raw = route.params.country
   const value = typeof raw === 'string' ? raw.trim().toUpperCase() : 'US'
   return COUNTRY_CODE_RE.test(value) ? value : 'US'
+})
+
+const detail = computed<AppDetailPayload | null>(() => {
+  if (!hasLoaded.value) {
+    return null
+  }
+
+  return {
+    snapshot: snapshot.value,
+    history: history.value,
+    page: page.value,
+    summary: summary.value,
+  }
 })
 
 watch(errorText, (next): void => {
@@ -65,33 +96,37 @@ function sourceLabel(source: string): string {
   }
 }
 
-async function loadDetail(): Promise<void> {
+async function loadDetail(window: PriceHistoryWindow = selectedWindow.value): Promise<void> {
   if (!appId.value) {
     errorText.value = '应用 ID 无效。'
-    detail.value = null
+    hasLoaded.value = true
     return
   }
 
-  loading.value = true
   errorText.value = ''
+  hasLoaded.value = false
 
   try {
-    const res = await fetch(
-      buildApiUrl(`/api/prices/${encodeURIComponent(appId.value)}?country=${country.value}&limit=3650`),
-    )
-
-    if (!res.ok) {
-      throw new Error(await parseApiErrorText(res))
-    }
-
-    detail.value = (await res.json()) as AppDetailPayload
+    await loadInitial(appId.value, country.value, window)
   }
   catch (error) {
-    detail.value = null
     errorText.value = error instanceof Error ? error.message : '详情加载失败，请稍后重试。'
   }
   finally {
-    loading.value = false
+    hasLoaded.value = true
+  }
+}
+
+async function changeHistoryWindow(window: PriceHistoryWindow): Promise<void> {
+  await loadDetail(window)
+}
+
+async function loadMoreHistory(): Promise<void> {
+  try {
+    await loadMore()
+  }
+  catch (error) {
+    errorText.value = error instanceof Error ? error.message : '更多历史数据加载失败，请稍后重试。'
   }
 }
 
@@ -113,24 +148,24 @@ const changeRows = computed<AppChangeRow[]>(() => {
 })
 
 const trendPoints = computed<AppTrendPoint[]>(() => {
-  const history = detail.value?.history ?? []
+  const currentHistory = detail.value?.history ?? []
 
-  if (history.length === 0) {
-    const snapshot = detail.value?.snapshot
+  if (currentHistory.length === 0) {
+    const currentSnapshot = detail.value?.snapshot
 
-    if (!snapshot) {
+    if (!currentSnapshot) {
       return []
     }
 
     return [{
       key: 'snapshot-only',
-      time: snapshot.updatedAt,
-      price: snapshot.lastPrice,
-      currency: snapshot.currency,
+      time: currentSnapshot.updatedAt,
+      price: currentSnapshot.lastPrice,
+      currency: currentSnapshot.currency,
     }]
   }
 
-  const first = history[0]
+  const first = currentHistory[0]
   const points: AppTrendPoint[] = [{
     key: `baseline-${first.id}`,
     time: first.changedAt,
@@ -138,7 +173,7 @@ const trendPoints = computed<AppTrendPoint[]>(() => {
     currency: first.currency,
   }]
 
-  for (const item of history) {
+  for (const item of currentHistory) {
     points.push({
       key: `event-${item.id}`,
       time: item.changedAt,
@@ -242,6 +277,8 @@ const appTitle = computed(() => {
 
 const storeUrl = computed(() => detail.value?.snapshot?.storeUrl ?? null)
 const iconUrl = computed(() => detail.value?.snapshot?.iconUrl ?? null)
+const totalChanges = computed(() => detail.value?.summary.totalChanges ?? 0)
+const canLoadMore = computed(() => Boolean(detail.value?.page.hasMore))
 
 watch(
   () => [appId.value, country.value],
@@ -316,7 +353,26 @@ watch(
         v-else-if="detail"
         class="reveal reveal-delay-1 mt-4 rounded-[2rem] border border-zinc-200/70 bg-white/92 p-5 shadow-[0_20px_40px_-15px_rgba(7,13,20,0.1)] md:p-6"
       >
-        <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <p class="text-sm text-zinc-500">
+            最近快照时间：{{ detail.snapshot ? toTime(detail.snapshot.updatedAt) : '暂无快照' }}
+          </p>
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-for="option in WINDOW_OPTIONS"
+              :key="option.value"
+              type="button"
+              class="inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold tracking-[0.08em] transition duration-300"
+              :class="selectedWindow === option.value ? 'border-zinc-900 bg-zinc-900 text-white' : 'border-zinc-300 bg-white text-zinc-600 hover:border-zinc-400 hover:text-zinc-900'"
+              :disabled="loading || loadingMore"
+              @click="changeHistoryWindow(option.value)"
+            >
+              {{ option.label }}
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <article class="rounded-2xl border border-zinc-200/80 bg-zinc-50/80 p-3">
             <p class="text-xs font-medium uppercase tracking-[0.16em] text-zinc-500">
               当前价格
@@ -337,15 +393,20 @@ watch(
           </article>
           <article class="rounded-2xl border border-zinc-200/80 bg-zinc-50/80 p-3">
             <p class="text-xs font-medium uppercase tracking-[0.16em] text-zinc-500">
-              变化事件数
+              累计变化事件
             </p>
-            <strong class="metric-mono mt-2 block text-lg text-zinc-900">{{ detail.history.length }}</strong>
+            <strong class="metric-mono mt-2 block text-lg text-zinc-900">{{ totalChanges }}</strong>
           </article>
         </div>
 
-        <p class="mt-3 text-xs text-zinc-500">
-          最近快照时间：{{ detail.snapshot ? toTime(detail.snapshot.updatedAt) : '暂无快照' }}，仅在价格变化时写入历史事件。
-        </p>
+        <div class="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-500">
+          <p>
+            仅在价格变化时写入历史事件，当前已加载 {{ detail.history.length }} / {{ totalChanges }} 条。
+          </p>
+          <p v-if="detail.summary.latestChangeAt">
+            最近变化：{{ toTime(detail.summary.latestChangeAt) }}
+          </p>
+        </div>
 
         <svg
           class="mt-4 h-44 w-full rounded-2xl border border-zinc-200 bg-[linear-gradient(180deg,rgba(16,185,129,0.08)_0%,rgba(255,255,255,0.9)_60%)]"
@@ -405,6 +466,18 @@ watch(
               </tr>
             </tbody>
           </table>
+        </div>
+
+        <div class="mt-4 flex justify-end">
+          <button
+            v-if="canLoadMore"
+            type="button"
+            class="inline-flex items-center justify-center rounded-xl border border-zinc-900 bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition duration-300 hover:-translate-y-0.5 hover:bg-zinc-800 active:translate-y-[1px] disabled:cursor-not-allowed disabled:opacity-60"
+            :disabled="loadingMore"
+            @click="loadMoreHistory"
+          >
+            {{ loadingMore ? '加载中...' : '加载更多' }}
+          </button>
         </div>
       </section>
     </div>
