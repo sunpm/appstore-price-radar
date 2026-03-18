@@ -191,7 +191,7 @@ describe('runProtectedPriceCheck job lease', () => {
     testHooks.dbRef.current = createDbMock(dbState);
   });
 
-  it('persists a completed run summary and releases lease', async () => {
+  it('persists completed run summaries with succeeded/skipped/failed counts', async () => {
     testHooks.runPriceCheckMock.mockResolvedValueOnce({
       startedAt: '2026-03-18T00:00:00.000Z',
       finishedAt: '2026-03-18T00:05:00.000Z',
@@ -232,7 +232,7 @@ describe('runProtectedPriceCheck job lease', () => {
     });
   });
 
-  it('skips duplicate price-check runs while a lease is active', async () => {
+  it('marks one run as skipped when a second trigger arrives before the lease expires', async () => {
     let resolveRun: ((report: CheckReport) => void) | null = null;
     const runPromise = new Promise<CheckReport>((resolve) => {
       resolveRun = resolve;
@@ -266,5 +266,22 @@ describe('runProtectedPriceCheck job lease', () => {
     const firstResult = await firstRun;
     expect(firstResult.kind).toBe('completed');
     expect(testHooks.runPriceCheckMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('captures failure reasons in errorSummary when refreshSingleApp throws', async () => {
+    testHooks.runPriceCheckMock.mockRejectedValueOnce(
+      new Error('refreshSingleApp failed for 123456789 (US)'),
+    );
+
+    await expect(
+      runProtectedPriceCheck(createEnv(), { trigger: 'scheduled' }),
+    ).rejects.toThrow('refreshSingleApp failed for 123456789 (US)');
+
+    expect(dbState.runs).toHaveLength(1);
+    expect(dbState.runs[0]).toMatchObject({
+      status: 'failed',
+      errorSummary: 'refreshSingleApp failed for 123456789 (US)',
+    });
+    expect(dbState.lease).toBeNull();
   });
 });

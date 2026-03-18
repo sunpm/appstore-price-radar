@@ -130,7 +130,7 @@ describe('POST /api/jobs/check route guard', () => {
     );
   });
 
-  it('returns 202 when duplicate run is skipped', async () => {
+  it('returns a structured skip payload when a price-check lease is already active', async () => {
     testHooks.runProtectedPriceCheckMock.mockResolvedValueOnce({
       kind: 'skipped',
       reason: 'price-check-already-running',
