@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: In progress
-stopped_at: Completed 04-02-PLAN.md
-last_updated: "2026-03-18T12:17:27Z"
-last_activity: 2026-03-18 — 完成 04-02，共享 session / authed api / unauthorized 跳转链路已收敛
+stopped_at: Completed 04-03-PLAN.md
+last_updated: "2026-03-18T12:57:44Z"
+last_activity: 2026-03-18 — 完成 04-03，历史查询已支持窗口分页、缓存复用与旧请求取消
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 17
-  completed_plans: 12
-  percent: 71
+  completed_plans: 13
+  percent: 76
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-18)
 
 **Core value:** 用户订阅的 App 必须能被持续、准确、可解释地监控，并在真实降价时收到可信且不重复的提醒。
-**Current focus:** Phase 4 - 契约与前端稳态（准备执行 04-03 历史分页与缓存）
+**Current focus:** Phase 4 - 契约与前端稳态（准备执行 04-04 详情页 metadata 与分层展示）
 
 ## Current Position
 
 Phase: 4 of 5 (契约与前端稳态)
-Plan: 2 of 4 in current phase
+Plan: 3 of 4 in current phase
 Status: In progress
-Last activity: 2026-03-18 — 完成 04-02，共享 session / authed api / unauthorized 跳转链路已收敛
+Last activity: 2026-03-18 — 完成 04-03，历史查询已支持窗口分页、缓存复用与旧请求取消
 
-Progress: [███████░░░] 71%
+Progress: [████████░░] 76%
 
 ## Performance Metrics
 
@@ -92,10 +92,10 @@ None yet.
 ### Blockers/Concerns
 
 - 当前无新增阻塞项
-- Phase 4 后续风险集中在 history API 的窗口化分页与前端旧请求取消/缓存，需继续避免 `limit=3650` 和 page-local 数据竞争残留
+- Phase 4 后续风险转移到 detail metadata 的采集、落库与 DTO 映射，执行 04-04 时需继续保持 shared contracts 与前端分层组件同步演进
 
 ## Session Continuity
 
-Last session: 2026-03-18T12:17:27Z
-Stopped at: Completed 04-02-PLAN.md
+Last session: 2026-03-18T12:57:44Z
+Stopped at: Completed 04-03-PLAN.md
 Resume file: None
