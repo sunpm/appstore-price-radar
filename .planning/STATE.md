@@ -42,6 +42,7 @@ Recent decisions affecting current work:
 
 - [Init]: 以 brownfield 现状作为已验证能力，路线图优先处理正确性、安全性和可运维性
 - [Init]: 继续沿用 Web-first + Cloudflare Worker + Neon 的现有架构
+- [2026-03-18]: 详情页 App 信息采用“核心决策信息首屏 + 长尾元数据折叠”的分层展示策略，不追求全字段默认展开
 
 ### Pending Todos
 
