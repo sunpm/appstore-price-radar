@@ -73,6 +73,10 @@ type DbState = {
   nextEventId: number;
 };
 
+type BatchOperation = {
+  apply: () => Promise<void> | void;
+};
+
 const testHooks = vi.hoisted(() => ({
   dbRef: { current: null as unknown },
   fetchAppStorePriceMock: vi.fn(),
@@ -170,6 +174,13 @@ const mapEventSelection = (
   return Object.fromEntries(
     Object.keys(selection).map((key) => [key, (event as Record<string, unknown>)[key]]),
   );
+};
+
+const isBatchOperation = (value: unknown): value is BatchOperation => {
+  return typeof value === 'object'
+    && value !== null
+    && 'apply' in value
+    && typeof (value as { apply?: unknown }).apply === 'function';
 };
 
 const createDbMock = (state: DbState) => ({
@@ -294,10 +305,20 @@ const createDbMock = (state: DbState) => ({
           .map(item => ({
             appId: item.appId,
             country: item.country,
-          }));
+        }));
       },
     }),
   }),
+  batch: async (writes: unknown[]) => {
+    for (const write of writes) {
+      if (isBatchOperation(write)) {
+        await write.apply();
+        continue;
+      }
+
+      await write;
+    }
+  },
   insert: (table: unknown) => {
     if (table === subscriptions) {
       return {
@@ -338,17 +359,19 @@ const createDbMock = (state: DbState) => ({
     if (table === appSnapshots) {
       return {
         values: (row: SnapshotRow) => ({
-          onConflictDoUpdate: async ({
+          onConflictDoUpdate: ({
             set,
           }: {
             set: Partial<SnapshotRow>;
-          }) => {
-            state.snapshot = {
-              ...(state.snapshot ?? row),
-              ...row,
-              ...set,
-            };
-          },
+          }): BatchOperation => ({
+            apply: () => {
+              state.snapshot = {
+                ...(state.snapshot ?? row),
+                ...row,
+                ...set,
+              };
+            },
+          }),
         }),
       };
     }
@@ -356,31 +379,35 @@ const createDbMock = (state: DbState) => ({
     if (table === appPriceChangeEvents) {
       return {
         values: (row: Omit<PriceChangeEventRow, 'id'>) => ({
-          onConflictDoNothing: async () => {
-            const duplicate = state.events.some(
-              item =>
-                item.appId === row.appId &&
-                item.country === row.country &&
-                item.requestId === row.requestId,
-            );
+          onConflictDoNothing: (): BatchOperation => ({
+            apply: () => {
+              const duplicate = state.events.some(
+                item =>
+                  item.appId === row.appId &&
+                  item.country === row.country &&
+                  item.requestId === row.requestId,
+              );
 
-            if (!duplicate) {
-              state.events.push({
-                id: state.nextEventId,
-                ...row,
-              });
-              state.nextEventId += 1;
-            }
-          },
+              if (!duplicate) {
+                state.events.push({
+                  id: state.nextEventId,
+                  ...row,
+                });
+                state.nextEventId += 1;
+              }
+            },
+          }),
         }),
       };
     }
 
     if (table === appDropEvents) {
       return {
-        values: async (row: Record<string, unknown>) => {
-          state.dropEvents.push(row);
-        },
+        values: (row: Record<string, unknown>): BatchOperation => ({
+          apply: () => {
+            state.dropEvents.push(row);
+          },
+        }),
       };
     }
 

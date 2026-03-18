@@ -1,4 +1,5 @@
 import { and, eq, gt, gte, isNull, or } from 'drizzle-orm';
+import type { BatchItem } from 'drizzle-orm/batch';
 
 import type { EnvConfig } from '../env';
 import { getDb } from '../db/client';
@@ -63,12 +64,12 @@ export const refreshSingleApp = async (
 
   const oldPrice = previous?.price;
   const priceChanged = oldPrice !== undefined && oldPrice !== data.price;
+  const priceDropped = oldPrice !== undefined && oldPrice > data.price;
   const source = options.source ?? (notifyDrops ? 'scheduled' : 'manual');
   const requestId =
     options.requestId ??
     `${source}:${data.appId}:${data.country}:${now.getTime()}`;
-
-  await db
+  const snapshotWrite = db
     .insert(appSnapshots)
     .values({
       appId: data.appId,
@@ -91,50 +92,55 @@ export const refreshSingleApp = async (
         updatedAt: now,
       },
     });
-
-  const priceDropped = oldPrice !== undefined && oldPrice > data.price;
+  const writes: [BatchItem<'pg'>, ...BatchItem<'pg'>[]] = [snapshotWrite];
 
   if (priceChanged && oldPrice !== undefined) {
-    await db
-      .insert(appPriceChangeEvents)
-      .values({
-        appId: data.appId,
-        country: data.country,
-        currency: data.currency,
-        oldAmount: oldPrice,
-        newAmount: data.price,
-        changedAt: now,
-        source,
-        requestId,
-      })
-      .onConflictDoNothing({
-        target: [
-          appPriceChangeEvents.appId,
-          appPriceChangeEvents.country,
-          appPriceChangeEvents.requestId,
-        ],
-      });
+    writes.push(
+      db
+        .insert(appPriceChangeEvents)
+        .values({
+          appId: data.appId,
+          country: data.country,
+          currency: data.currency,
+          oldAmount: oldPrice,
+          newAmount: data.price,
+          changedAt: now,
+          source,
+          requestId,
+        })
+        .onConflictDoNothing({
+          target: [
+            appPriceChangeEvents.appId,
+            appPriceChangeEvents.country,
+            appPriceChangeEvents.requestId,
+          ],
+        }),
+    );
   }
-
-  let alertsSent = 0;
 
   if (priceDropped && oldPrice !== undefined) {
     const dropPercent =
       oldPrice > 0 ? Number((((oldPrice - data.price) / oldPrice) * 100).toFixed(2)) : null;
 
-    await db.insert(appDropEvents).values({
-      appId: data.appId,
-      country: data.country,
-      appName: data.appName,
-      storeUrl: data.storeUrl,
-      iconUrl: data.iconUrl,
-      currency: data.currency,
-      oldPrice,
-      newPrice: data.price,
-      dropPercent,
-      detectedAt: now,
-    });
+    writes.push(
+      db.insert(appDropEvents).values({
+        appId: data.appId,
+        country: data.country,
+        appName: data.appName,
+        storeUrl: data.storeUrl,
+        iconUrl: data.iconUrl,
+        currency: data.currency,
+        oldPrice,
+        newPrice: data.price,
+        dropPercent,
+        detectedAt: now,
+      }),
+    );
   }
+
+  await db.batch(writes);
+
+  let alertsSent = 0;
 
   if (notifyDrops && priceDropped && oldPrice !== undefined) {
     const targets = await db
