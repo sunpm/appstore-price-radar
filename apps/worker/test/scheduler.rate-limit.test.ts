@@ -93,6 +93,11 @@ describe('runPriceCheck rate safety', () => {
     );
 
     expect(refreshSingleAppMock).toHaveBeenCalledTimes(3);
+    expect(refreshSingleAppMock.mock.calls[0]?.[2]).toMatchObject({
+      notifyDrops: true,
+      source: 'scheduled',
+    });
+    expect(refreshSingleAppMock.mock.calls[0]?.[2]?.requestId).toMatch(/^scheduled:/);
     expect(sleepMock).toHaveBeenNthCalledWith(1, 15000);
     expect(sleepMock).toHaveBeenNthCalledWith(2, 30000);
   });
@@ -133,6 +138,11 @@ describe('runPriceCheck rate safety', () => {
     );
 
     expect(refreshSingleAppMock).toHaveBeenCalledTimes(3);
+    expect(refreshSingleAppMock.mock.calls[0]?.[2]).toMatchObject({
+      notifyDrops: true,
+      source: 'scheduled',
+    });
+    expect(refreshSingleAppMock.mock.calls[0]?.[2]?.requestId).toMatch(/^scheduled:/);
     expect(sleepMock).toHaveBeenCalledTimes(2);
     expect(sleepMock).toHaveBeenNthCalledWith(1, 5000);
     expect(sleepMock).toHaveBeenNthCalledWith(2, 5000);

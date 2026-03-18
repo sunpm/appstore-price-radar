@@ -4,7 +4,7 @@ import type { EnvConfig } from '../env';
 import { getDb } from '../db/client';
 import { appSnapshots, subscriptions } from '../db/schema';
 import { extractAppId } from '../lib/appstore';
-import { refreshSingleApp } from '../lib/checker';
+import { buildRefreshOptions, refreshSingleApp } from '../lib/checker';
 import type {
   CreateSubscriptionPayload,
   CreateSubscriptionResponse,
@@ -69,9 +69,15 @@ export const createUserSubscription = async (
   let latest = null;
 
   try {
-    latest = await refreshSingleApp(config, appId, country, {
-      notifyDrops: false,
-    });
+    latest = await refreshSingleApp(
+      config,
+      appId,
+      country,
+      buildRefreshOptions({
+        trigger: 'subscription-create',
+        requestId: `subscription-create:${subscription.id}`,
+      }),
+    );
   } catch (error) {
     console.error('refreshSingleApp failed after subscription created', error);
   }
