@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: In progress
-stopped_at: Completed 04-01-PLAN.md
-last_updated: "2026-03-18T11:52:50Z"
-last_activity: 2026-03-18 — 完成 04-01，共享 contracts DTO、Worker mapper 与 Web 类型已收敛
+stopped_at: Completed 04-02-PLAN.md
+last_updated: "2026-03-18T12:17:27Z"
+last_activity: 2026-03-18 — 完成 04-02，共享 session / authed api / unauthorized 跳转链路已收敛
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 17
-  completed_plans: 11
-  percent: 65
+  completed_plans: 12
+  percent: 71
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-18)
 
 **Core value:** 用户订阅的 App 必须能被持续、准确、可解释地监控，并在真实降价时收到可信且不重复的提醒。
-**Current focus:** Phase 4 - 契约与前端稳态（准备进入 04-02 / 04-03 并行执行）
+**Current focus:** Phase 4 - 契约与前端稳态（准备执行 04-03 历史分页与缓存）
 
 ## Current Position
 
 Phase: 4 of 5 (契约与前端稳态)
-Plan: 1 of 4 in current phase
+Plan: 2 of 4 in current phase
 Status: In progress
-Last activity: 2026-03-18 — 完成 04-01，共享 contracts DTO、Worker mapper 与 Web 类型已收敛
+Last activity: 2026-03-18 — 完成 04-02，共享 session / authed api / unauthorized 跳转链路已收敛
 
-Progress: [███████░░░] 65%
+Progress: [███████░░░] 71%
 
 ## Performance Metrics
 
@@ -82,6 +82,8 @@ Recent decisions affecting current work:
 - [Phase 03]: 在不改生产逻辑的前提下增强 test doubles，以便稳定复现旧凭证淘汰场景。 — 优先用测试资产强化高风险边界，避免引入新的业务行为变更。
 - [Phase 04]: `@appstore-price-radar/contracts` 成为 auth / subscriptions / prices DTO 的唯一来源，Web 与 Worker 都必须显式声明 `workspace:*` 依赖。 — 避免“类型已抽出但 workspace link 缺失”导致的编译期漂移与隐性 any。
 - [Phase 04]: Worker HTTP 返回体统一通过显式 mapper 输出 ISO string DTO，测试也必须按 DTO 结构断言，不能继续依赖 raw `Date` 或旧字段。 — 确保共享 contracts 是运行时 shape 的真实反映，而不只是类型层面的名义统一。
+- [Phase 04]: 前端受保护请求统一经由 `useAuthedApi()` 处理 unauthorized，页面只负责声明业务错误文案与 UI 状态。 — 减少 401 side effect 分叉，避免每个 view 自己拼 token/clearSession/router 跳转。
+- [Phase 04]: `useAuthSession()` 负责 token / user / expiresAt 的共享恢复与持久化，route guard 和布局层都直接消费这套状态语义。 — 让导航、弹窗与页面 restore 行为站在同一份 session source 上。
 
 ### Pending Todos
 
@@ -90,10 +92,10 @@ None yet.
 ### Blockers/Concerns
 
 - 当前无新增阻塞项
-- Phase 4 后续风险集中在前端 unauthorized 行为与 history 分页收敛，需继续避免页面级会话逻辑和全量历史请求残留
+- Phase 4 后续风险集中在 history API 的窗口化分页与前端旧请求取消/缓存，需继续避免 `limit=3650` 和 page-local 数据竞争残留
 
 ## Session Continuity
 
-Last session: 2026-03-18T11:52:50Z
-Stopped at: Completed 04-01-PLAN.md
+Last session: 2026-03-18T12:17:27Z
+Stopped at: Completed 04-02-PLAN.md
 Resume file: None
