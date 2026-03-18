@@ -4,7 +4,8 @@
   "version": "0.1.0",
   "packageManager": "pnpm@10.9.0",
   "workspaces": [
-    "apps/*"
+    "apps/*",
+    "packages/*"
   ],
   "scripts": {
     "dev": "concurrently -n worker,web -c cyan,green \"pnpm dev:worker\" \"pnpm dev:web\"",
