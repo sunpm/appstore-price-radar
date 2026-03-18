@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { appDropEvents, appPriceChangeEvents, appSnapshots } from '../src/db/schema';
+import {
+  appDropEvents,
+  appPriceChangeEvents,
+  appPriceHistory,
+  appSnapshots,
+} from '../src/db/schema';
 import type { EnvConfig } from '../src/env';
 import { refreshSingleApp } from '../src/lib/checker';
 import { getPriceHistory } from '../src/services/prices';
@@ -28,11 +33,23 @@ type PriceChangeEventRow = {
   requestId: string;
 };
 
+type LegacyPriceHistoryRow = {
+  id: number;
+  appId: string;
+  country: string;
+  currency: string;
+  price: number;
+  fetchedAt: Date;
+};
+
 type DbState = {
   snapshot: SnapshotRow | null;
   events: PriceChangeEventRow[];
+  legacyHistory: LegacyPriceHistoryRow[];
   dropEvents: Array<Record<string, unknown>>;
   nextEventId: number;
+  missingRequestIdColumn: boolean;
+  missingChangeEventsTable: boolean;
 };
 
 let dbState: DbState;
@@ -78,8 +95,11 @@ const createEnv = (): EnvConfig =>
 const createDbState = (): DbState => ({
   snapshot: null,
   events: [],
+  legacyHistory: [],
   dropEvents: [],
   nextEventId: 1,
+  missingRequestIdColumn: false,
+  missingChangeEventsTable: false,
 });
 
 const mapEventSelection = (
@@ -141,6 +161,18 @@ const createDbMock = (state: DbState) => {
             where: () => ({
               orderBy: () => ({
                 limit: async (limitValue: number) => {
+                  if (state.missingChangeEventsTable) {
+                    const error = new Error('Failed query');
+                    error.cause = new Error('relation "app_price_change_events" does not exist');
+                    throw error;
+                  }
+
+                  if (state.missingRequestIdColumn && selection && 'requestId' in selection) {
+                    const error = new Error('Failed query');
+                    error.cause = new Error('column "request_id" does not exist');
+                    throw error;
+                  }
+
                   const sorted = [...state.events].sort(
                     (a, b) => b.changedAt.getTime() - a.changedAt.getTime(),
                   );
@@ -151,6 +183,39 @@ const createDbMock = (state: DbState) => {
                   }
 
                   return limited.map((event) => mapEventSelection(selection, event));
+                },
+              }),
+            }),
+          };
+        }
+
+        if (table === appPriceHistory) {
+          return {
+            where: () => ({
+              orderBy: () => ({
+                limit: async (limitValue: number) => {
+                  const sorted = [...state.legacyHistory].sort((a, b) => {
+                    const timeDelta = a.fetchedAt.getTime() - b.fetchedAt.getTime();
+
+                    if (timeDelta !== 0) {
+                      return timeDelta;
+                    }
+
+                    return a.id - b.id;
+                  });
+
+                  if (!selection) {
+                    return sorted.slice(0, limitValue);
+                  }
+
+                  return sorted.slice(0, limitValue).map((row) =>
+                    Object.fromEntries(
+                      Object.keys(selection).map((key) => [
+                        key,
+                        (row as Record<string, unknown>)[key],
+                      ]),
+                    ),
+                  );
                 },
               }),
             }),
@@ -409,6 +474,133 @@ describe('getPriceHistory', () => {
       '2026-01-15T00:00:00.000Z',
       '2026-02-10T00:00:00.000Z',
       '2026-03-18T00:00:00.000Z',
+    ]);
+  });
+
+  it('falls back when request_id column is missing from change events table', async () => {
+    dbState.snapshot = {
+      appId: '123456789',
+      country: 'US',
+      appName: 'Radar Pro',
+      storeUrl: 'https://apps.apple.com/us/app/id123456789',
+      iconUrl: null,
+      currency: 'USD',
+      lastPrice: 7.99,
+      updatedAt: new Date('2026-03-18T00:00:00.000Z'),
+    };
+    dbState.missingRequestIdColumn = true;
+    dbState.events.push({
+      id: 7,
+      appId: '123456789',
+      country: 'US',
+      currency: 'USD',
+      oldAmount: 9.99,
+      newAmount: 7.99,
+      changedAt: new Date('2026-03-18T00:00:00.000Z'),
+      source: 'scheduled',
+      requestId: 'ignored-in-fallback',
+    });
+
+    const result = await getPriceHistory(createEnv(), {
+      appId: '123456789',
+      country: 'us',
+      limit: 10,
+    });
+
+    expect(result.status).toBe(200);
+
+    if ('error' in result.body) {
+      throw new Error(result.body.error);
+    }
+
+    expect(result.body.history).toHaveLength(1);
+    expect(result.body.history[0]).toMatchObject({
+      id: 7,
+      requestId: 'legacy-change-event:7',
+      source: 'scheduled',
+    });
+  });
+
+  it('falls back to legacy snapshot history when change events table is unavailable', async () => {
+    dbState.snapshot = {
+      appId: '123456789',
+      country: 'US',
+      appName: 'Radar Pro',
+      storeUrl: 'https://apps.apple.com/us/app/id123456789',
+      iconUrl: null,
+      currency: 'USD',
+      lastPrice: 7.99,
+      updatedAt: new Date('2026-03-18T00:00:00.000Z'),
+    };
+    dbState.missingChangeEventsTable = true;
+    dbState.legacyHistory.push(
+      {
+        id: 1,
+        appId: '123456789',
+        country: 'US',
+        currency: 'USD',
+        price: 12.99,
+        fetchedAt: new Date('2026-01-15T00:00:00.000Z'),
+      },
+      {
+        id: 2,
+        appId: '123456789',
+        country: 'US',
+        currency: 'USD',
+        price: 12.99,
+        fetchedAt: new Date('2026-01-16T00:00:00.000Z'),
+      },
+      {
+        id: 3,
+        appId: '123456789',
+        country: 'US',
+        currency: 'USD',
+        price: 9.99,
+        fetchedAt: new Date('2026-02-10T00:00:00.000Z'),
+      },
+      {
+        id: 4,
+        appId: '123456789',
+        country: 'US',
+        currency: 'USD',
+        price: 7.99,
+        fetchedAt: new Date('2026-03-18T00:00:00.000Z'),
+      },
+    );
+
+    const result = await getPriceHistory(createEnv(), {
+      appId: '123456789',
+      country: 'us',
+      limit: 10,
+    });
+
+    expect(result.status).toBe(200);
+
+    if ('error' in result.body) {
+      throw new Error(result.body.error);
+    }
+
+    expect(result.body.history.map((event) => ({
+      id: event.id,
+      oldAmount: event.oldAmount,
+      newAmount: event.newAmount,
+      source: event.source,
+      requestId: event.requestId,
+    }))).toEqual([
+      {
+        id: 3,
+        oldAmount: 12.99,
+        newAmount: 9.99,
+        source: 'legacy',
+        requestId: 'legacy-price-history:3',
+      },
+      {
+        id: 4,
+        oldAmount: 9.99,
+        newAmount: 7.99,
+        source: 'legacy',
+        requestId: 'legacy-price-history:4',
+      },
     ]);
   });
 });

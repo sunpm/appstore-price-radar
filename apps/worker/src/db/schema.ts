@@ -178,6 +178,31 @@ export const appSnapshots = pgTable(
   }),
 );
 
+export const appPriceHistory = pgTable(
+  'app_price_history',
+  {
+    id: serial('id').primaryKey(),
+    appId: varchar('app_id', { length: 32 }).notNull(),
+    country: char('country', { length: 2 }).notNull(),
+    price: numeric('price', {
+      precision: 10,
+      scale: 2,
+      mode: 'number',
+    }).notNull(),
+    currency: char('currency', { length: 3 }).notNull(),
+    fetchedAt: timestamp('fetched_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => ({
+    appTimeIdx: index('app_price_history_app_time_idx').on(
+      table.appId,
+      table.country,
+      table.fetchedAt,
+    ),
+  }),
+);
+
 export const appPriceChangeEvents = pgTable(
   'app_price_change_events',
   {
@@ -260,5 +285,6 @@ export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 export type LoginCode = typeof loginCodes.$inferSelect;
 export type Subscription = typeof subscriptions.$inferSelect;
 export type AppSnapshot = typeof appSnapshots.$inferSelect;
+export type AppPriceHistory = typeof appPriceHistory.$inferSelect;
 export type AppPriceChangeEvent = typeof appPriceChangeEvents.$inferSelect;
 export type AppDropEvent = typeof appDropEvents.$inferSelect;

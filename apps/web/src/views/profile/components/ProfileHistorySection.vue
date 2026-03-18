@@ -233,6 +233,8 @@ function sourceLabel(source: string): string {
       return '手动刷新'
     case 'migration':
       return '迁移数据'
+    case 'legacy':
+      return '旧版历史'
     default:
       return source
   }
