@@ -14,6 +14,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@appstore-price-radar/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       vue:
         specifier: ^3.5.18
         version: 3.5.30(typescript@5.9.3)
@@ -48,6 +51,9 @@ importers:
 
   apps/worker:
     dependencies:
+      '@appstore-price-radar/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       '@hono/zod-validator':
         specifier: ^0.4.3
         version: 0.4.3(hono@4.12.8)(zod@3.25.76)
@@ -88,6 +94,12 @@ importers:
       wrangler:
         specifier: ^4.9.1
         version: 4.73.0(@cloudflare/workers-types@4.20260316.1)
+
+  packages/contracts:
+    devDependencies:
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
 
 packages:
 

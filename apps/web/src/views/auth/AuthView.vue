@@ -297,15 +297,23 @@ async function requestLoginCode(emailInput: string, sceneLabel: string): Promise
     const payload = (await res.json().catch(() => ({}))) as SendCodeResponse
 
     if (!res.ok) {
-      if (res.status === 429 && payload.retryAfterSeconds) {
+      if (res.status === 429 && 'retryAfterSeconds' in payload && payload.retryAfterSeconds) {
         startLoginCodeCooldown(payload.retryAfterSeconds)
       }
 
-      throw new Error(payload.error ?? `Request failed with status ${res.status}`)
+      const message
+        = ('error' in payload && typeof payload.error === 'string')
+          ? payload.error
+          : `Request failed with status ${res.status}`
+
+      throw new Error(message)
     }
 
     setPrimaryEmail(email)
-    const cooldownSeconds = payload.cooldownSeconds ?? DEFAULT_LOGIN_CODE_COOLDOWN_SECONDS
+    const cooldownSeconds
+      = ('cooldownSeconds' in payload && payload.cooldownSeconds)
+        ? payload.cooldownSeconds
+        : DEFAULT_LOGIN_CODE_COOLDOWN_SECONDS
     startLoginCodeCooldown(cooldownSeconds)
     successText.value = `${sceneLabel}验证码已发送，请前往邮箱查收。${cooldownSeconds > 0 ? ` ${cooldownSeconds} 秒后可重新发送。` : ''}`
   }

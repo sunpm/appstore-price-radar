@@ -1,6 +1,6 @@
-import type { PriceChangeEventDto, PriceHistoryPayload } from '../../types/prices'
+import type { PriceChangeEventDto, PriceHistoryResponseDto } from '@appstore-price-radar/contracts'
 
-export type AppDetailPayload = PriceHistoryPayload
+export type AppDetailPayload = PriceHistoryResponseDto
 
 export interface AppTrendPoint {
   key: string

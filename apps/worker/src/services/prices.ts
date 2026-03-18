@@ -13,15 +13,20 @@ import {
 } from '../db/schema';
 import { extractAppId } from '../lib/appstore';
 import type {
+  AppSnapshotRecord,
   GetPriceHistoryPayload,
+  HistorySummaryDto,
+  PriceChangeEventRecord,
+  PriceEventDto,
   PriceHistoryErrorResponse,
   PriceHistorySuccessResponse,
   PricesHttpStatus,
   PricesServiceResponse,
+  SnapshotDto,
 } from './prices.types';
 
 type PriceHistoryBody = PriceHistorySuccessResponse | PriceHistoryErrorResponse;
-type PriceHistoryEvent = PriceHistorySuccessResponse['history'][number];
+type PriceHistoryEvent = PriceChangeEventRecord;
 
 const LEGACY_HISTORY_FETCH_MULTIPLIER = 8;
 
@@ -205,6 +210,66 @@ const buildServiceResponse = <TBody>(
   return { status, body };
 };
 
+export const toAppSnapshotDto = (snapshot: AppSnapshotRecord): SnapshotDto => {
+  return {
+    appId: snapshot.appId,
+    country: snapshot.country,
+    appName: snapshot.appName,
+    storeUrl: snapshot.storeUrl,
+    iconUrl: snapshot.iconUrl,
+    currency: snapshot.currency,
+    lastPrice: snapshot.lastPrice,
+    updatedAt: snapshot.updatedAt.toISOString(),
+  };
+};
+
+export const toPriceChangeEventDto = (
+  event: PriceChangeEventRecord,
+): PriceEventDto => {
+  return {
+    id: event.id,
+    appId: event.appId,
+    country: event.country,
+    currency: event.currency,
+    oldAmount: event.oldAmount,
+    newAmount: event.newAmount,
+    changedAt: event.changedAt.toISOString(),
+    source: event.source,
+    requestId: event.requestId,
+  };
+};
+
+const toPriceHistorySummaryDto = (
+  snapshot: SnapshotDto | null,
+  history: PriceEventDto[],
+): HistorySummaryDto => {
+  const priceSeries: number[] = [];
+
+  if (history.length > 0) {
+    priceSeries.push(history[0].oldAmount);
+
+    for (const event of history) {
+      priceSeries.push(event.newAmount);
+    }
+  } else if (snapshot) {
+    priceSeries.push(snapshot.lastPrice);
+  }
+
+  if (priceSeries.length === 0) {
+    return {
+      latestPrice: null,
+      lowestPrice: null,
+      highestPrice: null,
+    };
+  }
+
+  return {
+    latestPrice: priceSeries.at(-1) ?? null,
+    lowestPrice: Math.min(...priceSeries),
+    highestPrice: Math.max(...priceSeries),
+  };
+};
+
 export const getPriceHistory = async (
   config: EnvConfig,
   payload: GetPriceHistoryPayload,
@@ -225,10 +290,17 @@ export const getPriceHistory = async (
     .where(and(eq(appSnapshots.appId, appId), eq(appSnapshots.country, countryCode)))
     .limit(1);
 
-  const history = await loadPriceHistory(db, appId, countryCode, historyLimit);
+  const historyRecords = await loadPriceHistory(db, appId, countryCode, historyLimit);
+  const history = historyRecords.map(toPriceChangeEventDto);
+  const snapshotDto = snapshot ? toAppSnapshotDto(snapshot) : null;
 
   return buildServiceResponse(200, {
-    snapshot: snapshot ?? null,
+    snapshot: snapshotDto,
     history,
+    page: {
+      limit: historyLimit,
+      returned: history.length,
+    },
+    summary: toPriceHistorySummaryDto(snapshotDto, history),
   });
 };

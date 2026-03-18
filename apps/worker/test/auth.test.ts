@@ -7,8 +7,10 @@ import {
   hashPassword,
   verifyPassword,
 } from '../src/lib/auth';
+import { toAuthSessionDto, toAuthUserDto } from '../src/services/auth';
 
 const encoder = new TextEncoder();
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 
 const toHex = (bytes: Uint8Array): string => {
   return Array.from(bytes)
@@ -63,5 +65,33 @@ describe('password hashing', () => {
 
     await expect(verifyPassword(password, storedHash)).resolves.toBe(true);
     await expect(verifyPassword('wrong-password', storedHash)).resolves.toBe(false);
+  });
+});
+
+describe('auth dto mappers', () => {
+  it('maps auth user dto keys exactly', () => {
+    const dto = toAuthUserDto({
+      id: 'user-1',
+      email: 'radar@example.com',
+    });
+
+    expect(dto).toStrictEqual({
+      id: 'user-1',
+      email: 'radar@example.com',
+    });
+    expect(Object.keys(dto)).toStrictEqual(['id', 'email']);
+  });
+
+  it('maps auth session dto with ISO expiresAt', () => {
+    const dto = toAuthSessionDto({
+      token: 'session-token',
+      expiresAt: new Date('2026-03-18T02:00:00.000Z'),
+    });
+
+    expect(dto).toStrictEqual({
+      token: 'session-token',
+      expiresAt: '2026-03-18T02:00:00.000Z',
+    });
+    expect(dto.expiresAt).toMatch(ISO_DATE_RE);
   });
 });

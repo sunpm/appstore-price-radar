@@ -25,6 +25,11 @@ import {
 } from '../lib/auth';
 import { sendLoginCodeEmail, sendPasswordResetEmail } from '../lib/auth-emails';
 import type {
+  AuthResponseDto,
+  AuthSessionDto,
+  AuthUserDto,
+} from '@appstore-price-radar/contracts';
+import type {
   AuthCooldownResponse,
   ChangePasswordPayload,
   AuthErrorResponse,
@@ -139,17 +144,29 @@ const createSession = async (
   return { token, expiresAt };
 };
 
-const buildAuthResponse = (
+export const toAuthUserDto = (
   user: Pick<AuthUserRow, 'id' | 'email'>,
-  session: AuthSession,
-): AuthResponsePayload => {
+): AuthUserDto => {
+  return {
+    id: user.id,
+    email: user.email,
+  };
+};
+
+export const toAuthSessionDto = (session: AuthSession): AuthSessionDto => {
   return {
     token: session.token,
     expiresAt: session.expiresAt.toISOString(),
-    user: {
-      id: user.id,
-      email: user.email,
-    },
+  };
+};
+
+const buildAuthResponse = (
+  user: Pick<AuthUserRow, 'id' | 'email'>,
+  session: AuthSession,
+): AuthResponseDto => {
+  return {
+    ...toAuthSessionDto(session),
+    user: toAuthUserDto(user),
   };
 };
 

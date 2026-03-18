@@ -550,11 +550,20 @@ describe('getPriceHistory', () => {
     }
 
     expect(result.body.snapshot?.lastPrice).toBe(7.99);
-    expect(result.body.history.map((event) => event.changedAt.toISOString())).toEqual([
+    expect(result.body.history.map((event) => event.changedAt)).toEqual([
       '2026-01-15T00:00:00.000Z',
       '2026-02-10T00:00:00.000Z',
       '2026-03-18T00:00:00.000Z',
     ]);
+    expect(result.body.page).toMatchObject({
+      limit: 10,
+      returned: 3,
+    });
+    expect(result.body.summary).toMatchObject({
+      latestPrice: 7.99,
+      lowestPrice: 7.99,
+      highestPrice: 12.99,
+    });
   });
 
   it('falls back when request_id column is missing from change events table', async () => {

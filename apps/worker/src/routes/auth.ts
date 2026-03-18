@@ -1,6 +1,7 @@
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod';
+import type { AuthMeResponseDto } from '@appstore-price-radar/contracts';
 
 import {
   MAX_PASSWORD_LENGTH,
@@ -17,6 +18,7 @@ import {
   resetPassword,
   revokeSession,
   sendLoginCode,
+  toAuthUserDto,
   verifyLoginCode,
 } from '../services/auth';
 
@@ -93,9 +95,11 @@ router.post('/verify-login-code', zValidator('json', verifyCodeSchema), async (c
 });
 
 router.get('/me', requireAuth, async (c) => {
-  return c.json({
-    user: c.get('authUser'),
-  });
+  const body: AuthMeResponseDto = {
+    user: toAuthUserDto(c.get('authUser')),
+  };
+
+  return c.json(body);
 });
 
 router.post('/logout', requireAuth, async (c) => {

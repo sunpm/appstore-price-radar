@@ -1,5 +1,11 @@
+import type {
+  CreateSubscriptionResponseDto,
+  DeleteSubscriptionResponseDto,
+  ListSubscriptionsResponseDto,
+  SubscriptionErrorDto,
+  SubscriptionItemDto,
+} from '@appstore-price-radar/contracts';
 import type { Subscription } from '../db/schema';
-import type { RefreshResult } from '../lib/checker.types';
 
 export type SubscriptionsHttpStatus = 200 | 400 | 404;
 
@@ -19,24 +25,23 @@ export type CreateSubscriptionPayload = {
   targetPrice?: number | null;
 };
 
-export type SubscriptionErrorResponse = {
-  error: string;
-};
+export type SubscriptionErrorResponse = SubscriptionErrorDto;
 
-export type CreateSubscriptionResponse = {
-  subscription: Subscription;
-  latest: RefreshResult | null;
-};
+export type CreateSubscriptionResponse = CreateSubscriptionResponseDto;
 
-export type SubscriptionListItem = {
-  id: string;
-  appId: string;
-  country: string;
-  targetPrice: number | null;
-  lastNotifiedPrice: number | null;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+export type SubscriptionCoreRecord = Pick<
+  Subscription,
+  | 'id'
+  | 'appId'
+  | 'country'
+  | 'targetPrice'
+  | 'lastNotifiedPrice'
+  | 'isActive'
+  | 'createdAt'
+  | 'updatedAt'
+>;
+
+export type SubscriptionListItemRecord = SubscriptionCoreRecord & {
   appName: string | null;
   storeUrl: string | null;
   iconUrl: string | null;
@@ -44,15 +49,14 @@ export type SubscriptionListItem = {
   currency: string | null;
 };
 
-export type ListSubscriptionsResponse = {
-  items: SubscriptionListItem[];
-};
+export type SubscriptionMapperInput = SubscriptionListItemRecord;
+
+export type ListSubscriptionsResponse = ListSubscriptionsResponseDto;
 
 export type DeleteSubscriptionPayload = {
   id: string;
 };
 
-export type DeleteSubscriptionResponse = {
-  ok: true;
-  id: string;
-};
+export type DeleteSubscriptionResponse = DeleteSubscriptionResponseDto;
+
+export type SubscriptionDto = SubscriptionItemDto;

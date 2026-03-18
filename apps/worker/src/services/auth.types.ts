@@ -1,37 +1,28 @@
-export type AuthUserRow = {
-  id: string;
-  email: string;
-  passwordHash: string;
-  isActive: boolean;
-};
+import type {
+  AuthErrorDto,
+  AuthOkResponseDto,
+  AuthResponseDto,
+  AuthUserDto,
+  SendLoginCodeResponseDto,
+} from '@appstore-price-radar/contracts';
 
 export type AuthSession = {
   token: string;
   expiresAt: Date;
 };
 
-export type AuthResponsePayload = {
-  token: string;
-  expiresAt: string;
-  user: {
-    id: string;
-    email: string;
-  };
+export type AuthUserRow = AuthUserDto & {
+  passwordHash: string;
+  isActive: boolean;
 };
 
-export type AuthErrorResponse = {
-  error: string;
-  retryAfterSeconds?: number;
-};
+export type AuthResponsePayload = AuthResponseDto;
 
-export type AuthOkResponse = {
-  ok: true;
-};
+export type AuthErrorResponse = AuthErrorDto;
 
-export type AuthCooldownResponse = {
-  ok: true;
-  cooldownSeconds: number;
-};
+export type AuthOkResponse = AuthOkResponseDto;
+
+export type AuthCooldownResponse = SendLoginCodeResponseDto;
 
 export type AuthHttpStatus = 200 | 400 | 401 | 409 | 429 | 500 | 503;
 

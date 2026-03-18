@@ -1,6 +1,7 @@
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod';
+import type { PriceHistoryResponseDto } from '@appstore-price-radar/contracts';
 
 import {
   DEFAULT_COUNTRY_CODE,
@@ -9,6 +10,7 @@ import {
 } from '../constants/routes';
 import { createOptionalIntWithDefault } from '../lib/zod';
 import { getPriceHistory } from '../services/prices';
+import type { PriceHistoryErrorResponse } from '../services/prices.types';
 import type { AppEnv } from '../types';
 
 const paramsSchema = z.object({
@@ -37,7 +39,8 @@ router.get(
       appId,
     });
 
-    return c.json(result.body, result.status);
+    const body: PriceHistoryResponseDto | PriceHistoryErrorResponse = result.body;
+    return c.json(body, result.status);
   },
 );
 

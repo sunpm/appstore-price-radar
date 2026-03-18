@@ -646,11 +646,7 @@ describe('fresh install smoke', () => {
       country: 'US',
       isActive: true,
     });
-    expect(subscriptionPayload.latest).toMatchObject({
-      appId: '123456789',
-      newPrice: 9.99,
-      priceChanged: false,
-    });
+    expect(Object.keys(subscriptionPayload)).toStrictEqual(['subscription']);
 
     const cronResponse = await worker.fetch(
       new Request('https://example.com/api/jobs/check', {
