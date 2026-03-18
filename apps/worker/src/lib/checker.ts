@@ -334,6 +334,9 @@ export const runPriceCheck = async (
     startedAt: startedAt.toISOString(),
     finishedAt: startedAt.toISOString(),
     scanned: watchedPairs.length,
+    succeeded: 0,
+    skipped: 0,
+    failed: 0,
     updated: 0,
     drops: 0,
     emailsSent: 0,
@@ -355,10 +358,12 @@ export const runPriceCheck = async (
       });
 
       if (!result) {
+        report.skipped += 1;
         report.errors.push(`app not found in App Store: ${pair.appId} (${pair.country})`);
         continue;
       }
 
+      report.succeeded += 1;
       report.updated += 1;
       report.emailsSent += result.alertsSent;
 
@@ -366,6 +371,7 @@ export const runPriceCheck = async (
         report.drops += 1;
       }
     } catch (error) {
+      report.failed += 1;
       const message = error instanceof Error ? error.message : 'unknown error';
       report.errors.push(`${pair.appId} (${pair.country}): ${message}`);
     }

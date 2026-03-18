@@ -77,7 +77,7 @@ describe('runPriceCheck rate safety', () => {
         alertsSent: 0,
       });
 
-    await runPriceCheck(
+    const report = await runPriceCheck(
       createEnv({
         PRICE_CHECK_MAX_CALLS_PER_MINUTE: 12,
         PRICE_CHECK_RETRY_BASE_SECONDS: 15,
@@ -100,6 +100,12 @@ describe('runPriceCheck rate safety', () => {
     expect(refreshSingleAppMock.mock.calls[0]?.[2]?.requestId).toMatch(/^scheduled:/);
     expect(sleepMock).toHaveBeenNthCalledWith(1, 15000);
     expect(sleepMock).toHaveBeenNthCalledWith(2, 30000);
+    expect(report).toMatchObject({
+      scanned: 1,
+      succeeded: 1,
+      skipped: 0,
+      failed: 0,
+    });
   });
 
   it('applies request pacing between watched pairs to cap per-run fetch pressure', async () => {
@@ -122,7 +128,7 @@ describe('runPriceCheck rate safety', () => {
       alertsSent: 0,
     });
 
-    await runPriceCheck(
+    const report = await runPriceCheck(
       createEnv({
         PRICE_CHECK_MAX_CALLS_PER_MINUTE: 12,
         PRICE_CHECK_RETRY_BASE_SECONDS: 15,
@@ -146,5 +152,11 @@ describe('runPriceCheck rate safety', () => {
     expect(sleepMock).toHaveBeenCalledTimes(2);
     expect(sleepMock).toHaveBeenNthCalledWith(1, 5000);
     expect(sleepMock).toHaveBeenNthCalledWith(2, 5000);
+    expect(report).toMatchObject({
+      scanned: 3,
+      succeeded: 3,
+      skipped: 0,
+      failed: 0,
+    });
   });
 });

@@ -4,11 +4,11 @@ import { cors } from 'hono/cors';
 import { Hono } from 'hono';
 
 import { parseEnv } from './env';
-import { runPriceCheck } from './lib/checker';
 import { resolveCorsOrigin } from './lib/cors';
 import authRouter from './routes/auth';
 import pricesRouter from './routes/prices';
 import publicRouter from './routes/public';
+import { runProtectedPriceCheck } from './services/jobs';
 import subscriptionsRouter from './routes/subscriptions';
 import type { AppEnv, WorkerBindings } from './types';
 
@@ -54,8 +54,13 @@ app.post('/api/jobs/check', async (c) => {
     }
   }
 
-  const report = await runPriceCheck(config);
-  return c.json(report);
+  const result = await runProtectedPriceCheck(config, { trigger: 'manual' });
+
+  if (result.kind === 'skipped') {
+    return c.json(result, 202);
+  }
+
+  return c.json(result.report);
 });
 
 app.notFound((c) => c.json({ error: 'Not Found' }, 404));
@@ -78,9 +83,14 @@ const worker: ExportedHandler<WorkerBindings> = {
     }
 
     ctx.waitUntil(
-      runPriceCheck(config)
-        .then((report) => {
-          console.log('scheduled check report', report);
+      runProtectedPriceCheck(config, { trigger: 'scheduled' })
+        .then((result) => {
+          if (result.kind === 'skipped') {
+            console.log('scheduled check skipped', result.reason);
+            return;
+          }
+
+          console.log('scheduled check report', result.report);
         })
         .catch((error) => {
           console.error('scheduled check failed', error);

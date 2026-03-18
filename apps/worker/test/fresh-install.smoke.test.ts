@@ -4,6 +4,8 @@ import {
   appDropEvents,
   appPriceChangeEvents,
   appSnapshots,
+  jobLeases,
+  priceCheckRuns,
   subscriptions,
   userSessions,
   users,
@@ -62,6 +64,29 @@ type PriceChangeEventRow = {
   requestId: string;
 };
 
+type JobLeaseRow = {
+  lockKey: string;
+  runId: string;
+  lockedUntil: Date;
+  updatedAt: Date;
+};
+
+type PriceCheckRunRow = {
+  id: string;
+  trigger: string;
+  status: string;
+  startedAt: Date;
+  finishedAt?: Date;
+  scanned: number;
+  succeeded: number;
+  skipped: number;
+  failed: number;
+  updated: number;
+  drops: number;
+  emailsSent: number;
+  errorSummary: string;
+};
+
 type DbState = {
   users: UserRow[];
   sessions: SessionRow[];
@@ -69,6 +94,8 @@ type DbState = {
   snapshot: SnapshotRow | null;
   events: PriceChangeEventRow[];
   dropEvents: Array<Record<string, unknown>>;
+  lease: JobLeaseRow | null;
+  runs: PriceCheckRunRow[];
   nextSubscriptionId: number;
   nextEventId: number;
 };
@@ -149,9 +176,24 @@ const createDbState = (tokenHash: string): DbState => ({
   snapshot: null,
   events: [],
   dropEvents: [],
+  lease: null,
+  runs: [],
   nextSubscriptionId: 1,
   nextEventId: 1,
 });
+
+const mapRowSelection = (
+  selection: Record<string, unknown> | undefined,
+  row: Record<string, unknown>,
+): Record<string, unknown> => {
+  if (!selection) {
+    return row;
+  }
+
+  return Object.fromEntries(
+    Object.keys(selection).map((key) => [key, row[key]]),
+  );
+};
 
 const mapSnapshotSelection = (
   selection: Record<string, unknown>,
@@ -320,6 +362,31 @@ const createDbMock = (state: DbState) => ({
     }
   },
   insert: (table: unknown) => {
+    if (table === jobLeases) {
+      return {
+        values: (row: JobLeaseRow) => ({
+          onConflictDoNothing: () => ({
+            returning: async (selection?: Record<string, unknown>) => {
+              if (state.lease) {
+                return [];
+              }
+
+              state.lease = { ...row };
+              return [mapRowSelection(selection, state.lease)];
+            },
+          }),
+        }),
+      };
+    }
+
+    if (table === priceCheckRuns) {
+      return {
+        values: async (row: PriceCheckRunRow) => {
+          state.runs.push({ ...row });
+        },
+      };
+    }
+
     if (table === subscriptions) {
       return {
         values: (row: Omit<SubscriptionRow, 'id' | 'createdAt'>) => ({
@@ -416,6 +483,40 @@ const createDbMock = (state: DbState) => ({
     };
   },
   update: (table: unknown) => {
+    if (table === jobLeases) {
+      return {
+        set: (patch: Partial<JobLeaseRow> & Pick<JobLeaseRow, 'updatedAt' | 'lockedUntil'>) => ({
+          where: () => ({
+            returning: async (selection?: Record<string, unknown>) => {
+              if (!state.lease || state.lease.lockedUntil > patch.updatedAt) {
+                return [];
+              }
+
+              state.lease = {
+                ...state.lease,
+                ...patch,
+              };
+              return [mapRowSelection(selection, state.lease)];
+            },
+          }),
+        }),
+      };
+    }
+
+    if (table === priceCheckRuns) {
+      return {
+        set: (patch: Partial<PriceCheckRunRow>) => ({
+          where: async () => {
+            const current = state.runs[state.runs.length - 1];
+
+            if (current) {
+              Object.assign(current, patch);
+            }
+          },
+        }),
+      };
+    }
+
     if (table === userSessions) {
       return {
         set: (patch: Partial<SessionRow>) => ({
@@ -448,6 +549,19 @@ const createDbMock = (state: DbState) => ({
       set: () => ({
         where: async () => undefined,
       }),
+    };
+  },
+  delete: (table: unknown) => {
+    if (table === jobLeases) {
+      return {
+        where: async () => {
+          state.lease = null;
+        },
+      };
+    }
+
+    return {
+      where: async () => undefined,
     };
   },
 });
