@@ -106,6 +106,30 @@ export const loginCodes = pgTable(
   }),
 );
 
+export const authRateLimits = pgTable(
+  'auth_rate_limits',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    scope: varchar('scope', { length: 64 }).notNull(),
+    subjectKey: varchar('subject_key', { length: 320 }).notNull(),
+    attemptCount: integer('attempt_count').notNull().default(0),
+    windowStartedAt: timestamp('window_started_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    blockedUntil: timestamp('blocked_until', { withTimezone: true }),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => ({
+    scopeSubjectUniq: uniqueIndex('auth_rate_limits_scope_subject_uniq').on(
+      table.scope,
+      table.subjectKey,
+    ),
+    blockedUntilIdx: index('auth_rate_limits_blocked_until_idx').on(table.blockedUntil),
+  }),
+);
+
 export const subscriptions = pgTable(
   'subscriptions',
   {
@@ -328,6 +352,7 @@ export type User = typeof users.$inferSelect;
 export type UserSession = typeof userSessions.$inferSelect;
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 export type LoginCode = typeof loginCodes.$inferSelect;
+export type AuthRateLimit = typeof authRateLimits.$inferSelect;
 export type Subscription = typeof subscriptions.$inferSelect;
 export type AppSnapshot = typeof appSnapshots.$inferSelect;
 export type AppPriceHistory = typeof appPriceHistory.$inferSelect;

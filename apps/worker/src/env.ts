@@ -1,6 +1,9 @@
 import { z } from 'zod';
 
 import {
+  DEFAULT_AUTH_RATE_LIMIT_BLOCK_MINUTES,
+  DEFAULT_AUTH_RATE_LIMIT_MAX_ATTEMPTS,
+  DEFAULT_AUTH_RATE_LIMIT_WINDOW_MINUTES,
   DEFAULT_LOGIN_CODE_RESEND_COOLDOWN_SECONDS,
   DEFAULT_LOGIN_CODE_TTL_MINUTES,
   DEFAULT_PRICE_CHECK_MAX_CALLS_PER_MINUTE,
@@ -40,6 +43,21 @@ const envSchema = z.object({
     defaultValue: DEFAULT_LOGIN_CODE_RESEND_COOLDOWN_SECONDS,
     min: 10,
     max: 600,
+  }),
+  AUTH_RATE_LIMIT_WINDOW_MINUTES: createOptionalIntWithDefault({
+    defaultValue: DEFAULT_AUTH_RATE_LIMIT_WINDOW_MINUTES,
+    min: 1,
+    max: 120,
+  }),
+  AUTH_RATE_LIMIT_MAX_ATTEMPTS: createOptionalIntWithDefault({
+    defaultValue: DEFAULT_AUTH_RATE_LIMIT_MAX_ATTEMPTS,
+    min: 1,
+    max: 20,
+  }),
+  AUTH_RATE_LIMIT_BLOCK_MINUTES: createOptionalIntWithDefault({
+    defaultValue: DEFAULT_AUTH_RATE_LIMIT_BLOCK_MINUTES,
+    min: 1,
+    max: 120,
   }),
   PRICE_CHECK_MAX_CALLS_PER_MINUTE: createOptionalIntWithDefault({
     defaultValue: DEFAULT_PRICE_CHECK_MAX_CALLS_PER_MINUTE,
