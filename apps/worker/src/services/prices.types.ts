@@ -3,6 +3,7 @@ import type {
   PriceChangeEventDto,
   PriceHistoryResponseDto,
   PriceHistorySummaryDto,
+  PriceHistoryWindow,
 } from '@appstore-price-radar/contracts';
 
 export type PricesHttpStatus = 200 | 400;
@@ -15,7 +16,9 @@ export type PricesServiceResponse<TBody> = {
 export type GetPriceHistoryPayload = {
   appId: string;
   country: string;
-  limit?: number;
+  window: PriceHistoryWindow;
+  pageSize?: number;
+  cursor?: string;
 };
 
 export type AppSnapshotRecord = {

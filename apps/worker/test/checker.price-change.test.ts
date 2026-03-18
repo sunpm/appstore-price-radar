@@ -540,7 +540,8 @@ describe('getPriceHistory', () => {
     const result = await getPriceHistory(createEnv(), {
       appId: '123456789',
       country: 'us',
-      limit: 10,
+      window: 'all',
+      pageSize: 10,
     });
 
     expect(result.status).toBe(200);
@@ -556,13 +557,15 @@ describe('getPriceHistory', () => {
       '2026-03-18T00:00:00.000Z',
     ]);
     expect(result.body.page).toMatchObject({
-      limit: 10,
-      returned: 3,
+      window: 'all',
+      pageSize: 10,
+      nextCursor: null,
+      hasMore: false,
     });
     expect(result.body.summary).toMatchObject({
-      latestPrice: 7.99,
-      lowestPrice: 7.99,
-      highestPrice: 12.99,
+      totalChanges: 3,
+      latestChangeAt: '2026-03-18T00:00:00.000Z',
+      earliestChangeAt: '2026-01-15T00:00:00.000Z',
     });
   });
 
@@ -593,7 +596,8 @@ describe('getPriceHistory', () => {
     const result = await getPriceHistory(createEnv(), {
       appId: '123456789',
       country: 'us',
-      limit: 10,
+      window: 'all',
+      pageSize: 10,
     });
 
     expect(result.status).toBe(200);
@@ -660,7 +664,8 @@ describe('getPriceHistory', () => {
     const result = await getPriceHistory(createEnv(), {
       appId: '123456789',
       country: 'us',
-      limit: 10,
+      window: 'all',
+      pageSize: 10,
     });
 
     expect(result.status).toBe(200);

@@ -5,5 +5,7 @@ export const PUBLIC_DROPS_MAX_LIMIT = 200;
 export const PUBLIC_DROPS_FETCH_MULTIPLIER = 12;
 export const PUBLIC_DROPS_FETCH_MAX_LIMIT = 2000;
 
-export const PRICE_HISTORY_DEFAULT_LIMIT = 30;
-export const PRICE_HISTORY_MAX_LIMIT = 3650;
+export const PRICE_HISTORY_WINDOW_DEFAULT = '90d';
+export const PRICE_HISTORY_WINDOW_VALUES = ['30d', '90d', '1y', 'all'] as const;
+export const PRICE_HISTORY_PAGE_SIZE_DEFAULT = 60;
+export const PRICE_HISTORY_PAGE_SIZE_MAX = 120;

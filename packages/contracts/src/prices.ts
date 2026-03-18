@@ -21,15 +21,19 @@ export interface PriceChangeEventDto {
   requestId: string
 }
 
+export type PriceHistoryWindow = '30d' | '90d' | '1y' | 'all'
+
 export interface PriceHistoryPageDto {
-  limit: number
-  returned: number
+  window: PriceHistoryWindow
+  pageSize: number
+  nextCursor: string | null
+  hasMore: boolean
 }
 
 export interface PriceHistorySummaryDto {
-  latestPrice: number | null
-  lowestPrice: number | null
-  highestPrice: number | null
+  totalChanges: number
+  latestChangeAt: string | null
+  earliestChangeAt: string | null
 }
 
 export interface PriceHistoryResponseDto {
