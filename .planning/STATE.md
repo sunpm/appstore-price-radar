@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 03-03-PLAN.md
-last_updated: "2026-03-18T10:09:12.846Z"
-last_activity: 2026-03-18 — 完成 03-03，手动巡检入口改为默认关闭并增加严格 CRON_SECRET 门禁与 route/smoke 回归
+status: Ready to start
+stopped_at: Completed 03-04-PLAN.md
+last_updated: "2026-03-18T10:24:37.916Z"
+last_activity: 2026-03-18 — 完成 03-04，高风险调度/认证边界测试已补齐并闭环 Phase 3
 progress:
   total_phases: 5
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 10
-  completed_plans: 9
-  percent: 90
+  completed_plans: 10
+  percent: 100
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-18)
 
 **Core value:** 用户订阅的 App 必须能被持续、准确、可解释地监控，并在真实降价时收到可信且不重复的提醒。
-**Current focus:** Phase 3 - 调度与认证安全
+**Current focus:** Phase 4 - 契约与前端稳态
 
 ## Current Position
 
-Phase: 3 of 5 (调度与认证安全)
-Plan: 3 of 4 in current phase
-Status: In progress
-Last activity: 2026-03-18 — 完成 03-03，手动巡检入口改为默认关闭并增加严格 CRON_SECRET 门禁与 route/smoke 回归
+Phase: 4 of 5 (契约与前端稳态)
+Plan: 0 of 4 in current phase
+Status: Ready to start
+Last activity: 2026-03-18 — 完成 03-04，高风险调度/认证边界测试已补齐并闭环 Phase 3
 
-Progress: [█████████░] 90%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
+- Total plans completed: 10
 - Average duration: 5.0 min
-- Total execution time: 0.75 hours
+- Total execution time: 0.83 hours
 
 **By Phase:**
 
@@ -45,12 +45,13 @@ Progress: [█████████░] 90%
 |-------|-------|-------|----------|
 | 1 | 3 | 4 min | 1.3 min |
 | 2 | 3 | 11 min | 3.7 min |
-| 3 | 3 | 30 min | 10.0 min |
+| 3 | 4 | 35 min | 8.8 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-03 (6 min), 03-02 (16 min), 03-01 (8 min), 02-03 (4 min), 02-02 (3 min)
+- Last 5 plans: 03-04 (5 min), 03-03 (6 min), 03-02 (16 min), 03-01 (8 min), 02-03 (4 min)
 - Trend: Improving（在保持高风险门禁与测试覆盖的前提下，执行节奏更平稳）
 | Phase 03 P03 | 6 min | 2 tasks | 8 files |
+| Phase 03 P04 | 5 min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -77,6 +78,8 @@ Recent decisions affecting current work:
 - [2026-03-18]: 新签发 login code / reset token 前必须显式作废旧的未使用凭证，保证同类凭证单活
 - [Phase 03]: 手动巡检入口默认关闭（MANUAL_PRICE_CHECKS_ENABLED=false），避免 secret 漏配导致公网裸露 — 将高副作用入口从 opt-in secret 校验改为显式开关 + deny-by-default，可在配置缺失时直接不可达
 - [Phase 03]: 当手动巡检显式开启但缺少 CRON_SECRET 时返回 503 并给出明确错误文本 — 通过结构化错误暴露配置问题，避免 silent fallback 到不安全默认行为
+- [Phase 03]: 使用验收标准中的精确用例名称作为测试名，确保 requirement 到测试点的映射可搜索、可审计。 — 便于通过 rg 快速定位 requirement 覆盖点，降低后续回归与审计成本。
+- [Phase 03]: 在不改生产逻辑的前提下增强 test doubles，以便稳定复现旧凭证淘汰场景。 — 优先用测试资产强化高风险边界，避免引入新的业务行为变更。
 
 ### Pending Todos
 
@@ -84,11 +87,11 @@ None yet.
 
 ### Blockers/Concerns
 
-- Phase 3 剩余风险：调度/认证高风险边界联测（03-04）仍待落地
+- Phase 3 已完成，无新增阻塞项
 - Phase 4 前置风险：前后端 DTO 与鉴权错误处理仍未统一，后续需要避免接口字段继续漂移
 
 ## Session Continuity
 
-Last session: 2026-03-18T10:09:12.843Z
-Stopped at: Completed 03-03-PLAN.md
+Last session: 2026-03-18T10:24:37.914Z
+Stopped at: Completed 03-04-PLAN.md
 Resume file: None
