@@ -7,6 +7,7 @@ export type WorkerBindings = {
   CRON_SECRET?: string;
   APP_BASE_URL?: string;
   CORS_ORIGIN?: string;
+  MANUAL_PRICE_CHECKS_ENABLED?: string;
   SESSION_TTL_DAYS?: string;
   RESET_PASSWORD_TTL_MINUTES?: string;
   LOGIN_CODE_TTL_MINUTES?: string;

@@ -6,6 +6,7 @@ import {
   DEFAULT_AUTH_RATE_LIMIT_WINDOW_MINUTES,
   DEFAULT_LOGIN_CODE_RESEND_COOLDOWN_SECONDS,
   DEFAULT_LOGIN_CODE_TTL_MINUTES,
+  DEFAULT_MANUAL_PRICE_CHECKS_ENABLED,
   DEFAULT_PRICE_CHECK_MAX_CALLS_PER_MINUTE,
   DEFAULT_PRICE_CHECK_LOCK_TTL_SECONDS,
   DEFAULT_PRICE_CHECK_MAX_RETRIES,
@@ -15,7 +16,7 @@ import {
   DEFAULT_RESET_PASSWORD_TTL_MINUTES,
   DEFAULT_SESSION_TTL_DAYS,
 } from './constants/env';
-import { createOptionalIntWithDefault } from './lib/zod';
+import { createOptionalBooleanWithDefault, createOptionalIntWithDefault } from './lib/zod';
 
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
@@ -24,6 +25,9 @@ const envSchema = z.object({
   CRON_SECRET: z.string().min(8).optional(),
   APP_BASE_URL: z.string().url().optional(),
   CORS_ORIGIN: z.string().optional(),
+  MANUAL_PRICE_CHECKS_ENABLED: createOptionalBooleanWithDefault(
+    DEFAULT_MANUAL_PRICE_CHECKS_ENABLED,
+  ),
   SESSION_TTL_DAYS: createOptionalIntWithDefault({
     defaultValue: DEFAULT_SESSION_TTL_DAYS,
     min: 1,

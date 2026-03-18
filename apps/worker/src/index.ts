@@ -46,12 +46,20 @@ app.route('/api/prices', pricesRouter);
 app.post('/api/jobs/check', async (c) => {
   const config = c.get('config');
 
-  if (config.CRON_SECRET) {
-    const token = c.req.header('x-cron-secret');
+  if (!config.MANUAL_PRICE_CHECKS_ENABLED) {
+    return c.json({ error: 'Not Found' }, 404);
+  }
 
-    if (token !== config.CRON_SECRET) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+  if (!config.CRON_SECRET) {
+    return c.json(
+      { error: 'CRON_SECRET is required when manual price checks are enabled' },
+      503,
+    );
+  }
+
+  const token = c.req.header('x-cron-secret');
+  if (token !== config.CRON_SECRET) {
+    return c.json({ error: 'Unauthorized' }, 401);
   }
 
   const result = await runProtectedPriceCheck(config, { trigger: 'manual' });
