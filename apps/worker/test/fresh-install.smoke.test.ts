@@ -141,6 +141,7 @@ const SESSION_ID = '10000000-0000-4000-8000-000000000001';
 const createBindings = (): WorkerBindings => ({
   DATABASE_URL: 'postgres://test',
   CRON_SECRET: 'cron-secret-123',
+  MANUAL_PRICE_CHECKS_ENABLED: 'true',
   APP_BASE_URL: 'https://app.example.com',
   CORS_ORIGIN: 'https://app.example.com',
   SESSION_TTL_DAYS: '30',
@@ -666,6 +667,9 @@ describe('fresh install smoke', () => {
     expect(cronResponse.status).toBe(200);
     expect(cronPayload).toMatchObject({
       scanned: 1,
+      succeeded: 1,
+      skipped: 0,
+      failed: 0,
       updated: 1,
       drops: 1,
       emailsSent: 0,

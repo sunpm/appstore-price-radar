@@ -7,8 +7,11 @@ DATABASE_URL=
 RESEND_API_KEY=
 # Sender email under a verified Resend domain
 RESEND_FROM_EMAIL=
-# Secret for POST /api/jobs/check authentication (required in production for POST /api/jobs/check)
+# Secret for POST /api/jobs/check authentication (required when MANUAL_PRICE_CHECKS_ENABLED=true)
 CRON_SECRET=
+# Explicit switch for exposing POST /api/jobs/check (default false)
+# Local manual route testing requires MANUAL_PRICE_CHECKS_ENABLED=true + CRON_SECRET
+MANUAL_PRICE_CHECKS_ENABLED=false
 # Auth session ttl in days (1-90, default 30)
 SESSION_TTL_DAYS=30
 # Password reset token ttl in minutes (5-120, default 30)

@@ -58,7 +58,8 @@ Web 必填：
 
 Worker 常用可选：
 - `RESEND_API_KEY`、`RESEND_FROM_EMAIL`（邮件能力）
-- `CRON_SECRET`（手动触发巡检鉴权；如果生产环境保留 `POST /api/jobs/check`，则为 required in production）
+- `MANUAL_PRICE_CHECKS_ENABLED`（默认 `false`，只有设为 `true` 才会暴露 `POST /api/jobs/check`）
+- `CRON_SECRET`（当 `MANUAL_PRICE_CHECKS_ENABLED=true` 时 required；缺失会返回 `CRON_SECRET is required when manual price checks are enabled`）
 - `SESSION_TTL_DAYS`（默认 30）
 - `RESET_PASSWORD_TTL_MINUTES`（默认 30）
 - `LOGIN_CODE_TTL_MINUTES`（默认 10）
@@ -102,6 +103,9 @@ pnpm dev
 手动触发巡检（可选）：
 
 ```bash
+# 先确保 worker 配置：
+# MANUAL_PRICE_CHECKS_ENABLED=true
+# CRON_SECRET=<your-secret>
 curl -X POST 'http://127.0.0.1:8787/api/jobs/check' \
   -H 'x-cron-secret: <CRON_SECRET>'
 ```
@@ -138,7 +142,7 @@ pnpm --filter @appstore-price-radar/worker deploy
 - `apps/worker/wrangler.toml` 已设置 `keep_vars = true`，避免每次部署覆盖 Dashboard 里的普通变量。
 - `apps/worker/wrangler.toml` 默认 cron 为 `0 */6 * * *`（每 6 小时），降低对 App Store API 的请求压力。
 - 本项目不在 `wrangler.toml` 里写 `[vars]`，线上变量以 Dashboard 为准。
-- 只要生产环境保留 `POST /api/jobs/check`，`CRON_SECRET` 就是 required in production，不能留空后直接暴露到公网。
+- 生产若要保留 `POST /api/jobs/check`，必须同时满足 `MANUAL_PRICE_CHECKS_ENABLED=true` 且配置 `CRON_SECRET`；否则该入口会返回 `404`（关闭）或 `503`（开关开启但 secret 缺失）。
 
 ### Web（Netlify）
 
