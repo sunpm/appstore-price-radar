@@ -7,9 +7,9 @@
 
 ### Data & Deployment
 
-- [ ] **DATA-01**: 维护者可以通过单一官方迁移链路初始化数据库，并创建当前运行代码所需的完整 schema
-- [ ] **DATA-02**: fresh install 环境可以完成订阅创建、价格巡检和价格历史查询的基础 smoke path，而不会因迁移漂移失败
-- [ ] **DATA-03**: 部署文档和环境变量说明与实际运行要求保持一致，新的生产环境不会因遗漏关键配置进入不安全或不可用状态
+- [x] **DATA-01**: 维护者可以通过单一官方迁移链路初始化数据库，并创建当前运行代码所需的完整 schema
+- [x] **DATA-02**: fresh install 环境可以完成订阅创建、价格巡检和价格历史查询的基础 smoke path，而不会因迁移漂移失败
+- [x] **DATA-03**: 部署文档和环境变量说明与实际运行要求保持一致，新的生产环境不会因遗漏关键配置进入不安全或不可用状态
 
 ### Price Integrity
 
@@ -62,9 +62,9 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DATA-01 | Phase 1 | Pending |
-| DATA-02 | Phase 1 | Pending |
-| DATA-03 | Phase 1 | Pending |
+| DATA-01 | Phase 1 | Complete |
+| DATA-02 | Phase 1 | Complete |
+| DATA-03 | Phase 1 | Complete |
 | PRICE-01 | Phase 2 | Pending |
 | PRICE-02 | Phase 2 | Pending |
 | PRICE-05 | Phase 2 | Pending |
