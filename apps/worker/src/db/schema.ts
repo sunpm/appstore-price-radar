@@ -3,6 +3,7 @@ import {
   char,
   foreignKey,
   index,
+  integer,
   numeric,
   pgTable,
   serial,
@@ -279,6 +280,50 @@ export const appDropEvents = pgTable(
   }),
 );
 
+export const jobLeases = pgTable(
+  'job_leases',
+  {
+    lockKey: varchar('lock_key', { length: 64 }).primaryKey(),
+    runId: uuid('run_id').notNull(),
+    lockedUntil: timestamp('locked_until', { withTimezone: true }).notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => ({
+    lockedUntilIdx: index('job_leases_locked_until_idx').on(table.lockedUntil),
+  }),
+);
+
+export const priceCheckRuns = pgTable(
+  'price_check_runs',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    trigger: varchar('trigger', { length: 32 }).notNull(),
+    status: varchar('status', { length: 32 }).notNull(),
+    startedAt: timestamp('started_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    finishedAt: timestamp('finished_at', { withTimezone: true }),
+    scanned: integer('scanned').notNull().default(0),
+    succeeded: integer('succeeded').notNull().default(0),
+    skipped: integer('skipped').notNull().default(0),
+    failed: integer('failed').notNull().default(0),
+    updated: integer('updated').notNull().default(0),
+    drops: integer('drops').notNull().default(0),
+    emailsSent: integer('emails_sent').notNull().default(0),
+    errorSummary: text('error_summary').notNull().default(''),
+  },
+  (table) => ({
+    startedAtIdx: index('price_check_runs_started_at_idx').on(table.startedAt),
+    statusStartedAtIdx: index('price_check_runs_status_started_at_idx').on(
+      table.status,
+      table.startedAt,
+    ),
+    finishedAtIdx: index('price_check_runs_finished_at_idx').on(table.finishedAt),
+  }),
+);
+
 export type User = typeof users.$inferSelect;
 export type UserSession = typeof userSessions.$inferSelect;
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
@@ -288,3 +333,5 @@ export type AppSnapshot = typeof appSnapshots.$inferSelect;
 export type AppPriceHistory = typeof appPriceHistory.$inferSelect;
 export type AppPriceChangeEvent = typeof appPriceChangeEvents.$inferSelect;
 export type AppDropEvent = typeof appDropEvents.$inferSelect;
+export type JobLease = typeof jobLeases.$inferSelect;
+export type PriceCheckRun = typeof priceCheckRuns.$inferSelect;

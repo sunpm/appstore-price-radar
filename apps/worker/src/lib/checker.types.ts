@@ -42,6 +42,9 @@ export type CheckReport = {
   startedAt: string;
   finishedAt: string;
   scanned: number;
+  succeeded: number;
+  skipped: number;
+  failed: number;
   updated: number;
   drops: number;
   emailsSent: number;
