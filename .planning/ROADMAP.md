@@ -29,7 +29,7 @@
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: 统一 Drizzle schema、SQL 基线与初始化路径
+- [x] 01-01: 统一 Drizzle schema、SQL 基线与初始化路径
 - [ ] 01-02: 校正文档、环境变量说明和部署步骤
 - [ ] 01-03: 增加 fresh install / smoke verification 基线
 
@@ -103,7 +103,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. 数据基线与可部署性 | 0/3 | Not started | - |
+| 1. 数据基线与可部署性 | 1/3 | In progress | 01-01 |
 | 2. 价格数据正确性 | 0/3 | Not started | - |
 | 3. 调度与认证安全 | 0/4 | Not started | - |
 | 4. 契约与前端稳态 | 0/4 | Not started | - |
