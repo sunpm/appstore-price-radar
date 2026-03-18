@@ -5,33 +5,33 @@
 See: .planning/PROJECT.md (updated 2026-03-18)
 
 **Core value:** 用户订阅的 App 必须能被持续、准确、可解释地监控，并在真实降价时收到可信且不重复的提醒。
-**Current focus:** Phase 2 - 价格数据正确性
+**Current focus:** Phase 3 - 调度与认证安全
 
 ## Current Position
 
-Phase: 2 of 5 (价格数据正确性)
-Plan: 2 of 3 in current phase
-Status: Ready to execute
-Last activity: 2026-03-18 — 完成 02-02，单刷新写入通过 `db.batch(...)` 收敛到一致性边界
+Phase: 3 of 5 (调度与认证安全)
+Plan: 0 of 4 in current phase
+Status: Ready to plan
+Last activity: 2026-03-18 — 完成 Phase 2，统一即时刷新与定时巡检的共享 refresh options contract
 
-Progress: [███████░░░] 67%
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
-- Average duration: 2.2 min
-- Total execution time: 0.18 hours
+- Total plans completed: 6
+- Average duration: 2.5 min
+- Total execution time: 0.25 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 | 3 | 4 min | 1.3 min |
-| 2 | 2 | 7 min | 3.5 min |
+| 2 | 3 | 11 min | 3.7 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-02 (3 min), 02-01 (4 min), 01-02 (1 min), 01-03 (1 min), 01-01 (2 min)
+- Last 5 plans: 02-03 (4 min), 02-02 (3 min), 02-01 (4 min), 01-02 (1 min), 01-03 (1 min)
 - Trend: Stable
 
 ## Accumulated Context
@@ -51,6 +51,7 @@ Recent decisions affecting current work:
 - [2026-03-18]: `refreshSingleApp` 在 `invalid-price` 时会直接跳过 snapshot / event / drop-event 持久化
 - [2026-03-18]: `refreshSingleApp` 现在通过 `db.batch(...)` 一次性提交 snapshot、change event 和 drop event 写入
 - [2026-03-18]: request-level smoke mock 也必须兼容 batched persistence，避免验证资产与真实实现再次漂移
+- [2026-03-18]: 订阅创建与 scheduled refresh 统一通过 `buildRefreshOptions(...)` 派生策略字段，只允许在 `notifyDrops`、`source` 和 `requestId` 上存在显式差异
 
 ### Pending Todos
 
@@ -58,11 +59,11 @@ None yet.
 
 ### Blockers/Concerns
 
-- Phase 2 剩余风险：订阅创建与 scheduled refresh 的共享 options contract 还未落地，`02-03` 需要收敛
 - Phase 3 前置风险：巡检缺少互斥、认证入口缺少限流，仍是后续高风险区域
+- Phase 4 前置风险：前后端 DTO 与鉴权错误处理仍未统一，后续需要避免接口字段继续漂移
 
 ## Session Continuity
 
-Last session: 2026-03-18 16:22
-Stopped at: 完成 02-02，下一步执行 02-03-PLAN.md
+Last session: 2026-03-18 16:32
+Stopped at: 完成 Phase 2 execute + verification，下一步进入 Phase 3 规划
 Resume file: None
