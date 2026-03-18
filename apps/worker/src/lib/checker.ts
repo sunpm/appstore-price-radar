@@ -34,6 +34,16 @@ export const refreshSingleApp = async (
     return null;
   }
 
+  if (data.kind === 'invalid-price') {
+    console.warn('skipping invalid App Store price', {
+      appId,
+      country,
+      reason: data.reason,
+      formattedPrice: data.formattedPrice ?? null,
+    });
+    return null;
+  }
+
   const notifyDrops = options.notifyDrops ?? true;
   const db = getDb(env);
   const now = new Date();

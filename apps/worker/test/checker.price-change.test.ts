@@ -328,6 +328,7 @@ describe('refreshSingleApp change-event persistence', () => {
     });
 
     testHooks.fetchAppStorePriceMock.mockResolvedValueOnce({
+      kind: 'found',
       appId: '123456789',
       country: 'US',
       appName: 'Radar Pro',
@@ -372,6 +373,7 @@ describe('refreshSingleApp change-event persistence', () => {
     });
 
     testHooks.fetchAppStorePriceMock.mockResolvedValueOnce({
+      kind: 'found',
       appId: '123456789',
       country: 'US',
       appName: 'Radar Pro',
@@ -399,6 +401,57 @@ describe('refreshSingleApp change-event persistence', () => {
       requestId: 'req-change-1',
     });
     expect(dbState.events[1]?.changedAt.toISOString()).toBe('2026-03-18T00:00:00.000Z');
+  });
+
+  it('skips snapshot and history writes when App Store price is invalid', async () => {
+    dbState.snapshot = {
+      appId: '123456789',
+      country: 'US',
+      appName: 'Radar Pro',
+      storeUrl: 'https://apps.apple.com/us/app/id123456789',
+      iconUrl: null,
+      currency: 'USD',
+      lastPrice: 9.99,
+      updatedAt: new Date('2026-03-17T00:00:00.000Z'),
+    };
+
+    dbState.events.push({
+      id: 1,
+      appId: '123456789',
+      country: 'US',
+      currency: 'USD',
+      oldAmount: 12.99,
+      newAmount: 9.99,
+      changedAt: new Date('2026-03-17T00:00:00.000Z'),
+      source: 'scheduled',
+      requestId: 'seed-invalid',
+    });
+
+    testHooks.fetchAppStorePriceMock.mockResolvedValueOnce({
+      kind: 'invalid-price',
+      reason: 'missing-price',
+      appId: '123456789',
+      country: 'US',
+      appName: 'Radar Pro',
+      currency: 'USD',
+      storeUrl: 'https://apps.apple.com/us/app/id123456789',
+      iconUrl: null,
+      formattedPrice: '$9.99',
+    });
+
+    await refreshSingleApp(createEnv(), '123456789', 'US', {
+      notifyDrops: true,
+      source: 'scheduled',
+      requestId: 'req-invalid',
+    });
+
+    expect(dbState.snapshot).toMatchObject({
+      appId: '123456789',
+      country: 'US',
+      lastPrice: 9.99,
+    });
+    expect(dbState.events).toHaveLength(1);
+    expect(dbState.dropEvents).toHaveLength(0);
   });
 });
 
