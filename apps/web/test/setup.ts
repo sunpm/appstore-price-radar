@@ -1,7 +1,8 @@
+import type { VueWrapper } from '@vue/test-utils'
 import type { Router } from 'vue-router'
-import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
-import { createMemoryHistory } from 'vue-router'
+import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, vi } from 'vitest'
+import { createMemoryHistory } from 'vue-router'
 
 const fetchMock = vi.fn<typeof fetch>()
 

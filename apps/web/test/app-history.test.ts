@@ -44,7 +44,7 @@ function buildPayload(
   }
 }
 
-describe('AppDetailView price history', () => {
+describe('app detail view price history', () => {
   beforeEach(() => {
     vi.resetModules()
   })

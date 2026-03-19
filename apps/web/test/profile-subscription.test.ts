@@ -20,7 +20,7 @@ function seedStoredSession(): void {
   localStorage.setItem(SESSION_EXPIRES_AT_STORAGE_KEY, '2026-04-19T00:00:00.000Z')
 }
 
-describe('ProfileView subscriptions', () => {
+describe('profile view subscriptions', () => {
   beforeEach(() => {
     vi.resetModules()
   })

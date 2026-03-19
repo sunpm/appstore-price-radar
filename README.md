@@ -90,7 +90,25 @@ pnpm --filter @appstore-price-radar/worker test:smoke
 - baseline SQL 资产仍与运行时代码契约一致
 - Worker 的最小请求闭环（健康检查、订阅创建、巡检触发、价格历史读取）仍可 deterministic 通过
 
-### 6) 启动开发环境
+### 6) 运行发布前统一验证
+
+```bash
+pnpm verify
+```
+
+这是当前仓库的官方发布前验证入口，部署前应统一执行这条命令。它会按固定顺序运行：
+- `pnpm typecheck`
+- `pnpm lint`
+- `pnpm test`
+- `pnpm --filter @appstore-price-radar/worker test:smoke`
+
+如果你希望显式使用完整别名，也可以执行：
+
+```bash
+pnpm verify:full
+```
+
+### 7) 启动开发环境
 
 ```bash
 pnpm dev

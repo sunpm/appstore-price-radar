@@ -1,6 +1,6 @@
 import type { AuthUserDto } from '@appstore-price-radar/contracts'
-import { createMemoryHistory } from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createMemoryHistory } from 'vue-router'
 import {
   SESSION_EXPIRES_AT_STORAGE_KEY,
   SESSION_USER_STORAGE_KEY,
