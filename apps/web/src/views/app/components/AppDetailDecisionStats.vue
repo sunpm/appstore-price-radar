@@ -18,18 +18,18 @@ function toPercent(value: number | null | undefined): string {
 const statCards = computed(() => {
   return [
     {
-      label: '评分',
+      label: '综合评分',
       value: props.stats.averageUserRating === null ? '-' : props.stats.averageUserRating.toFixed(1),
+      accent: 'text-zinc-900',
+    },
+    {
+      label: '当前版本评分',
+      value: props.stats.averageUserRatingForCurrentVersion === null ? '-' : props.stats.averageUserRatingForCurrentVersion.toFixed(1),
       accent: 'text-zinc-900',
     },
     {
       label: '评价数',
       value: props.stats.userRatingCount === null ? '-' : props.stats.userRatingCount.toLocaleString(),
-      accent: 'text-zinc-900',
-    },
-    {
-      label: '分类',
-      value: props.stats.primaryGenreName ?? '暂无',
       accent: 'text-zinc-900',
     },
     {
@@ -43,6 +43,11 @@ const statCards = computed(() => {
       accent: 'text-zinc-900',
     },
     {
+      label: '分类',
+      value: props.stats.primaryGenreName ?? '暂无',
+      accent: 'text-zinc-900',
+    },
+    {
       label: '累计变化事件',
       value: String(props.stats.totalChanges),
       accent: 'text-zinc-900',
@@ -53,18 +58,15 @@ const statCards = computed(() => {
 
 <template>
   <section class="rounded-[2rem] border border-zinc-200/70 bg-white/92 p-5 shadow-[0_20px_40px_-15px_rgba(7,13,20,0.1)] md:p-6">
-    <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
       <div>
         <p class="metric-mono text-xs tracking-[0.18em] text-zinc-500">
           DECISION SIGNALS
         </p>
         <h2 class="mt-2 text-xl font-semibold tracking-tight text-zinc-900">
-          首屏先回答“现在值不值得买”
+          购买决策信号
         </h2>
       </div>
-      <p class="max-w-[34rem] text-sm text-zinc-600">
-        这些指标优先覆盖价格位置、品类热度和口碑信号，帮助快速判断是立即购买、继续观望，还是等待下一次下探。
-      </p>
     </div>
 
     <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">

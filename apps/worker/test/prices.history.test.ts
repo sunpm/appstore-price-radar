@@ -73,6 +73,9 @@ const EMPTY_SNAPSHOT_METADATA = {
   releaseNotes: null,
 };
 
+const fetchMock = vi.fn();
+let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
+
 vi.mock('../src/db/client', () => ({
   getDb: () => testHooks.dbRef.current,
 }));
@@ -199,11 +202,17 @@ describe('prices history route', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-03-18T00:00:00.000Z'));
+    fetchMock.mockReset();
+    fetchMock.mockRejectedValue(new Error('network unavailable'));
+    vi.stubGlobal('fetch', fetchMock);
+    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     dbState = createDbState();
     testHooks.dbRef.current = createDbMock(dbState);
   });
 
   afterEach(() => {
+    consoleWarnSpy.mockRestore();
+    vi.unstubAllGlobals();
     vi.useRealTimers();
   });
 
