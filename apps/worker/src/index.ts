@@ -107,4 +107,5 @@ const worker: ExportedHandler<WorkerBindings> = {
   },
 };
 
+export { app };
 export default worker;

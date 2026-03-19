@@ -30,15 +30,15 @@
 
 - [ ] **API-01**: 前后端对核心认证与订阅 DTO 共享统一契约，避免接口字段漂移
 - [ ] **API-02**: 用户在工作台和详情页查看价格历史时，不会因为超长 payload 或频繁切换导致明显卡顿
-- [ ] **API-03**: 首页公开降价流在数据增长后仍能稳定返回去重后的结果与正确的关注人数
+- [x] **API-03**: 首页公开降价流在数据增长后仍能稳定返回去重后的结果与正确的关注人数
 - [ ] **API-04**: 前端的鉴权请求、401 处理和错误反馈被收敛为共享逻辑，避免页面行为分叉
 - [ ] **API-05**: 用户在 App 详情页可以查看足够支持购买或继续关注决策的 App 信息，核心信息首屏可见，扩展元数据采用折叠展示，避免无差别堆叠字段
 
 ### Quality Assurance
 
-- [ ] **QA-01**: Worker 的关键路由和服务具备回归测试，覆盖认证、订阅、公开 feed、手动巡检鉴权和错误边界
-- [ ] **QA-02**: 前端至少覆盖登录态恢复、工作台订阅流程和价格历史查看的自动化回归
-- [ ] **QA-03**: 团队可以通过统一验证命令完成类型检查、lint、测试和关键 smoke path 后再部署
+- [x] **QA-01**: Worker 的关键路由和服务具备回归测试，覆盖认证、订阅、公开 feed、手动巡检鉴权和错误边界
+- [x] **QA-02**: 前端至少覆盖登录态恢复、工作台订阅流程和价格历史查看的自动化回归
+- [x] **QA-03**: 团队可以通过统一验证命令完成类型检查、lint、测试和关键 smoke path 后再部署
 
 ## v2 Requirements
 
@@ -78,10 +78,10 @@
 | API-02 | Phase 4 | Pending |
 | API-04 | Phase 4 | Pending |
 | API-05 | Phase 4 | Pending |
-| API-03 | Phase 5 | Pending |
-| QA-01 | Phase 5 | Pending |
-| QA-02 | Phase 5 | Pending |
-| QA-03 | Phase 5 | Pending |
+| API-03 | Phase 5 | Complete |
+| QA-01 | Phase 5 | Complete |
+| QA-02 | Phase 5 | Complete |
+| QA-03 | Phase 5 | Complete |
 
 **Coverage:**
 - v1 requirements: 20 total

@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: In progress
-stopped_at: Completed 04-04-PLAN.md
-last_updated: "2026-03-18T13:25:15Z"
-last_activity: 2026-03-18 — 完成 04-04，详情页 metadata 已从采集到展示全链路打通
+status: Complete
+stopped_at: Completed 05-03-PLAN.md
+last_updated: "2026-03-19T03:14:47.065Z"
+last_activity: 2026-03-19 — 完成 05-03，Web 关键路径自动化测试与根级统一验证入口已落地，Phase 5 全部收口
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 17
-  completed_plans: 14
-  percent: 82
+  completed_plans: 17
+  percent: 100
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-18)
 
 **Core value:** 用户订阅的 App 必须能被持续、准确、可解释地监控，并在真实降价时收到可信且不重复的提醒。
-**Current focus:** Phase 5 - Feed 性能与回归保障（准备执行 05-01 公开降价流查询优化）
+**Current focus:** Phase 5 - Feed 性能与回归保障（已完成，公开 feed、Worker/Web 回归测试与统一验证入口均已收口）
 
 ## Current Position
 
-Phase: 4 of 5 (契约与前端稳态)
-Plan: 4 of 4 in current phase
-Status: Completed
-Last activity: 2026-03-18 — 完成 04-04，详情页 metadata 已从采集到展示全链路打通
+Phase: 5 of 5 (Feed 性能与回归保障)
+Plan: 3 of 3 in current phase
+Status: Complete
+Last activity: 2026-03-19 — 完成 05-03，Web 关键路径自动化测试与根级统一验证入口已落地，Phase 5 全部收口
 
-Progress: [████████░░] 82%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 10
-- Average duration: 5.0 min
-- Total execution time: 0.83 hours
+- Total plans completed: 12
+- Average duration: 5.5 min
+- Total execution time: 1.10 hours
 
 **By Phase:**
 
@@ -46,12 +46,16 @@ Progress: [████████░░] 82%
 | 1 | 3 | 4 min | 1.3 min |
 | 2 | 3 | 11 min | 3.7 min |
 | 3 | 4 | 35 min | 8.8 min |
+| 5 | 3 | 27 min | 9.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-04 (5 min), 03-03 (6 min), 03-02 (16 min), 03-01 (8 min), 02-03 (4 min)
-- Trend: Improving（在保持高风险门禁与测试覆盖的前提下，执行节奏更平稳）
+- Last 5 plans: 05-03 (9 min), 05-02 (7 min), 05-01 (11 min), 03-04 (5 min), 03-03 (6 min)
+- Trend: Stable（在补齐前后端回归测试与统一验证入口后，执行成本仍保持可控）
 | Phase 03 P03 | 6 min | 2 tasks | 8 files |
 | Phase 03 P04 | 5 min | 2 tasks | 4 files |
+| Phase 05 P01 | 11 min | 2 tasks | 9 files |
+| Phase 05 P02 | 7 min | 2 tasks | 8 files |
+| Phase 05 P03 | 9 min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -84,6 +88,12 @@ Recent decisions affecting current work:
 - [Phase 04]: Worker HTTP 返回体统一通过显式 mapper 输出 ISO string DTO，测试也必须按 DTO 结构断言，不能继续依赖 raw `Date` 或旧字段。 — 确保共享 contracts 是运行时 shape 的真实反映，而不只是类型层面的名义统一。
 - [Phase 04]: 前端受保护请求统一经由 `useAuthedApi()` 处理 unauthorized，页面只负责声明业务错误文案与 UI 状态。 — 减少 401 side effect 分叉，避免每个 view 自己拼 token/clearSession/router 跳转。
 - [Phase 04]: `useAuthSession()` 负责 token / user / expiresAt 的共享恢复与持久化，route guard 和布局层都直接消费这套状态语义。 — 让导航、弹窗与页面 restore 行为站在同一份 session source 上。
+- [Phase 05]: 公开降价流现在在数据库边界完成 (appId, country) 最新事件去重，并以 detectedAt DESC、id DESC 作为稳定排序语义。
+- [Phase 05]: `/api/public/drops` 现在显式补齐 dedupe=true 和默认 limit，并将超限 limit clamp 到 PUBLIC_DROPS_MAX_LIMIT。
+- [Phase 05]: 保留已有 jobs.check-route 回归资产，只增量补齐 auth/subscriptions 缺失覆盖。
+- [Phase 05]: Worker route 回归使用最小 requireAuth mock，service 回归继续沿用 in-memory DB state doubles。
+- [Phase 05]: Web 自动化优先覆盖 route view + composable 的真实关键路径，而不是拆成零散 util 测试。
+- [Phase 05]: 根级 verify 成为唯一官方发布前入口，verify:full 保持等价别名。
 
 ### Pending Todos
 
@@ -96,6 +106,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-18T13:25:15Z
-Stopped at: Completed 04-04-PLAN.md
+Last session: 2026-03-19T03:14:47.062Z
+Stopped at: Completed 05-03-PLAN.md
 Resume file: None
