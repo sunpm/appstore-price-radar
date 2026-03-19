@@ -1,24 +1,19 @@
 <script setup lang="ts">
 import type { PriceHistoryWindow } from '@appstore-price-radar/contracts'
-import type { AppDecisionStatsState, AppDetailPayload } from './types'
+import type { AppDetailPayload } from './types'
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePriceHistory } from '../../composables/usePriceHistory'
+import { resolveCountryLabel } from '../../constants/countries'
 import { useToast } from '../../lib/toast'
-import AppDetailDecisionStats from './components/AppDetailDecisionStats.vue'
 import AppDetailHeroCard from './components/AppDetailHeroCard.vue'
 import AppDetailMetadataPanel from './components/AppDetailMetadataPanel.vue'
 import AppDetailTrendPanel from './components/AppDetailTrendPanel.vue'
 
-interface DetailPricePoint {
-  key: string
-  time: string
-  price: number
-  currency: string
-}
-
 const COUNTRY_CODE_RE = /^[A-Z]{2}$/
-const DEFAULT_DETAIL_WINDOW: PriceHistoryWindow = '1y'
+const DEFAULT_DETAIL_WINDOW: PriceHistoryWindow = 'all'
+const MAC_DEVICE_RE = /(?:^|[^a-z])mac(?:book|mini|pro|studio)?|imac|macos/
+const IOS_DEVICE_RE = /iphone|ipad|ipod|iosuniversal/
 
 const route = useRoute()
 const toast = useToast()
@@ -33,7 +28,6 @@ const {
   summary,
   loading,
   loadingMore,
-  selectedWindow,
   loadInitial,
   loadMore,
 } = usePriceHistory()
@@ -47,6 +41,10 @@ const country = computed<string>(() => {
   const raw = route.params.country
   const value = typeof raw === 'string' ? raw.trim().toUpperCase() : 'US'
   return COUNTRY_CODE_RE.test(value) ? value : 'US'
+})
+
+const countryLabel = computed(() => {
+  return resolveCountryLabel(country.value)
 })
 
 const detail = computed<AppDetailPayload | null>(() => {
@@ -92,10 +90,6 @@ async function loadDetail(window: PriceHistoryWindow = DEFAULT_DETAIL_WINDOW): P
   }
 }
 
-async function changeHistoryWindow(window: PriceHistoryWindow): Promise<void> {
-  await loadDetail(window)
-}
-
 async function loadMoreHistory(): Promise<void> {
   try {
     await loadMore()
@@ -105,116 +99,32 @@ async function loadMoreHistory(): Promise<void> {
   }
 }
 
-const priceTrail = computed<DetailPricePoint[]>(() => {
-  const currentHistory = detail.value?.history ?? []
-
-  if (currentHistory.length === 0) {
-    const currentSnapshot = detail.value?.snapshot
-
-    if (!currentSnapshot) {
-      return []
-    }
-
-    return [{
-      key: 'snapshot-only',
-      time: currentSnapshot.updatedAt,
-      price: currentSnapshot.lastPrice,
-      currency: currentSnapshot.currency,
-    }]
-  }
-
-  const [firstChange] = currentHistory
-
-  if (!firstChange) {
-    return []
-  }
-
-  const points: DetailPricePoint[] = [{
-    key: `baseline-${firstChange.id}`,
-    time: firstChange.changedAt,
-    price: firstChange.oldAmount,
-    currency: firstChange.currency,
-  }]
-
-  for (const item of currentHistory) {
-    points.push({
-      key: `change-${item.id}`,
-      time: item.changedAt,
-      price: item.newAmount,
-      currency: item.currency,
-    })
-  }
-
-  return points
-})
-
-const currentPoint = computed(() => {
-  return priceTrail.value.at(-1) ?? null
-})
-
-const lowestPoint = computed(() => {
-  if (priceTrail.value.length === 0) {
-    return null
-  }
-
-  return priceTrail.value.reduce((lowest, current) => {
-    if (current.price < lowest.price) {
-      return current
-    }
-
-    return lowest
-  }, priceTrail.value[0]!)
-})
-
-const highestPoint = computed(() => {
-  if (priceTrail.value.length === 0) {
-    return null
-  }
-
-  return priceTrail.value.reduce((highest, current) => {
-    if (current.price > highest.price) {
-      return current
-    }
-
-    return highest
-  }, priceTrail.value[0]!)
-})
-
-const historyCurrency = computed(() => {
-  return detail.value?.snapshot?.currency ?? currentPoint.value?.currency ?? 'USD'
-})
-
-const dropFromPeakPct = computed<number | null>(() => {
-  const current = currentPoint.value
-  const highest = highestPoint.value
-
-  if (!current || !highest || highest.price <= 0) {
-    return null
-  }
-
-  return ((highest.price - current.price) / highest.price) * 100
-})
-
 const appTitle = computed(() => {
   return detail.value?.snapshot?.appName ?? `App ${appId.value}`
 })
 
-const heroCurrentPrice = computed(() => {
-  return currentPoint.value?.price ?? detail.value?.snapshot?.lastPrice ?? null
-})
+const storePlatformLabel = computed(() => {
+  const normalizedValues = [
+    ...(detail.value?.metadata?.supportedDevices ?? []),
+    ...(detail.value?.metadata?.features ?? []),
+  ].map(item => item.toLowerCase())
 
-const decisionStats = computed<AppDecisionStatsState>(() => {
-  return {
-    averageUserRating: detail.value?.metadata?.averageUserRating ?? null,
-    averageUserRatingForCurrentVersion:
-      detail.value?.metadata?.averageUserRatingForCurrentVersion ?? null,
-    userRatingCount: detail.value?.metadata?.userRatingCount ?? null,
-    primaryGenreName: detail.value?.metadata?.primaryGenreName ?? null,
-    dropFromPeakPct: dropFromPeakPct.value,
-    lowestPrice: lowestPoint.value?.price ?? heroCurrentPrice.value,
-    totalChanges: detail.value?.summary.totalChanges ?? 0,
-    currency: historyCurrency.value,
+  const hasMac = normalizedValues.some(item => MAC_DEVICE_RE.test(item))
+  const hasIOS = normalizedValues.some(item => IOS_DEVICE_RE.test(item))
+
+  if (hasIOS && hasMac) {
+    return 'iOS / macOS'
   }
+
+  if (hasMac) {
+    return 'macOS'
+  }
+
+  if (hasIOS) {
+    return 'iOS'
+  }
+
+  return 'iOS'
 })
 
 const canLoadMore = computed(() => Boolean(detail.value?.page.hasMore))
@@ -248,40 +158,40 @@ watch(
       </p>
 
       <template v-else-if="detail">
-        <AppDetailHeroCard
-          :app-id="appId"
-          :country="country"
-          :app-name="appTitle"
-          :icon-url="detail.snapshot?.iconUrl ?? null"
-          :store-url="detail.snapshot?.storeUrl ?? null"
-          :seller-name="detail.metadata?.sellerName ?? null"
-          :primary-genre-name="detail.metadata?.primaryGenreName ?? null"
-          :version="detail.metadata?.version ?? null"
-          :content-advisory-rating="detail.metadata?.contentAdvisoryRating ?? detail.metadata?.trackContentRating ?? null"
-          :current-price="heroCurrentPrice"
-          :currency="historyCurrency"
-          :updated-at="detail.snapshot?.updatedAt ?? null"
-        />
+        <div class="grid items-start gap-4 xl:grid-cols-[minmax(0,1.08fr)_23rem] xl:gap-5">
+          <div class="space-y-4">
+            <AppDetailHeroCard
+              :app-id="appId"
+              :country-label="countryLabel"
+              :app-name="appTitle"
+              :icon-url="detail.snapshot?.iconUrl ?? null"
+              :store-platform-label="storePlatformLabel"
+              :seller-name="detail.metadata?.sellerName ?? null"
+              :primary-genre-name="detail.metadata?.primaryGenreName ?? null"
+              :version="detail.metadata?.version ?? null"
+              :content-advisory-rating="detail.metadata?.contentAdvisoryRating ?? detail.metadata?.trackContentRating ?? null"
+              :updated-at="detail.snapshot?.updatedAt ?? null"
+            />
 
-        <AppDetailTrendPanel
-          :snapshot="detail.snapshot"
-          :history="detail.history"
-          :summary="detail.summary"
-          :selected-window="selectedWindow"
-          :loading-more="loadingMore"
-          :can-load-more="canLoadMore"
-          @change-window="changeHistoryWindow"
-          @load-more="loadMoreHistory"
-        />
+            <AppDetailMetadataPanel
+              :metadata="detail.metadata"
+              :app-name="appTitle"
+            />
+          </div>
 
-        <AppDetailDecisionStats class="mt-4" :stats="decisionStats" />
-
-        <AppDetailMetadataPanel
-          class="mt-4"
-          :metadata="detail.metadata"
-          :app-name="appTitle"
-          :store-url="detail.snapshot?.storeUrl ?? null"
-        />
+          <aside class="xl:sticky xl:top-8">
+            <AppDetailTrendPanel
+              :snapshot="detail.snapshot"
+              :history="detail.history"
+              :summary="detail.summary"
+              :loading-more="loadingMore"
+              :can-load-more="canLoadMore"
+              :store-url="detail.snapshot?.storeUrl ?? null"
+              :store-platform-label="storePlatformLabel"
+              @load-more="loadMoreHistory"
+            />
+          </aside>
+        </div>
       </template>
     </div>
   </main>
