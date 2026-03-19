@@ -1,15 +1,13 @@
 <script setup lang="ts">
-import type { HistoryPayload, SubscriptionItem, WatchStats } from './types'
+import type { SubscriptionItem, WatchStats } from './types'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthedApi } from '../../composables/useAuthedApi'
 import { useAuthSession } from '../../composables/useAuthSession'
-import { usePriceHistory } from '../../composables/usePriceHistory'
 import { COUNTRY_OPTIONS, resolveCountryLabel } from '../../constants/countries'
 import { formatDateTime, formatMoney } from '../../lib/format'
 import { useToast } from '../../lib/toast'
 import ProfileDashboardHeader from './components/ProfileDashboardHeader.vue'
-import ProfileHistorySection from './components/ProfileHistorySection.vue'
 import ProfileSubscriptionListCard from './components/ProfileSubscriptionListCard.vue'
 import ProfileWatchFormCard from './components/ProfileWatchFormCard.vue'
 
@@ -37,25 +35,8 @@ const form = reactive({
 })
 
 const subscriptions = ref<SubscriptionItem[]>([])
-const selectedSubscription = ref<SubscriptionItem | null>(null)
-const selectedAppLabel = ref('')
-const historyTargetPrice = ref('')
-const {
-  history,
-  snapshot,
-  page,
-  summary,
-  loading: loadingHistory,
-  loadingMore,
-  selectedWindow,
-  loadInitial,
-  loadMore,
-  abortActiveRequest,
-} = usePriceHistory({ auth: true })
-
 const loadingList = ref(false)
 const creating = ref(false)
-const updatingHistoryTarget = ref(false)
 
 const successText = ref('')
 const errorText = ref('')
@@ -91,10 +72,6 @@ function resetMessages(): void {
 
 function resetDashboardState(): void {
   subscriptions.value = []
-  selectedSubscription.value = null
-  selectedAppLabel.value = ''
-  historyTargetPrice.value = ''
-  abortActiveRequest()
 }
 
 async function handleAuthedError(error: unknown, fallback: string): Promise<void> {
@@ -105,19 +82,6 @@ async function handleAuthedError(error: unknown, fallback: string): Promise<void
     resetDashboardState()
   }
 }
-
-const selectedHistory = computed<HistoryPayload | null>(() => {
-  if (!selectedSubscription.value) {
-    return null
-  }
-
-  return {
-    snapshot: snapshot.value,
-    history: history.value,
-    page: page.value,
-    summary: summary.value,
-  }
-})
 
 function parsePrice(value: unknown): number | null {
   if (value === null || value === undefined || value === '') {
@@ -157,21 +121,6 @@ function targetRuleText(targetPrice: number | null, currency = 'USD'): string {
   }
 
   return `当价格 <= ${toMoney(targetPrice, currency)} 时通知`
-}
-
-function syncSelectedSubscription(): void {
-  if (!selectedSubscription.value) {
-    return
-  }
-
-  const matched = subscriptions.value.find(item => item.id === selectedSubscription.value?.id)
-
-  if (!matched) {
-    return
-  }
-
-  selectedSubscription.value = matched
-  historyTargetPrice.value = matched.targetPrice === null ? '' : String(matched.targetPrice)
 }
 
 async function loadCurrentUser(): Promise<void> {
@@ -226,7 +175,6 @@ async function loadSubscriptions(options: { silent?: boolean } = {}): Promise<vo
     const data = await authedRequest<{ items: SubscriptionItem[] }>('/api/subscriptions')
 
     subscriptions.value = data.items
-    syncSelectedSubscription()
 
     if (!options.silent) {
       successText.value = `已同步 ${data.items.length} 条监控任务。`
@@ -303,108 +251,11 @@ async function removeSubscription(id: string): Promise<void> {
       },
     )
 
-    if (selectedSubscription.value?.id === id) {
-      selectedSubscription.value = null
-      selectedAppLabel.value = ''
-      historyTargetPrice.value = ''
-      abortActiveRequest()
-    }
-
     successText.value = '监控任务已移除。'
     await loadSubscriptions({ silent: true })
   }
   catch (error) {
     await handleAuthedError(error, '任务移除失败，请稍后重试。')
-  }
-}
-
-async function loadHistory(item: SubscriptionItem): Promise<void> {
-  resetMessages()
-
-  selectedSubscription.value = item
-  historyTargetPrice.value = item.targetPrice === null ? '' : String(item.targetPrice)
-  selectedAppLabel.value = `${item.appName ?? `App ${item.appId}`} · ${countryLabel(item.country)}`
-
-  try {
-    await loadInitial(item.appId, item.country, selectedWindow.value)
-  }
-  catch (error) {
-    await handleAuthedError(error, '历史数据加载失败，请稍后重试。')
-  }
-}
-
-async function changeHistoryWindow(window: HistoryPayload['page']['window']): Promise<void> {
-  const selected = selectedSubscription.value
-
-  if (!selected) {
-    return
-  }
-
-  resetMessages()
-
-  try {
-    await loadInitial(selected.appId, selected.country, window)
-  }
-  catch (error) {
-    await handleAuthedError(error, '历史数据加载失败，请稍后重试。')
-  }
-}
-
-async function loadMoreHistory(): Promise<void> {
-  try {
-    await loadMore()
-  }
-  catch (error) {
-    await handleAuthedError(error, '更多历史数据加载失败，请稍后重试。')
-  }
-}
-
-async function saveHistoryTargetPrice(): Promise<void> {
-  resetMessages()
-
-  const selected = selectedSubscription.value
-
-  if (!selected) {
-    errorText.value = '请先在任务列表中选择一个应用。'
-    return
-  }
-
-  updatingHistoryTarget.value = true
-
-  try {
-    const targetPrice = parsePrice(historyTargetPrice.value)
-    const data = await authedRequest<{ subscription: SubscriptionItem }>(
-      '/api/subscriptions',
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          appId: selected.appId,
-          country: selected.country,
-          targetPrice,
-        }),
-      },
-    )
-
-    selectedSubscription.value = {
-      ...selected,
-      targetPrice: data.subscription.targetPrice,
-      updatedAt: data.subscription.updatedAt,
-    }
-    historyTargetPrice.value
-      = data.subscription.targetPrice === null ? '' : String(data.subscription.targetPrice)
-
-    successText.value
-      = data.subscription.targetPrice === null
-        ? '该应用已更新为“任意降价即通知”。'
-        : `该应用已更新为“价格 <= ${toMoney(data.subscription.targetPrice, data.subscription.currency ?? 'USD')} 时通知”。`
-
-    await loadSubscriptions({ silent: true })
-  }
-  catch (error) {
-    await handleAuthedError(error, '通知规则更新失败，请稍后重试。')
-  }
-  finally {
-    updatingHistoryTarget.value = false
   }
 }
 
@@ -487,26 +338,9 @@ onMounted(async (): Promise<void> => {
             :to-money="toMoney"
             :target-rule-text="targetRuleText"
             @refresh="loadSubscriptions()"
-            @show-history="loadHistory($event)"
             @remove="removeSubscription($event)"
           />
         </section>
-
-        <ProfileHistorySection
-          v-model:history-target-price="historyTargetPrice"
-          :selected-history="selectedHistory"
-          :selected-subscription="selectedSubscription"
-          :selected-app-label="selectedAppLabel"
-          :updating-history-target="updatingHistoryTarget"
-          :loading-history="loadingHistory"
-          :loading-more="loadingMore"
-          :selected-window="selectedWindow"
-          :target-rule-text="targetRuleText"
-          :to-money="toMoney"
-          @change-window="changeHistoryWindow($event)"
-          @load-more="loadMoreHistory"
-          @save-target-price="saveHistoryTargetPrice"
-        />
       </template>
 
       <section
