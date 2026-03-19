@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: In progress
-stopped_at: Completed 05-02-PLAN.md
-last_updated: "2026-03-19T02:58:23.512Z"
-last_activity: 2026-03-19 — 完成 05-02，Worker 关键路由与服务回归测试已补齐，手动巡检 deny-by-default 门禁继续保持自动化覆盖
+status: Complete
+stopped_at: Completed 05-03-PLAN.md
+last_updated: "2026-03-19T03:14:47.065Z"
+last_activity: 2026-03-19 — 完成 05-03，Web 关键路径自动化测试与根级统一验证入口已落地，Phase 5 全部收口
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 17
-  completed_plans: 16
-  percent: 94
+  completed_plans: 17
+  percent: 100
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-18)
 
 **Core value:** 用户订阅的 App 必须能被持续、准确、可解释地监控，并在真实降价时收到可信且不重复的提醒。
-**Current focus:** Phase 5 - Feed 性能与回归保障（准备执行 05-03 前端关键路径测试与统一验证命令）
+**Current focus:** Phase 5 - Feed 性能与回归保障（已完成，公开 feed、Worker/Web 回归测试与统一验证入口均已收口）
 
 ## Current Position
 
 Phase: 5 of 5 (Feed 性能与回归保障)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-03-19 — 完成 05-02，Worker 关键路由与服务回归测试已补齐，手动巡检 deny-by-default 门禁继续保持自动化覆盖
+Plan: 3 of 3 in current phase
+Status: Complete
+Last activity: 2026-03-19 — 完成 05-03，Web 关键路径自动化测试与根级统一验证入口已落地，Phase 5 全部收口
 
-Progress: [█████████░] 94%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 11
-- Average duration: 5.2 min
-- Total execution time: 0.95 hours
+- Total plans completed: 12
+- Average duration: 5.5 min
+- Total execution time: 1.10 hours
 
 **By Phase:**
 
@@ -46,15 +46,16 @@ Progress: [█████████░] 94%
 | 1 | 3 | 4 min | 1.3 min |
 | 2 | 3 | 11 min | 3.7 min |
 | 3 | 4 | 35 min | 8.8 min |
-| 5 | 2 | 18 min | 9.0 min |
+| 5 | 3 | 27 min | 9.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 05-02 (7 min), 05-01 (11 min), 03-04 (5 min), 03-03 (6 min), 03-02 (16 min)
-- Trend: Stable（在补齐回归测试资产的同时，执行成本仍保持可控）
+- Last 5 plans: 05-03 (9 min), 05-02 (7 min), 05-01 (11 min), 03-04 (5 min), 03-03 (6 min)
+- Trend: Stable（在补齐前后端回归测试与统一验证入口后，执行成本仍保持可控）
 | Phase 03 P03 | 6 min | 2 tasks | 8 files |
 | Phase 03 P04 | 5 min | 2 tasks | 4 files |
 | Phase 05 P01 | 11 min | 2 tasks | 9 files |
 | Phase 05 P02 | 7 min | 2 tasks | 8 files |
+| Phase 05 P03 | 9 min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -91,6 +92,8 @@ Recent decisions affecting current work:
 - [Phase 05]: `/api/public/drops` 现在显式补齐 dedupe=true 和默认 limit，并将超限 limit clamp 到 PUBLIC_DROPS_MAX_LIMIT。
 - [Phase 05]: 保留已有 jobs.check-route 回归资产，只增量补齐 auth/subscriptions 缺失覆盖。
 - [Phase 05]: Worker route 回归使用最小 requireAuth mock，service 回归继续沿用 in-memory DB state doubles。
+- [Phase 05]: Web 自动化优先覆盖 route view + composable 的真实关键路径，而不是拆成零散 util 测试。
+- [Phase 05]: 根级 verify 成为唯一官方发布前入口，verify:full 保持等价别名。
 
 ### Pending Todos
 
@@ -103,6 +106,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-19T02:58:23.510Z
-Stopped at: Completed 05-02-PLAN.md
+Last session: 2026-03-19T03:14:47.062Z
+Stopped at: Completed 05-03-PLAN.md
 Resume file: None

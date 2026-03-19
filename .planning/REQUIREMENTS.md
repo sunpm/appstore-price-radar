@@ -37,8 +37,8 @@
 ### Quality Assurance
 
 - [x] **QA-01**: Worker 的关键路由和服务具备回归测试，覆盖认证、订阅、公开 feed、手动巡检鉴权和错误边界
-- [ ] **QA-02**: 前端至少覆盖登录态恢复、工作台订阅流程和价格历史查看的自动化回归
-- [ ] **QA-03**: 团队可以通过统一验证命令完成类型检查、lint、测试和关键 smoke path 后再部署
+- [x] **QA-02**: 前端至少覆盖登录态恢复、工作台订阅流程和价格历史查看的自动化回归
+- [x] **QA-03**: 团队可以通过统一验证命令完成类型检查、lint、测试和关键 smoke path 后再部署
 
 ## v2 Requirements
 
@@ -80,8 +80,8 @@
 | API-05 | Phase 4 | Pending |
 | API-03 | Phase 5 | Complete |
 | QA-01 | Phase 5 | Complete |
-| QA-02 | Phase 5 | Pending |
-| QA-03 | Phase 5 | Pending |
+| QA-02 | Phase 5 | Complete |
+| QA-03 | Phase 5 | Complete |
 
 **Coverage:**
 - v1 requirements: 20 total
