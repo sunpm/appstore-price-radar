@@ -11,7 +11,7 @@ import {
   appPriceHistory,
   appSnapshots,
 } from '../db/schema';
-import { extractAppId } from '../lib/appstore';
+import { extractAppId, fetchAppStorePrice } from '../lib/appstore';
 import type {
   AppSnapshotRecord,
   GetPriceHistoryPayload,
@@ -343,14 +343,133 @@ export const toAppDecisionMetadataDto = (
   return {
     sellerName: snapshot.sellerName ?? null,
     primaryGenreName: snapshot.primaryGenreName ?? null,
+    genres: snapshot.primaryGenreName ? [snapshot.primaryGenreName] : [],
     description: snapshot.description ?? null,
     averageUserRating: snapshot.averageUserRating ?? null,
+    averageUserRatingForCurrentVersion: null,
     userRatingCount: snapshot.userRatingCount ?? null,
+    userRatingCountForCurrentVersion: null,
     bundleId: snapshot.bundleId ?? null,
     version: snapshot.version ?? null,
     minimumOsVersion: snapshot.minimumOsVersion ?? null,
     releaseNotes: snapshot.releaseNotes ?? null,
+    fileSizeBytes: null,
+    contentAdvisoryRating: null,
+    trackContentRating: null,
+    releaseDate: null,
+    currentVersionReleaseDate: null,
+    sellerUrl: null,
+    artistViewUrl: null,
+    supportedDevices: [],
+    languageCodesISO2A: [],
+    advisories: [],
+    features: [],
+    screenshotUrls: [],
+    ipadScreenshotUrls: [],
   };
+};
+
+const mergeMetadata = (
+  base: MetadataDto | null,
+  override: MetadataDto | null,
+): MetadataDto | null => {
+  if (!base) {
+    return override;
+  }
+
+  if (!override) {
+    return base;
+  }
+
+  return {
+    sellerName: override.sellerName ?? base.sellerName,
+    primaryGenreName: override.primaryGenreName ?? base.primaryGenreName,
+    genres: override.genres.length > 0 ? override.genres : base.genres,
+    description: override.description ?? base.description,
+    averageUserRating: override.averageUserRating ?? base.averageUserRating,
+    averageUserRatingForCurrentVersion:
+      override.averageUserRatingForCurrentVersion ?? base.averageUserRatingForCurrentVersion,
+    userRatingCount: override.userRatingCount ?? base.userRatingCount,
+    userRatingCountForCurrentVersion:
+      override.userRatingCountForCurrentVersion ?? base.userRatingCountForCurrentVersion,
+    bundleId: override.bundleId ?? base.bundleId,
+    version: override.version ?? base.version,
+    minimumOsVersion: override.minimumOsVersion ?? base.minimumOsVersion,
+    releaseNotes: override.releaseNotes ?? base.releaseNotes,
+    fileSizeBytes: override.fileSizeBytes ?? base.fileSizeBytes,
+    contentAdvisoryRating: override.contentAdvisoryRating ?? base.contentAdvisoryRating,
+    trackContentRating: override.trackContentRating ?? base.trackContentRating,
+    releaseDate: override.releaseDate ?? base.releaseDate,
+    currentVersionReleaseDate:
+      override.currentVersionReleaseDate ?? base.currentVersionReleaseDate,
+    sellerUrl: override.sellerUrl ?? base.sellerUrl,
+    artistViewUrl: override.artistViewUrl ?? base.artistViewUrl,
+    supportedDevices:
+      override.supportedDevices.length > 0 ? override.supportedDevices : base.supportedDevices,
+    languageCodesISO2A:
+      override.languageCodesISO2A.length > 0
+        ? override.languageCodesISO2A
+        : base.languageCodesISO2A,
+    advisories: override.advisories.length > 0 ? override.advisories : base.advisories,
+    features: override.features.length > 0 ? override.features : base.features,
+    screenshotUrls:
+      override.screenshotUrls.length > 0 ? override.screenshotUrls : base.screenshotUrls,
+    ipadScreenshotUrls:
+      override.ipadScreenshotUrls.length > 0
+        ? override.ipadScreenshotUrls
+        : base.ipadScreenshotUrls,
+  };
+};
+
+const getLiveMetadata = async (
+  appId: string,
+  countryCode: string,
+): Promise<MetadataDto | null> => {
+  try {
+    const liveLookup = await fetchAppStorePrice(appId, countryCode);
+
+    if (!liveLookup) {
+      return null;
+    }
+
+    return {
+      sellerName: liveLookup.sellerName ?? null,
+      primaryGenreName: liveLookup.primaryGenreName ?? null,
+      genres: liveLookup.genres,
+      description: liveLookup.description ?? null,
+      averageUserRating: liveLookup.averageUserRating ?? null,
+      averageUserRatingForCurrentVersion:
+        liveLookup.averageUserRatingForCurrentVersion ?? null,
+      userRatingCount: liveLookup.userRatingCount ?? null,
+      userRatingCountForCurrentVersion:
+        liveLookup.userRatingCountForCurrentVersion ?? null,
+      bundleId: liveLookup.bundleId ?? null,
+      version: liveLookup.version ?? null,
+      minimumOsVersion: liveLookup.minimumOsVersion ?? null,
+      releaseNotes: liveLookup.releaseNotes ?? null,
+      fileSizeBytes: liveLookup.fileSizeBytes ?? null,
+      contentAdvisoryRating: liveLookup.contentAdvisoryRating ?? null,
+      trackContentRating: liveLookup.trackContentRating ?? null,
+      releaseDate: liveLookup.releaseDate ?? null,
+      currentVersionReleaseDate: liveLookup.currentVersionReleaseDate ?? null,
+      sellerUrl: liveLookup.sellerUrl ?? null,
+      artistViewUrl: liveLookup.artistViewUrl ?? null,
+      supportedDevices: liveLookup.supportedDevices,
+      languageCodesISO2A: liveLookup.languageCodesISO2A,
+      advisories: liveLookup.advisories,
+      features: liveLookup.features,
+      screenshotUrls: liveLookup.screenshotUrls,
+      ipadScreenshotUrls: liveLookup.ipadScreenshotUrls,
+    };
+  }
+  catch (error) {
+    console.warn('failed to enrich app metadata from App Store lookup', {
+      appId,
+      countryCode,
+      error,
+    });
+    return null;
+  }
 };
 
 export const toPriceChangeEventDto = (
@@ -415,7 +534,10 @@ export const getPriceHistory = async (
     .reverse()
     .map(toPriceChangeEventDto);
   const snapshotDto = snapshot ? toAppSnapshotDto(snapshot) : null;
-  const metadataDto = snapshot ? toAppDecisionMetadataDto(snapshot) : null;
+  const metadataDto = mergeMetadata(
+    snapshot ? toAppDecisionMetadataDto(snapshot) : null,
+    await getLiveMetadata(appId, countryCode),
+  );
 
   return buildServiceResponse(200, {
     snapshot: snapshotDto,

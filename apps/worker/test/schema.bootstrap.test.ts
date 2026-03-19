@@ -18,6 +18,16 @@ describe('schema bootstrap contract', () => {
     );
   });
 
+  it('keeps later worker tables and snapshot metadata in the baseline sql asset', () => {
+    expect(baselineSql).toContain('CREATE TABLE IF NOT EXISTS job_leases');
+    expect(baselineSql).toContain('CREATE TABLE IF NOT EXISTS price_check_runs');
+    expect(baselineSql).toContain('CREATE TABLE IF NOT EXISTS auth_rate_limits');
+    expect(baselineSql).toContain('seller_name text');
+    expect(baselineSql).toContain('primary_genre_name text');
+    expect(baselineSql).toContain('average_user_rating numeric(4, 2)');
+    expect(baselineSql).toContain('release_notes text');
+  });
+
   it('guards legacy backfill while preserving idempotent replay semantics', () => {
     expect(followupSql).toContain("to_regclass('app_price_history') IS NOT NULL");
     expect(followupSql).toContain('ON CONFLICT (app_id, country, request_id) DO NOTHING');

@@ -37,50 +37,55 @@ const publicDropSelection = {
     where ${subscriptions.appId} = ${appDropEvents.appId}
       and ${subscriptions.country} = ${appDropEvents.country}
       and ${subscriptions.isActive} = true
-  )`,
+  )`.as('submissionCount'),
 };
 
-export const getPublicDrops = async (
-  config: EnvConfig,
+export const buildPublicDropsQuery = (
+  db: ReturnType<typeof getDb>,
   payload: GetPublicDropsPayload,
-): Promise<PublicServiceResponse<PublicDropsResponse>> => {
+) => {
   const countryCode = payload.country?.toUpperCase();
-  const db = getDb(config);
   const finalLimit = payload.limit ?? PUBLIC_DROPS_DEFAULT_LIMIT;
   const useDedupe = payload.dedupe ?? true;
   const where = countryCode ? eq(appDropEvents.country, countryCode) : undefined;
 
-  let items: PublicDropItem[];
-
-  if (useDedupe) {
-    const latestDrops = db
-      .selectDistinctOn(
-        [appDropEvents.appId, appDropEvents.country],
-        publicDropSelection,
-      )
-      .from(appDropEvents)
-      .where(where)
-      .orderBy(
-        appDropEvents.appId,
-        appDropEvents.country,
-        desc(appDropEvents.detectedAt),
-        desc(appDropEvents.id),
-      )
-      .as('latest_public_drops');
-
-    items = await db
-      .select()
-      .from(latestDrops)
-      .orderBy(desc(latestDrops.detectedAt), desc(latestDrops.id))
-      .limit(finalLimit);
-  } else {
-    items = await db
+  if (!useDedupe) {
+    return db
       .select(publicDropSelection)
       .from(appDropEvents)
       .where(where)
       .orderBy(desc(appDropEvents.detectedAt), desc(appDropEvents.id))
       .limit(finalLimit);
   }
+
+  const latestDrops = db
+    .selectDistinctOn(
+      [appDropEvents.appId, appDropEvents.country],
+      publicDropSelection,
+    )
+    .from(appDropEvents)
+    .where(where)
+    .orderBy(
+      appDropEvents.appId,
+      appDropEvents.country,
+      desc(appDropEvents.detectedAt),
+      desc(appDropEvents.id),
+    )
+    .as('latest_public_drops');
+
+  return db
+    .select()
+    .from(latestDrops)
+    .orderBy(desc(latestDrops.detectedAt), desc(latestDrops.id))
+    .limit(finalLimit);
+};
+
+export const getPublicDrops = async (
+  config: EnvConfig,
+  payload: GetPublicDropsPayload,
+): Promise<PublicServiceResponse<PublicDropsResponse>> => {
+  const db = getDb(config);
+  const items = await buildPublicDropsQuery(db, payload) as PublicDropItem[];
 
   return buildServiceResponse(200, { items });
 };

@@ -95,6 +95,15 @@ CREATE TABLE IF NOT EXISTS app_snapshots (
   app_name text NOT NULL,
   store_url text,
   icon_url text,
+  seller_name text,
+  primary_genre_name text,
+  description text,
+  average_user_rating numeric(4, 2),
+  user_rating_count integer,
+  bundle_id text,
+  version text,
+  minimum_os_version text,
+  release_notes text,
   currency char(3) NOT NULL,
   last_price numeric(10, 2) NOT NULL,
   updated_at timestamptz NOT NULL DEFAULT now()
@@ -152,3 +161,54 @@ CREATE INDEX IF NOT EXISTS app_drop_events_app_country_detected_idx
 
 CREATE INDEX IF NOT EXISTS app_drop_events_detected_idx
   ON app_drop_events (detected_at DESC);
+
+CREATE TABLE IF NOT EXISTS job_leases (
+  lock_key varchar(64) PRIMARY KEY,
+  run_id uuid NOT NULL,
+  locked_until timestamptz NOT NULL,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS job_leases_locked_until_idx
+  ON job_leases (locked_until);
+
+CREATE TABLE IF NOT EXISTS price_check_runs (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  trigger varchar(32) NOT NULL,
+  status varchar(32) NOT NULL,
+  started_at timestamptz NOT NULL DEFAULT now(),
+  finished_at timestamptz,
+  scanned integer NOT NULL DEFAULT 0,
+  succeeded integer NOT NULL DEFAULT 0,
+  skipped integer NOT NULL DEFAULT 0,
+  failed integer NOT NULL DEFAULT 0,
+  updated integer NOT NULL DEFAULT 0,
+  drops integer NOT NULL DEFAULT 0,
+  emails_sent integer NOT NULL DEFAULT 0,
+  error_summary text NOT NULL DEFAULT ''
+);
+
+CREATE INDEX IF NOT EXISTS price_check_runs_started_at_idx
+  ON price_check_runs (started_at DESC);
+
+CREATE INDEX IF NOT EXISTS price_check_runs_status_started_at_idx
+  ON price_check_runs (status, started_at DESC);
+
+CREATE INDEX IF NOT EXISTS price_check_runs_finished_at_idx
+  ON price_check_runs (finished_at DESC);
+
+CREATE TABLE IF NOT EXISTS auth_rate_limits (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  scope varchar(64) NOT NULL,
+  subject_key varchar(320) NOT NULL,
+  attempt_count integer NOT NULL DEFAULT 0,
+  window_started_at timestamptz NOT NULL DEFAULT now(),
+  blocked_until timestamptz,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS auth_rate_limits_scope_subject_uniq
+  ON auth_rate_limits (scope, subject_key);
+
+CREATE INDEX IF NOT EXISTS auth_rate_limits_blocked_until_idx
+  ON auth_rate_limits (blocked_until);
