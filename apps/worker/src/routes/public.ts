@@ -6,21 +6,50 @@ import {
   PUBLIC_DROPS_DEFAULT_LIMIT,
   PUBLIC_DROPS_MAX_LIMIT,
 } from '../constants/routes';
-import {
-  createOptionalBooleanWithDefault,
-  createOptionalIntWithDefault,
-} from '../lib/zod';
 import { getPublicDrops } from '../services/public';
 import type { AppEnv } from '../types';
 
+const dedupeQuerySchema = z.preprocess((value) => {
+  if (value === undefined || value === null || value === '') {
+    return true;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+
+    if (normalized === '1' || normalized === 'true' || normalized === 'yes') {
+      return true;
+    }
+
+    if (normalized === '0' || normalized === 'false' || normalized === 'no') {
+      return false;
+    }
+  }
+
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  return true;
+}, z.boolean());
+
+const limitQuerySchema = z.preprocess((value) => {
+  if (value === undefined || value === null || value === '') {
+    return PUBLIC_DROPS_DEFAULT_LIMIT;
+  }
+
+  if (typeof value === 'string') {
+    return Number(value);
+  }
+
+  return value;
+}, z.number().int().min(1))
+  .transform(value => Math.min(value, PUBLIC_DROPS_MAX_LIMIT));
+
 const querySchema = z.object({
   country: z.string().trim().length(2).optional(),
-  dedupe: createOptionalBooleanWithDefault(true),
-  limit: createOptionalIntWithDefault({
-    defaultValue: PUBLIC_DROPS_DEFAULT_LIMIT,
-    min: 1,
-    max: PUBLIC_DROPS_MAX_LIMIT,
-  }),
+  dedupe: dedupeQuerySchema,
+  limit: limitQuerySchema,
 });
 
 const router = new Hono<AppEnv>();
