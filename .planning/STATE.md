@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: In progress
-stopped_at: Completed 05-01-PLAN.md
-last_updated: "2026-03-19T02:46:30Z"
-last_activity: 2026-03-19 — 完成 05-01，公开降价流去重、submissionCount 聚合与 route 回归基线已收敛
+stopped_at: Completed 05-02-PLAN.md
+last_updated: "2026-03-19T02:58:23.512Z"
+last_activity: 2026-03-19 — 完成 05-02，Worker 关键路由与服务回归测试已补齐，手动巡检 deny-by-default 门禁继续保持自动化覆盖
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 17
-  completed_plans: 15
-  percent: 88
+  completed_plans: 16
+  percent: 94
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-18)
 
 **Core value:** 用户订阅的 App 必须能被持续、准确、可解释地监控，并在真实降价时收到可信且不重复的提醒。
-**Current focus:** Phase 5 - Feed 性能与回归保障（准备执行 05-02 Worker 关键路由/服务回归测试）
+**Current focus:** Phase 5 - Feed 性能与回归保障（准备执行 05-03 前端关键路径测试与统一验证命令）
 
 ## Current Position
 
 Phase: 5 of 5 (Feed 性能与回归保障)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-03-19 — 完成 05-01，公开降价流去重、submissionCount 聚合与 route 回归基线已收敛
+Last activity: 2026-03-19 — 完成 05-02，Worker 关键路由与服务回归测试已补齐，手动巡检 deny-by-default 门禁继续保持自动化覆盖
 
-Progress: [█████████░] 88%
+Progress: [█████████░] 94%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 10
-- Average duration: 5.0 min
-- Total execution time: 0.83 hours
+- Total plans completed: 11
+- Average duration: 5.2 min
+- Total execution time: 0.95 hours
 
 **By Phase:**
 
@@ -46,13 +46,15 @@ Progress: [█████████░] 88%
 | 1 | 3 | 4 min | 1.3 min |
 | 2 | 3 | 11 min | 3.7 min |
 | 3 | 4 | 35 min | 8.8 min |
+| 5 | 2 | 18 min | 9.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-04 (5 min), 03-03 (6 min), 03-02 (16 min), 03-01 (8 min), 02-03 (4 min)
-- Trend: Improving（在保持高风险门禁与测试覆盖的前提下，执行节奏更平稳）
+- Last 5 plans: 05-02 (7 min), 05-01 (11 min), 03-04 (5 min), 03-03 (6 min), 03-02 (16 min)
+- Trend: Stable（在补齐回归测试资产的同时，执行成本仍保持可控）
 | Phase 03 P03 | 6 min | 2 tasks | 8 files |
 | Phase 03 P04 | 5 min | 2 tasks | 4 files |
 | Phase 05 P01 | 11 min | 2 tasks | 9 files |
+| Phase 05 P02 | 7 min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -87,6 +89,8 @@ Recent decisions affecting current work:
 - [Phase 04]: `useAuthSession()` 负责 token / user / expiresAt 的共享恢复与持久化，route guard 和布局层都直接消费这套状态语义。 — 让导航、弹窗与页面 restore 行为站在同一份 session source 上。
 - [Phase 05]: 公开降价流现在在数据库边界完成 (appId, country) 最新事件去重，并以 detectedAt DESC、id DESC 作为稳定排序语义。
 - [Phase 05]: `/api/public/drops` 现在显式补齐 dedupe=true 和默认 limit，并将超限 limit clamp 到 PUBLIC_DROPS_MAX_LIMIT。
+- [Phase 05]: 保留已有 jobs.check-route 回归资产，只增量补齐 auth/subscriptions 缺失覆盖。
+- [Phase 05]: Worker route 回归使用最小 requireAuth mock，service 回归继续沿用 in-memory DB state doubles。
 
 ### Pending Todos
 
@@ -99,6 +103,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-19T02:45:24.957Z
-Stopped at: Completed 05-01-PLAN.md
+Last session: 2026-03-19T02:58:23.510Z
+Stopped at: Completed 05-02-PLAN.md
 Resume file: None
