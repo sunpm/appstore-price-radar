@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: In progress
-stopped_at: Completed 04-04-PLAN.md
-last_updated: "2026-03-18T13:25:15Z"
-last_activity: 2026-03-18 — 完成 04-04，详情页 metadata 已从采集到展示全链路打通
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-03-19T02:46:30Z"
+last_activity: 2026-03-19 — 完成 05-01，公开降价流去重、submissionCount 聚合与 route 回归基线已收敛
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 17
-  completed_plans: 14
-  percent: 82
+  completed_plans: 15
+  percent: 88
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-18)
 
 **Core value:** 用户订阅的 App 必须能被持续、准确、可解释地监控，并在真实降价时收到可信且不重复的提醒。
-**Current focus:** Phase 5 - Feed 性能与回归保障（准备执行 05-01 公开降价流查询优化）
+**Current focus:** Phase 5 - Feed 性能与回归保障（准备执行 05-02 Worker 关键路由/服务回归测试）
 
 ## Current Position
 
-Phase: 4 of 5 (契约与前端稳态)
-Plan: 4 of 4 in current phase
-Status: Completed
-Last activity: 2026-03-18 — 完成 04-04，详情页 metadata 已从采集到展示全链路打通
+Phase: 5 of 5 (Feed 性能与回归保障)
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-03-19 — 完成 05-01，公开降价流去重、submissionCount 聚合与 route 回归基线已收敛
 
-Progress: [████████░░] 82%
+Progress: [█████████░] 88%
 
 ## Performance Metrics
 
@@ -52,6 +52,7 @@ Progress: [████████░░] 82%
 - Trend: Improving（在保持高风险门禁与测试覆盖的前提下，执行节奏更平稳）
 | Phase 03 P03 | 6 min | 2 tasks | 8 files |
 | Phase 03 P04 | 5 min | 2 tasks | 4 files |
+| Phase 05 P01 | 11 min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -84,6 +85,8 @@ Recent decisions affecting current work:
 - [Phase 04]: Worker HTTP 返回体统一通过显式 mapper 输出 ISO string DTO，测试也必须按 DTO 结构断言，不能继续依赖 raw `Date` 或旧字段。 — 确保共享 contracts 是运行时 shape 的真实反映，而不只是类型层面的名义统一。
 - [Phase 04]: 前端受保护请求统一经由 `useAuthedApi()` 处理 unauthorized，页面只负责声明业务错误文案与 UI 状态。 — 减少 401 side effect 分叉，避免每个 view 自己拼 token/clearSession/router 跳转。
 - [Phase 04]: `useAuthSession()` 负责 token / user / expiresAt 的共享恢复与持久化，route guard 和布局层都直接消费这套状态语义。 — 让导航、弹窗与页面 restore 行为站在同一份 session source 上。
+- [Phase 05]: 公开降价流现在在数据库边界完成 (appId, country) 最新事件去重，并以 detectedAt DESC、id DESC 作为稳定排序语义。
+- [Phase 05]: `/api/public/drops` 现在显式补齐 dedupe=true 和默认 limit，并将超限 limit clamp 到 PUBLIC_DROPS_MAX_LIMIT。
 
 ### Pending Todos
 
@@ -96,6 +99,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-18T13:25:15Z
-Stopped at: Completed 04-04-PLAN.md
+Last session: 2026-03-19T02:45:24.957Z
+Stopped at: Completed 05-01-PLAN.md
 Resume file: None
