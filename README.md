@@ -78,7 +78,7 @@ Worker 常用可选：
 pnpm --filter @appstore-price-radar/worker db:push
 ```
 
-这是 fresh install 的唯一官方建库路径。`apps/worker/drizzle/0000_init.sql` 和 `apps/worker/drizzle/0001_price_change_events.sql` 作为 baseline / legacy migration 资产保留，但不再作为 README 推荐的首要初始化步骤。
+这是 fresh install 的唯一官方建库路径。仓库只保留 `apps/worker/drizzle/0000_init.sql` 作为 baseline SQL 资产，以及 `apps/worker/drizzle/0001_price_change_events.sql` 作为 legacy backfill 资产；后续纯 schema 增量 SQL 已折叠回 baseline，不再单独维护。
 
 ### 5) 运行 smoke verification
 
