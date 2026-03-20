@@ -35,7 +35,7 @@ function progressWidth(dropPercent: number | null): string {
           降价列表
         </p>
         <h2 class="mt-2 font-['Space_Grotesk'] text-3xl font-bold tracking-[-0.05em] text-slate-950">
-          最新降价情报
+          最新降价记录
         </h2>
       </div>
 
@@ -60,7 +60,7 @@ function progressWidth(dropPercent: number | null): string {
       v-else-if="items.length === 0"
       class="radar-empty mt-4 p-4 text-sm leading-7"
     >
-      暂无匹配结果
+      暂无匹配记录，请调整筛选条件后重试。
     </div>
 
     <ul v-else class="mt-4 grid gap-3">
@@ -152,7 +152,7 @@ function progressWidth(dropPercent: number | null): string {
               :to="appDetailTo(item)"
               class="radar-button-primary w-full"
             >
-              进入详情页
+              查看详情
             </RouterLink>
 
             <a

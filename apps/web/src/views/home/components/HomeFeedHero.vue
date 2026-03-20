@@ -52,12 +52,12 @@ const statCards = computed(() => {
       <div>
         <div class="flex flex-wrap gap-2">
           <span class="radar-chip border-blue-100 bg-blue-50 text-blue-700 shadow-none">
-            公开情报
+            公开记录
           </span>
         </div>
 
         <h1 class="mt-5 max-w-[12ch] font-['Space_Grotesk'] text-4xl font-bold tracking-[-0.08em] text-slate-950 md:text-[3.7rem] md:leading-[0.98]">
-          公开降价情报总览
+          公开降价记录
         </h1>
 
         <div class="mt-6 grid gap-3 md:grid-cols-3">

@@ -42,7 +42,7 @@ function appDetailTo(item: SubscriptionItem) {
         :disabled="props.loadingList"
         @click="emit('refresh')"
       >
-        {{ props.loadingList ? '同步中...' : '同步数据' }}
+        {{ props.loadingList ? '刷新中...' : '刷新列表' }}
       </button>
     </div>
 

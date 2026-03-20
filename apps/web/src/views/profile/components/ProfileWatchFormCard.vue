@@ -97,7 +97,7 @@ function onTargetPriceInput(event: Event): void {
         type="submit"
         :disabled="props.creating"
       >
-        {{ props.creating ? '创建中...' : '创建并开始监控' }}
+        {{ props.creating ? '创建中...' : '创建任务' }}
       </button>
     </form>
   </article>

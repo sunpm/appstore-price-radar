@@ -181,7 +181,7 @@ async function createSubscription(): Promise<void> {
   resetMessages()
 
   if (!currentUser.value) {
-    errorText.value = '请先完成登录。'
+    errorText.value = '请先登录。'
     return
   }
 
@@ -313,7 +313,7 @@ onMounted(async (): Promise<void> => {
           登录状态已失效
         </h2>
         <p class="mt-2 text-sm leading-6 text-slate-500">
-          请重新登录后再进入工作台或账号安全页面。
+          请重新登录。
         </p>
         <RouterLink
           to="/auth"

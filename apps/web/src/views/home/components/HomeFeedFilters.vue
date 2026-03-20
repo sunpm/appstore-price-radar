@@ -32,10 +32,10 @@ function onKeywordInput(event: Event): void {
     <div class="flex items-start justify-between gap-4">
       <div>
         <p class="metric-mono text-[0.68rem] tracking-[0.24em] text-slate-400">
-          筛选面板
+          筛选
         </p>
         <h2 class="mt-2 font-['Space_Grotesk'] text-2xl font-bold tracking-[-0.04em] text-slate-950">
-          筛选控制台
+          筛选
         </h2>
       </div>
 
@@ -44,7 +44,7 @@ function onKeywordInput(event: Event): void {
         class="radar-button-secondary shrink-0 px-4 py-2.5 text-sm"
         @click="emit('refresh')"
       >
-        刷新数据
+        刷新记录
       </button>
     </div>
 
@@ -70,7 +70,7 @@ function onKeywordInput(event: Event): void {
       </label>
 
       <label class="grid gap-2">
-        <span class="text-sm font-semibold text-slate-700">检索关键词</span>
+        <span class="text-sm font-semibold text-slate-700">关键词</span>
         <input
           :value="keyword"
           type="text"

@@ -328,7 +328,7 @@ const ratingCards = computed<InfoCardItem[]>(() => {
         应用元数据
       </p>
       <h2 class="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
-        应用信息
+        App Store 信息
       </h2>
     </div>
 
@@ -336,7 +336,7 @@ const ratingCards = computed<InfoCardItem[]>(() => {
       v-if="!hasMetadata"
       class="radar-empty mt-4 px-4 py-4 text-sm"
     >
-      暂无扩展元数据
+      暂无更多 App Store 信息。
     </div>
 
     <template v-else>
@@ -346,6 +346,9 @@ const ratingCards = computed<InfoCardItem[]>(() => {
             <h3 class="text-lg font-semibold tracking-tight text-slate-950">
               应用截图
             </h3>
+            <p class="mt-1 text-sm text-slate-500">
+              左右滑动查看更多截图。
+            </p>
           </div>
           <p class="text-sm text-slate-500">
             {{ screenshotUrls.length > 0 ? `共 ${screenshotUrls.length} 张` : '暂无官方截图' }}
@@ -356,7 +359,7 @@ const ratingCards = computed<InfoCardItem[]>(() => {
           v-if="screenshotUrls.length === 0"
           class="radar-empty mt-4 px-4 py-4 text-sm leading-7"
         >
-          当前 App Store 官方接口没有返回截图数据
+          App Store 接口未返回截图数据。
         </div>
 
         <div v-else class="mt-4 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3">

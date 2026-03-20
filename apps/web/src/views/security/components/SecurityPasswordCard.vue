@@ -76,14 +76,14 @@ const confirmPassword = defineModel<string>('confirmPassword', { required: true 
 
       <div class="flex flex-wrap items-center justify-between gap-3 md:col-span-3">
         <p class="text-sm text-slate-500">
-          忘记当前密码可使用
+          忘记当前密码可前往
           <RouterLink
             :to="{ path: '/auth', query: { reset: '1' } }"
             class="font-semibold text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-slate-950"
           >
             重置密码
           </RouterLink>
-          流程。
+          。
         </p>
         <button
           class="radar-button-primary"

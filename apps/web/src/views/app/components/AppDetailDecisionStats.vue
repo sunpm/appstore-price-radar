@@ -69,10 +69,10 @@ const statCards = computed(() => {
     <div>
       <div>
         <p class="metric-mono text-[0.68rem] tracking-[0.24em] text-slate-400">
-          决策信号
+          STATS
         </p>
         <h2 class="mt-2 font-['Space_Grotesk'] text-2xl font-bold tracking-[-0.04em] text-slate-950">
-          购买决策信号
+          价格与评分
         </h2>
       </div>
     </div>

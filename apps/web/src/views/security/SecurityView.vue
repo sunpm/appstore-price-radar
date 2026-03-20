@@ -94,7 +94,7 @@ async function changePassword(): Promise<void> {
   resetMessages()
 
   if (!currentUser.value) {
-    errorText.value = '请先完成登录。'
+    errorText.value = '请先登录。'
     return
   }
 
@@ -172,7 +172,7 @@ onMounted(async (): Promise<void> => {
                 账号安全
               </p>
               <h1 class="mt-2 font-['Space_Grotesk'] text-3xl font-bold tracking-[-0.05em] text-slate-950 md:text-[3rem]">
-                账号安全中心
+                账号安全
               </h1>
               <p class="mt-3 text-sm leading-6 text-slate-600">
                 当前账号：{{ currentUser.email }}
@@ -215,7 +215,7 @@ onMounted(async (): Promise<void> => {
           登录状态已失效
         </h2>
         <p class="mt-2 text-sm leading-6 text-slate-500">
-          请重新登录后再进入账号安全页面。
+          请重新登录。
         </p>
         <RouterLink
           to="/auth"

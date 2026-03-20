@@ -200,10 +200,10 @@ function directionTextClass(direction: TrendChangeRow['direction']): string {
   <section class="grid gap-4">
     <article class="radar-panel-strong p-4">
       <p class="metric-mono text-[0.68rem] tracking-[0.24em] text-slate-500">
-        官方渠道
+        APP STORE
       </p>
       <h2 class="mt-2 font-['Space_Grotesk'] text-2xl font-bold tracking-[-0.05em] text-slate-950">
-        官方渠道下载
+        App Store 下载
       </h2>
       <p class="mt-2 text-sm text-slate-600">
         {{ props.storePlatformLabel }}
@@ -216,14 +216,14 @@ function directionTextClass(direction: TrendChangeRow['direction']): string {
         rel="noreferrer"
         class="mt-4 inline-flex h-12 w-full items-center justify-center rounded-[0.9rem] bg-[#ffd84f] px-5 text-base font-semibold text-slate-950 shadow-[0_14px_24px_-18px_rgba(250,204,21,0.6)] transition duration-300 hover:bg-[#ffcf2d]"
       >
-        官方渠道下载
+        前往 App Store
       </a>
 
       <div
         v-else
         class="radar-empty mt-5 px-4 py-4 text-center text-sm"
       >
-        暂无 App Store 官方链接
+        暂无 App Store 链接
       </div>
     </article>
 
@@ -265,7 +265,7 @@ function directionTextClass(direction: TrendChangeRow['direction']): string {
         v-else
         class="radar-empty mt-5 px-4 py-4 text-sm"
       >
-        暂无价格轨迹
+        暂无价格记录。
       </div>
 
       <div class="mt-4 grid gap-3">
@@ -295,13 +295,13 @@ function directionTextClass(direction: TrendChangeRow['direction']): string {
 
         <article class="rounded-[0.95rem] border border-slate-200/80 bg-white p-4">
           <p class="text-sm font-medium tracking-[0.08em] text-slate-500">
-            最近一次变化
+            最近一次变价
           </p>
           <strong class="mt-2 block text-base font-semibold leading-7 text-slate-950">
-            {{ latestChange ? `${formatMoney(latestChange.oldAmount, latestChange.currency)} -> ${formatMoney(latestChange.newAmount, latestChange.currency)}` : '暂无变化事件' }}
+            {{ latestChange ? `${formatMoney(latestChange.oldAmount, latestChange.currency)} -> ${formatMoney(latestChange.newAmount, latestChange.currency)}` : '暂无变价记录' }}
           </strong>
           <p class="mt-2 text-sm text-slate-500">
-            {{ latestChange ? formatDate(latestChange.time) : '等待后续价格更新' }}
+            {{ latestChange ? formatDate(latestChange.time) : '暂无最近变价时间' }}
           </p>
         </article>
 
@@ -323,7 +323,7 @@ function directionTextClass(direction: TrendChangeRow['direction']): string {
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 class="font-['Space_Grotesk'] text-xl font-bold tracking-[-0.04em] text-slate-950">
-            最低入手价浮动记录
+            价格变动记录
           </h3>
           <p class="mt-1 text-sm text-slate-500">
             {{ props.summary.latestChangeAt ? `最近更新：${formatDateTime(props.summary.latestChangeAt)}` : '暂无变价记录' }}
@@ -335,7 +335,7 @@ function directionTextClass(direction: TrendChangeRow['direction']): string {
         v-if="orderedChanges.length === 0"
         class="radar-empty mt-4 px-4 py-4 text-sm"
       >
-        当前窗口暂无历史变化事件。
+        当前范围内暂无变价记录。
       </div>
 
       <ul v-else class="mt-4 space-y-3">

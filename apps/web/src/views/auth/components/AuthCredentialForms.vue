@@ -52,7 +52,7 @@ const minPasswordLength = MIN_PASSWORD_LENGTH
               PASSWORD RECOVERY
             </p>
             <h2 class="mt-2 font-['Space_Grotesk'] text-xl font-bold tracking-[-0.04em] text-slate-950">
-              两步完成密码重置
+              重置密码
             </h2>
           </div>
           <button
@@ -147,7 +147,7 @@ const minPasswordLength = MIN_PASSWORD_LENGTH
             CREATE ACCOUNT
           </p>
           <h2 class="mt-2 font-['Space_Grotesk'] text-xl font-bold tracking-[-0.04em] text-slate-950">
-            注册账号并立即开始监控
+            创建账号
           </h2>
         </div>
 
@@ -188,7 +188,7 @@ const minPasswordLength = MIN_PASSWORD_LENGTH
         />
 
         <p class="text-sm leading-6 text-slate-500">
-          注册前需要先完成邮箱验证码校验，这能避免垃圾账号进入监控工作台。
+          先发送验证码，再创建账号。
         </p>
 
         <button
@@ -206,7 +206,7 @@ const minPasswordLength = MIN_PASSWORD_LENGTH
             PASSWORD LOGIN
           </p>
           <h2 class="mt-2 font-['Space_Grotesk'] text-xl font-bold tracking-[-0.04em] text-slate-950">
-            用邮箱和密码继续工作流
+            邮箱密码登录
           </h2>
         </div>
 
@@ -268,7 +268,7 @@ const minPasswordLength = MIN_PASSWORD_LENGTH
             EMAIL OTP
           </p>
           <h2 class="mt-2 font-['Space_Grotesk'] text-xl font-bold tracking-[-0.04em] text-slate-950">
-            用验证码快速完成登录
+            邮箱验证码登录
           </h2>
         </div>
 
@@ -296,7 +296,7 @@ const minPasswordLength = MIN_PASSWORD_LENGTH
         />
 
         <p class="text-sm leading-6 text-slate-500">
-          验证码通常在一分钟内送达，首次使用该方式的邮箱也可以快速完成账号建立。
+          验证码通常在 1 分钟内送达。首次使用该邮箱验证码登录时会自动创建账号。
         </p>
 
         <button

@@ -16,12 +16,12 @@ const showLoginAction = computed(() => !token.value && route.name !== 'auth')
 
 const navItems = computed<NavItem[]>(() => {
   const items: NavItem[] = [
-    { label: '公开情报', path: '/' },
+    { label: '降价记录', path: '/' },
   ]
 
   if (token.value) {
     items.push(
-      { label: '监控工作台', path: '/profile' },
+      { label: '我的订阅', path: '/profile' },
       { label: '账号安全', path: '/security' },
     )
   }
@@ -87,7 +87,7 @@ watch(
                 APP STORE PRICE RADAR
               </span>
               <span class="mt-1 block truncate font-['Space_Grotesk'] text-lg font-bold tracking-[-0.04em] text-slate-950 md:text-[1.38rem]">
-                公开降价情报与个人监控工作台
+                降价记录与我的订阅
               </span>
             </span>
           </RouterLink>
@@ -110,7 +110,7 @@ watch(
               class="radar-focus radar-button-secondary px-4 py-2.5 text-sm"
               @click="openAuthModal"
             >
-              登录中心
+              登录
             </button>
           </div>
         </div>

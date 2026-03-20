@@ -34,7 +34,7 @@ const emit = defineEmits<{
         to="/profile"
         class="radar-button-primary w-full"
       >
-        进入监控工作台
+        进入我的订阅
       </RouterLink>
       <button
         type="button"

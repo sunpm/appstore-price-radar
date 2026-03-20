@@ -114,12 +114,12 @@ const featureCards = computed(() => {
       {
         label: 'SESSION',
         title: '当前会话已恢复',
-        body: '你可以直接进入工作台管理订阅，或退出当前设备会话。',
+        body: '你可以直接进入我的订阅，或退出当前设备会话。',
       },
       {
         label: 'SYNC',
-        title: '工作台与安全页共用同一登录状态',
-        body: '登录后所有个人监控数据会自动同步，无需重复验证。',
+        title: '订阅页与安全页共用同一登录状态',
+        body: '登录后可直接进入订阅页或账号安全页，无需重复验证。',
       },
       {
         label: 'CONTINUITY',
@@ -133,12 +133,12 @@ const featureCards = computed(() => {
     {
       label: 'PASSWORD',
       title: '标准密码登录',
-      body: '适合已有账号且经常回访的用户，直接进入工作台继续追踪价格。',
+      body: '适合已有账号，登录后可直接进入我的订阅。',
     },
     {
       label: 'EMAIL OTP',
       title: '邮箱验证码登录',
-      body: '不想记密码时也能完成登录，首次验证同样可以快速建立账号。',
+      body: '不想记密码时也能登录，首次验证也会自动创建账号。',
     },
     {
       label: 'RESET',
@@ -235,7 +235,7 @@ async function submitAuth(): Promise<void> {
 
     applyAuthSession(data)
     authForm.password = ''
-    successText.value = props.redirectOnSuccess ? '登录成功，正在进入工作台。' : '登录成功。'
+    successText.value = props.redirectOnSuccess ? '登录成功，正在进入我的订阅。' : '登录成功。'
 
     await onAuthenticated()
   }
@@ -280,7 +280,7 @@ async function submitRegister(): Promise<void> {
     applyAuthSession(data)
     authForm.password = ''
     registerCode.value = ''
-    successText.value = props.redirectOnSuccess ? '账号创建成功，正在进入工作台。' : '账号创建成功。'
+    successText.value = props.redirectOnSuccess ? '账号创建成功，正在进入我的订阅。' : '账号创建成功。'
 
     await onAuthenticated()
   }
@@ -383,7 +383,7 @@ async function verifyLoginCode(): Promise<void> {
 
     applyAuthSession(data)
     codeForm.code = ''
-    successText.value = props.redirectOnSuccess ? '验证成功，正在进入工作台。' : '验证成功，已完成登录。'
+    successText.value = props.redirectOnSuccess ? '登录成功，正在进入我的订阅。' : '登录成功。'
 
     await onAuthenticated()
   }
@@ -489,7 +489,7 @@ async function logout(): Promise<void> {
   }
 
   clearSession()
-  successText.value = '已安全退出登录。'
+  successText.value = '已退出登录。'
 }
 
 onMounted(async (): Promise<void> => {
@@ -507,7 +507,7 @@ onMounted(async (): Promise<void> => {
       successText.value = '已识别重置令牌，请填写新密码后提交。'
     }
     else if (openReset) {
-      successText.value = '请输入注册邮箱并完成密码重置流程。'
+      successText.value = '请输入邮箱并重置密码。'
     }
 
     if (openReset || resetToken) {

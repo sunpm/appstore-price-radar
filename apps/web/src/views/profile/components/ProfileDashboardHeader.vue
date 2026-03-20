@@ -18,10 +18,10 @@ const emit = defineEmits<{
     <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-end">
       <div>
         <p class="metric-mono text-[0.68rem] tracking-[0.24em] text-slate-500">
-          监控工作台
+          我的订阅
         </p>
         <h1 class="mt-2 font-['Space_Grotesk'] text-3xl font-bold tracking-[-0.05em] text-slate-950 md:text-[2.5rem]">
-          订阅策略工作台
+          我的订阅
         </h1>
         <p class="mt-3 text-sm leading-6 text-slate-600">
           当前账号：{{ currentUserEmail }}
