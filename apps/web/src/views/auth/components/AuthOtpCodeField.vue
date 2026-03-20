@@ -13,21 +13,15 @@ const emit = defineEmits<{
 
 const model = defineModel<string>({ required: true })
 
-function readInputValue(event: Event): string {
-  return (event.target as HTMLInputElement).value
-}
-
 function onInput(event: Event): void {
-  model.value = readInputValue(event)
+  model.value = (event.target as HTMLInputElement).value
 }
 </script>
 
 <template>
-  <div class="grid gap-2">
-    <span class="text-sm font-medium text-zinc-700">{{ props.label }}</span>
-    <div
-      class="flex items-stretch rounded-xl border border-zinc-300/80 bg-white transition focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100"
-    >
+  <label class="grid gap-2">
+    <span class="text-sm font-semibold text-slate-700">{{ props.label }}</span>
+    <div class="flex items-stretch rounded-[1.2rem] border border-slate-200 bg-white/92 shadow-[inset_0_1px_0_rgba(255,255,255,0.88)] transition duration-300 focus-within:border-blue-300 focus-within:shadow-[0_0_0_4px_rgba(37,99,235,0.1)]">
       <input
         :value="model"
         type="text"
@@ -35,12 +29,12 @@ function onInput(event: Event): void {
         inputmode="numeric"
         :placeholder="props.placeholder"
         required
-        class="min-w-0 flex-1 border-0 bg-transparent px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
+        class="min-w-0 flex-1 rounded-l-[1.2rem] border-0 bg-transparent px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
         @input="onInput"
       >
       <button
-        class="inline-flex w-[112px] shrink-0 items-center justify-center whitespace-nowrap border-l border-zinc-200 px-3 py-2.5 text-sm font-medium text-zinc-700 transition duration-300 hover:bg-zinc-50 hover:text-zinc-900 active:translate-y-[1px] disabled:cursor-not-allowed disabled:opacity-60"
         type="button"
+        class="inline-flex w-[128px] shrink-0 items-center justify-center rounded-r-[1.2rem] border-l border-slate-200 px-3 py-3 text-sm font-semibold text-slate-700 transition duration-300 hover:bg-slate-50 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
         :disabled="props.sending || !props.canResend"
         @click="emit('send')"
       >
@@ -53,5 +47,5 @@ function onInput(event: Event): void {
         }}
       </button>
     </div>
-  </div>
+  </label>
 </template>

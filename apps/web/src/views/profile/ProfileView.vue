@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { SubscriptionItem, WatchStats } from './types'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useAuthedApi } from '../../composables/useAuthedApi'
 import { useAuthSession } from '../../composables/useAuthSession'
 import { COUNTRY_OPTIONS, resolveCountryLabel } from '../../constants/countries'
@@ -12,11 +12,8 @@ import ProfileSubscriptionListCard from './components/ProfileSubscriptionListCar
 import ProfileWatchFormCard from './components/ProfileWatchFormCard.vue'
 
 const router = useRouter()
-const route = useRoute()
 const countryOptions = COUNTRY_OPTIONS
 const COUNTRY_CODE_PATTERN = /^[A-Z]{2}$/
-
-type AccountSection = 'profile' | 'security'
 
 function countryLabel(countryCode: string): string {
   return resolveCountryLabel(countryCode)
@@ -56,14 +53,6 @@ watch(errorText, (next): void => {
 
   toast.error(next)
 })
-
-const activeSection = computed<AccountSection>(() => {
-  return route.name === 'security' ? 'security' : 'profile'
-})
-
-function isAccountSectionActive(section: AccountSection): boolean {
-  return activeSection.value === section
-}
 
 function resetMessages(): void {
   successText.value = ''
@@ -275,13 +264,11 @@ onMounted(async (): Promise<void> => {
 </script>
 
 <template>
-  <main class="radar-app min-h-[100dvh] bg-zinc-100 text-zinc-900">
-    <div class="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_8%_10%,rgba(16,185,129,0.18),transparent_33%),radial-gradient(circle_at_85%_0%,rgba(14,116,144,0.16),transparent_35%),linear-gradient(160deg,#f4f7f7_0%,#ecf1f1_45%,#f6f7f9_100%)]" />
-
-    <div class="mx-auto max-w-[1400px] px-4 py-6 md:px-8 md:py-10">
+  <main class="radar-app">
+    <div class="radar-container pb-12 pt-5 md:pb-14 md:pt-6">
       <div v-if="restoringSession" class="grid gap-4 md:grid-cols-2">
-        <div class="skeleton-box h-24 rounded-2xl" />
-        <div class="skeleton-box h-24 rounded-2xl" />
+        <div class="skeleton-box h-24 rounded-[1rem]" />
+        <div class="skeleton-box h-24 rounded-[1rem]" />
       </div>
 
       <template v-else-if="currentUser">
@@ -293,35 +280,7 @@ onMounted(async (): Promise<void> => {
           @logout="logout"
         />
 
-        <section class="reveal reveal-delay-1 mt-4 rounded-[1.5rem] border border-zinc-200/75 bg-white/88 px-4 shadow-[0_18px_38px_-16px_rgba(7,13,20,0.12)] md:px-6">
-          <nav class="flex gap-2 border-b border-zinc-200/80" aria-label="账号页面导航">
-            <RouterLink
-              :to="{ name: 'profile' }"
-              class="group relative inline-flex min-w-fit items-center px-3 py-3.5 text-sm font-semibold tracking-[0.02em] transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/80 focus-visible:ring-offset-2"
-              :class="isAccountSectionActive('profile') ? 'text-zinc-950' : 'text-zinc-500 hover:text-zinc-800'"
-            >
-              我的订阅
-              <span
-                class="pointer-events-none absolute inset-x-2 -bottom-[1px] h-0.5 rounded-full transition duration-300"
-                :class="isAccountSectionActive('profile') ? 'bg-zinc-900 opacity-100' : 'bg-zinc-400 opacity-0 group-hover:opacity-100'"
-              />
-            </RouterLink>
-
-            <RouterLink
-              :to="{ name: 'security' }"
-              class="group relative inline-flex min-w-fit items-center px-3 py-3.5 text-sm font-semibold tracking-[0.02em] transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/80 focus-visible:ring-offset-2"
-              :class="isAccountSectionActive('security') ? 'text-zinc-950' : 'text-zinc-500 hover:text-zinc-800'"
-            >
-              账号安全
-              <span
-                class="pointer-events-none absolute inset-x-2 -bottom-[1px] h-0.5 rounded-full transition duration-300"
-                :class="isAccountSectionActive('security') ? 'bg-zinc-900 opacity-100' : 'bg-zinc-400 opacity-0 group-hover:opacity-100'"
-              />
-            </RouterLink>
-          </nav>
-        </section>
-
-        <section class="reveal reveal-delay-1 mt-4 grid gap-4 lg:grid-cols-[0.98fr_1.02fr]">
+        <section class="reveal reveal-delay-1 mt-4 grid gap-3 xl:grid-cols-[340px_minmax(0,1fr)]">
           <ProfileWatchFormCard
             v-model:app-id="form.appId"
             v-model:country="form.country"
@@ -345,20 +304,20 @@ onMounted(async (): Promise<void> => {
 
       <section
         v-else
-        class="reveal rounded-[2rem] border border-zinc-200/70 bg-white/92 p-6 shadow-[0_20px_40px_-15px_rgba(7,13,20,0.1)]"
+        class="reveal radar-panel-strong p-6"
       >
-        <p class="metric-mono text-xs tracking-[0.2em] text-zinc-500">
+        <p class="metric-mono text-[0.68rem] tracking-[0.24em] text-slate-400">
           AUTH
         </p>
-        <h2 class="mt-2 text-2xl font-semibold tracking-tight text-zinc-900">
+        <h2 class="mt-2 font-['Space_Grotesk'] text-2xl font-bold tracking-[-0.04em] text-slate-950">
           登录状态已失效
         </h2>
-        <p class="mt-2 text-sm text-zinc-600">
+        <p class="mt-2 text-sm leading-6 text-slate-500">
           请重新登录。
         </p>
         <RouterLink
           to="/auth"
-          class="mt-4 inline-flex items-center justify-center rounded-xl border border-zinc-900 bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition duration-300 hover:-translate-y-0.5 hover:bg-zinc-800 active:translate-y-[1px]"
+          class="radar-button-primary mt-5"
         >
           前往登录
         </RouterLink>

@@ -13,24 +13,32 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="mt-4 rounded-2xl border border-zinc-200/80 bg-zinc-50/70 p-4">
-    <p class="text-sm text-zinc-700">
-      当前账号：<strong>{{ props.currentUser.email }}</strong>
-    </p>
-    <p v-if="props.sessionExpiresAt" class="mt-1 text-xs text-zinc-500">
-      会话有效期至：{{ props.toTime(props.sessionExpiresAt) }}
-    </p>
+  <div class="mt-6 grid gap-4">
+    <article class="radar-panel-dark p-5">
+      <p class="metric-mono text-[0.68rem] tracking-[0.24em] text-slate-300">
+        ACTIVE SESSION
+      </p>
+      <h2 class="mt-2 font-['Space_Grotesk'] text-2xl font-bold tracking-[-0.04em] text-white">
+        当前会话已恢复
+      </h2>
+      <p class="mt-3 text-sm leading-6 text-slate-300">
+        登录账号：{{ props.currentUser.email }}
+      </p>
+      <p v-if="props.sessionExpiresAt" class="mt-2 text-sm text-slate-300">
+        会话有效期至：{{ props.toTime(props.sessionExpiresAt) }}
+      </p>
+    </article>
 
-    <div class="mt-4 flex flex-wrap items-center gap-2">
+    <div class="grid gap-3 md:grid-cols-2">
       <RouterLink
         to="/profile"
-        class="inline-flex items-center justify-center rounded-xl border border-zinc-900 bg-zinc-900 px-3 py-2 text-sm font-medium text-white transition duration-300 hover:-translate-y-0.5 hover:bg-zinc-800 active:translate-y-[1px]"
+        class="radar-button-primary w-full"
       >
         进入我的订阅
       </RouterLink>
       <button
-        class="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition duration-300 hover:-translate-y-0.5 hover:border-zinc-400 hover:text-zinc-900 active:translate-y-[1px]"
         type="button"
+        class="radar-button-secondary w-full"
         @click="emit('logout')"
       >
         退出当前账号

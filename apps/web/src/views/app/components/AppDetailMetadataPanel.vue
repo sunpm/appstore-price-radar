@@ -322,42 +322,42 @@ const ratingCards = computed<InfoCardItem[]>(() => {
 </script>
 
 <template>
-  <section class="rounded-[2rem] border border-zinc-200/70 bg-white/92 p-5 shadow-[0_20px_40px_-15px_rgba(7,13,20,0.1)] md:p-6">
+  <section class="radar-panel p-5 md:p-6">
     <div>
-      <p class="text-sm font-medium tracking-[0.12em] text-zinc-500">
-        App Store 信息
+      <p class="metric-mono text-[0.68rem] tracking-[0.24em] text-slate-400">
+        应用元数据
       </p>
-      <h2 class="mt-2 text-xl font-semibold tracking-tight text-zinc-900 md:text-2xl">
-        {{ props.appName }} 的 App Store 信息
+      <h2 class="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
+        App Store 信息
       </h2>
     </div>
 
     <div
       v-if="!hasMetadata"
-      class="mt-4 rounded-[1.5rem] border border-dashed border-zinc-300 bg-zinc-50/70 px-4 py-4 text-sm text-zinc-500"
+      class="radar-empty mt-4 px-4 py-4 text-sm"
     >
       暂无更多 App Store 信息。
     </div>
 
     <template v-else>
-      <article class="mt-5 rounded-[1.7rem] border border-zinc-200/80 bg-zinc-50/80 p-4 md:p-5">
+      <article class="mt-4 rounded-[1rem] border border-slate-200/80 bg-slate-50/76 p-4 md:p-5">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h3 class="text-lg font-semibold tracking-tight text-zinc-900">
+            <h3 class="text-lg font-semibold tracking-tight text-slate-950">
               应用截图
             </h3>
-            <p class="mt-1 text-sm text-zinc-500">
+            <p class="mt-1 text-sm text-slate-500">
               左右滑动查看更多截图。
             </p>
           </div>
-          <p class="text-sm text-zinc-500">
+          <p class="text-sm text-slate-500">
             {{ screenshotUrls.length > 0 ? `共 ${screenshotUrls.length} 张` : '暂无官方截图' }}
           </p>
         </div>
 
         <div
           v-if="screenshotUrls.length === 0"
-          class="mt-4 rounded-[1.35rem] border border-dashed border-zinc-300 bg-white/80 px-4 py-4 text-sm leading-7 text-zinc-500"
+          class="radar-empty mt-4 px-4 py-4 text-sm leading-7"
         >
           App Store 接口未返回截图数据。
         </div>
@@ -366,9 +366,9 @@ const ratingCards = computed<InfoCardItem[]>(() => {
           <figure
             v-for="(url, index) in screenshotUrls"
             :key="url"
-            class="w-[13.5rem] shrink-0 snap-start overflow-hidden rounded-[2.2rem] bg-zinc-950 p-1 shadow-[0_26px_50px_-28px_rgba(15,23,42,0.65)] transition duration-300 hover:-translate-y-1 sm:w-[15rem]"
+            class="w-[13.5rem] shrink-0 snap-start overflow-hidden rounded-[1.2rem] border border-slate-200/80 bg-white p-1 shadow-[0_16px_28px_-22px_rgba(37,99,235,0.14)] transition duration-300 sm:w-[15rem]"
           >
-            <div class="overflow-hidden rounded-[1.9rem] bg-zinc-100">
+            <div class="overflow-hidden rounded-[1rem] bg-slate-100">
               <img
                 :src="url"
                 :alt="`${props.appName} 截图 ${index + 1}`"
@@ -379,27 +379,23 @@ const ratingCards = computed<InfoCardItem[]>(() => {
         </div>
       </article>
 
-      <article class="mt-4 rounded-[1.7rem] border border-zinc-200/80 bg-zinc-50/80 p-4 md:p-5">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h3 class="text-lg font-semibold tracking-tight text-zinc-900">
-              应用简介
-            </h3>
-          </div>
-        </div>
+      <article class="mt-4 rounded-[1rem] border border-slate-200/80 bg-slate-50/76 p-4 md:p-5">
+        <h3 class="text-lg font-semibold tracking-tight text-slate-950">
+          应用简介
+        </h3>
 
         <div
           v-if="descriptionBlocks.length === 0"
-          class="mt-4 rounded-[1.2rem] border border-dashed border-zinc-300 bg-white/75 px-4 py-4 text-sm text-zinc-500"
+          class="radar-empty mt-4 px-4 py-4 text-sm"
         >
-          暂无应用简介。
+          暂无简介
         </div>
 
         <div v-else class="mt-4 space-y-4">
           <p
             v-for="(paragraph, index) in descriptionBlocks"
             :key="`${index}-${paragraph}`"
-            class="text-[0.95rem] leading-8 text-zinc-700 whitespace-pre-line"
+            class="text-[0.95rem] leading-8 text-slate-700 whitespace-pre-line"
           >
             {{ paragraph }}
           </p>
@@ -408,14 +404,14 @@ const ratingCards = computed<InfoCardItem[]>(() => {
 
       <article
         v-if="releaseNotesItems.length > 0"
-        class="mt-4 rounded-[1.7rem] border border-zinc-200/80 bg-zinc-50/80 p-4 md:p-5"
+        class="mt-4 rounded-[1rem] border border-slate-200/80 bg-slate-50/76 p-4 md:p-5"
       >
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h3 class="text-lg font-semibold tracking-tight text-zinc-900">
+            <h3 class="text-lg font-semibold tracking-tight text-slate-950">
               更新说明
             </h3>
-            <p class="mt-1 text-sm text-zinc-500">
+            <p class="mt-1 text-sm text-slate-500">
               版本 {{ props.metadata?.version ?? '暂无' }}
             </p>
           </div>
@@ -425,15 +421,15 @@ const ratingCards = computed<InfoCardItem[]>(() => {
           <li
             v-for="(item, index) in releaseNotesItems"
             :key="`${index}-${item}`"
-            class="rounded-[1.2rem] border border-zinc-200/80 bg-white/90 px-4 py-3 text-sm leading-7 text-zinc-700"
+            class="rounded-[0.9rem] border border-slate-200/80 bg-white/92 px-4 py-3 text-sm leading-7 text-slate-700"
           >
             {{ item }}
           </li>
         </ul>
       </article>
 
-      <article class="mt-4 rounded-[1.7rem] border border-zinc-200/80 bg-zinc-50/80 p-4 md:p-5">
-        <h3 class="text-lg font-semibold tracking-tight text-zinc-900">
+      <article class="mt-4 rounded-[1rem] border border-slate-200/80 bg-slate-50/76 p-4 md:p-5">
+        <h3 class="text-lg font-semibold tracking-tight text-slate-950">
           基础信息
         </h3>
 
@@ -441,20 +437,20 @@ const ratingCards = computed<InfoCardItem[]>(() => {
           <div
             v-for="item in overviewCards"
             :key="item.label"
-            class="rounded-[1.25rem] border border-zinc-200/80 bg-white/90 p-4"
+            class="rounded-[0.9rem] border border-slate-200/80 bg-white/90 p-4"
           >
-            <p class="text-sm font-medium tracking-[0.08em] text-zinc-500">
+            <p class="text-sm font-medium tracking-[0.08em] text-slate-500">
               {{ item.label }}
             </p>
-            <p class="mt-3 break-words text-base font-semibold leading-8 text-zinc-900">
+            <p class="mt-3 break-words text-base font-semibold leading-8 text-slate-950">
               {{ item.value }}
             </p>
           </div>
         </div>
       </article>
 
-      <article class="mt-4 rounded-[1.7rem] border border-zinc-200/80 bg-zinc-50/80 p-4 md:p-5">
-        <h3 class="text-lg font-semibold tracking-tight text-zinc-900">
+      <article class="mt-4 rounded-[1rem] border border-slate-200/80 bg-slate-50/76 p-4 md:p-5">
+        <h3 class="text-lg font-semibold tracking-tight text-slate-950">
           兼容性
         </h3>
 
@@ -462,26 +458,26 @@ const ratingCards = computed<InfoCardItem[]>(() => {
           <div
             v-for="item in compatibilityCards"
             :key="item.label"
-            class="rounded-[1.25rem] border border-zinc-200/80 bg-white/90 p-4"
+            class="rounded-[0.9rem] border border-slate-200/80 bg-white/90 p-4"
           >
-            <p class="text-sm font-medium tracking-[0.08em] text-zinc-500">
+            <p class="text-sm font-medium tracking-[0.08em] text-slate-500">
               {{ item.label }}
             </p>
-            <p class="mt-3 text-base font-semibold leading-8 text-zinc-900">
+            <p class="mt-3 text-base font-semibold leading-8 text-slate-950">
               {{ item.value }}
             </p>
           </div>
         </div>
 
         <div v-if="compatibilityCategories.length > 0" class="mt-5">
-          <p class="text-sm font-medium tracking-[0.08em] text-zinc-500">
+          <p class="text-sm font-medium tracking-[0.08em] text-slate-500">
             适用设备
           </p>
           <div class="mt-3 flex flex-wrap gap-2.5">
             <span
               v-for="category in compatibilityCategories"
               :key="category"
-              class="inline-flex items-center rounded-full border border-zinc-200 bg-white px-3.5 py-1.5 text-sm font-medium text-zinc-700"
+              class="radar-chip"
             >
               {{ category }}
             </span>
@@ -489,14 +485,14 @@ const ratingCards = computed<InfoCardItem[]>(() => {
         </div>
 
         <div v-if="supportedLanguageNames.length > 0" class="mt-5">
-          <p class="text-sm font-medium tracking-[0.08em] text-zinc-500">
+          <p class="text-sm font-medium tracking-[0.08em] text-slate-500">
             支持语言
           </p>
           <div class="mt-3 flex flex-wrap gap-2.5">
             <span
               v-for="language in supportedLanguageNames"
               :key="language"
-              class="inline-flex items-center rounded-full border border-zinc-200 bg-white px-3.5 py-1.5 text-sm font-medium text-zinc-700"
+              class="radar-chip"
             >
               {{ language }}
             </span>
@@ -504,14 +500,14 @@ const ratingCards = computed<InfoCardItem[]>(() => {
         </div>
 
         <div v-if="compatibilityFeatureTags.length > 0" class="mt-5">
-          <p class="text-sm font-medium tracking-[0.08em] text-zinc-500">
+          <p class="text-sm font-medium tracking-[0.08em] text-slate-500">
             系统 / 硬件能力
           </p>
           <div class="mt-3 flex flex-wrap gap-2.5">
             <span
               v-for="feature in compatibilityFeatureTags"
               :key="feature"
-              class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3.5 py-1.5 text-sm font-medium text-emerald-700"
+              class="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3.5 py-1.5 text-sm font-medium text-blue-700"
             >
               {{ feature }}
             </span>
@@ -519,8 +515,8 @@ const ratingCards = computed<InfoCardItem[]>(() => {
         </div>
       </article>
 
-      <article class="mt-4 rounded-[1.7rem] border border-zinc-200/80 bg-zinc-50/80 p-4 md:p-5">
-        <h3 class="text-lg font-semibold tracking-tight text-zinc-900">
+      <article class="mt-4 rounded-[1rem] border border-slate-200/80 bg-slate-50/76 p-4 md:p-5">
+        <h3 class="text-lg font-semibold tracking-tight text-slate-950">
           评分与分级
         </h3>
 
@@ -528,26 +524,26 @@ const ratingCards = computed<InfoCardItem[]>(() => {
           <div
             v-for="item in ratingCards"
             :key="item.label"
-            class="rounded-[1.25rem] border border-zinc-200/80 bg-white/90 p-4"
+            class="rounded-[0.9rem] border border-slate-200/80 bg-white/90 p-4"
           >
-            <p class="text-sm font-medium tracking-[0.08em] text-zinc-500">
+            <p class="text-sm font-medium tracking-[0.08em] text-slate-500">
               {{ item.label }}
             </p>
-            <p class="mt-3 text-xl font-semibold text-zinc-900">
+            <p class="mt-3 text-xl font-semibold text-slate-950">
               {{ item.value }}
             </p>
           </div>
         </div>
 
         <div v-if="advisories.length > 0" class="mt-5">
-          <p class="text-sm font-medium tracking-[0.08em] text-zinc-500">
+          <p class="text-sm font-medium tracking-[0.08em] text-slate-500">
             分级说明
           </p>
           <div class="mt-3 flex flex-wrap gap-2.5">
             <span
               v-for="item in advisories"
               :key="item"
-              class="inline-flex items-center rounded-full border border-zinc-200 bg-white px-3.5 py-1.5 text-sm font-medium text-zinc-700"
+              class="radar-chip"
             >
               {{ item }}
             </span>

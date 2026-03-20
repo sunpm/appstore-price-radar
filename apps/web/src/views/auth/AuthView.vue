@@ -34,14 +34,17 @@ const props = withDefaults(
     redirectOnSuccess: false,
   },
 )
+
 const emit = defineEmits<{
   authenticated: []
 }>()
+
 const router = useRouter()
 const authMode = ref<AuthMode>('login')
 const loginMethod = ref<LoginMethod>('password')
 const showResetPanel = ref(false)
 const isPageMode = computed((): boolean => props.mode === 'page')
+
 const {
   seconds: loginCodeCooldownSeconds,
   canTrigger: loginCodeCanResend,
@@ -66,7 +69,14 @@ const resetForm = reactive({
   newPassword: '',
 })
 
-const { token, currentUser, sessionExpiresAt, applySession, clearSession, restoreSession } = useAuthSession()
+const {
+  token,
+  currentUser,
+  sessionExpiresAt,
+  applySession,
+  clearSession,
+  restoreSession,
+} = useAuthSession()
 const { request: authedRequest } = useAuthedApi()
 const restoringSession = ref(true)
 const toast = useToast()
@@ -77,6 +87,66 @@ const codeSending = ref(false)
 const codeVerifying = ref(false)
 const resetSending = ref(false)
 const resetSubmitting = ref(false)
+
+const featureCards = computed(() => {
+  if (showResetPanel.value) {
+    return [
+      {
+        label: 'RECOVERY',
+        title: '重置流程拆成两个动作',
+        body: '先发重置邮件，再填写令牌和新密码，避免把不同风险级别的动作混在同一表单里。',
+      },
+      {
+        label: 'TOKEN HANDOFF',
+        title: '支持直接识别邮件里的 reset token',
+        body: '从链接进入页面时会自动填充令牌，并把页面切到重置视图，减少复制错误。',
+      },
+      {
+        label: 'SAFE EXIT',
+        title: '密码更新后回到标准登录流程',
+        body: '重置完成会清空旧会话，并提示你使用新密码重新登录。',
+      },
+    ]
+  }
+
+  if (currentUser.value) {
+    return [
+      {
+        label: 'SESSION',
+        title: '当前会话已恢复',
+        body: '你可以直接进入我的订阅，或退出当前设备会话。',
+      },
+      {
+        label: 'SYNC',
+        title: '订阅页与安全页共用同一登录状态',
+        body: '登录后可直接进入订阅页或账号安全页，无需重复验证。',
+      },
+      {
+        label: 'CONTINUITY',
+        title: '弹层与独立页面使用同一套交互',
+        body: '从导航快速登录，或者进入独立认证页，都会走同一套状态逻辑。',
+      },
+    ]
+  }
+
+  return [
+    {
+      label: 'PASSWORD',
+      title: '标准密码登录',
+      body: '适合已有账号，登录后可直接进入我的订阅。',
+    },
+    {
+      label: 'EMAIL OTP',
+      title: '邮箱验证码登录',
+      body: '不想记密码时也能登录，首次验证也会自动创建账号。',
+    },
+    {
+      label: 'RESET',
+      title: '重置密码不离开当前页面',
+      body: '发送邮件、填入令牌和设置新密码都在同一入口完成，路径更短。',
+    },
+  ]
+})
 
 function setAuthMode(mode: AuthMode): void {
   authMode.value = mode
@@ -151,7 +221,7 @@ async function submitAuth(): Promise<void> {
   }
 
   if (password.length < MIN_PASSWORD_LENGTH) {
-    errorText.value = '密码长度需不少于 8 位。'
+    errorText.value = `密码长度需不少于 ${MIN_PASSWORD_LENGTH} 位。`
     return
   }
 
@@ -190,7 +260,7 @@ async function submitRegister(): Promise<void> {
   }
 
   if (password.length < MIN_PASSWORD_LENGTH) {
-    errorText.value = '密码长度需不少于 8 位。'
+    errorText.value = `密码长度需不少于 ${MIN_PASSWORD_LENGTH} 位。`
     return
   }
 
@@ -380,7 +450,7 @@ async function resetPassword(): Promise<void> {
   }
 
   if (newPassword.length < MIN_PASSWORD_LENGTH) {
-    errorText.value = '新密码长度需不少于 8 位。'
+    errorText.value = `新密码长度需不少于 ${MIN_PASSWORD_LENGTH} 位。`
     return
   }
 
@@ -425,10 +495,10 @@ async function logout(): Promise<void> {
 onMounted(async (): Promise<void> => {
   if (isPageMode.value) {
     const url = new URL(window.location.href)
-    const openResetPanel = shouldOpenResetPanel(url.searchParams.get(OPEN_RESET_PANEL_QUERY_PARAM))
+    const openReset = shouldOpenResetPanel(url.searchParams.get(OPEN_RESET_PANEL_QUERY_PARAM))
     const resetToken = url.searchParams.get(RESET_TOKEN_QUERY_PARAM)
 
-    if (openResetPanel || resetToken) {
+    if (openReset || resetToken) {
       showResetPanel.value = true
     }
 
@@ -436,11 +506,11 @@ onMounted(async (): Promise<void> => {
       resetForm.token = resetToken
       successText.value = '已识别重置令牌，请填写新密码后提交。'
     }
-    else if (openResetPanel) {
+    else if (openReset) {
       successText.value = '请输入邮箱并重置密码。'
     }
 
-    if (openResetPanel || resetToken) {
+    if (openReset || resetToken) {
       url.searchParams.delete(OPEN_RESET_PANEL_QUERY_PARAM)
       url.searchParams.delete(RESET_TOKEN_QUERY_PARAM)
       window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
@@ -452,71 +522,156 @@ onMounted(async (): Promise<void> => {
 </script>
 
 <template>
-  <main class="text-zinc-900" :class="[isPageMode ? 'min-h-[100dvh] bg-zinc-100' : '']">
-    <div
-      v-if="isPageMode"
-      class="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_12%_10%,rgba(16,185,129,0.16),transparent_34%),radial-gradient(circle_at_88%_6%,rgba(15,23,42,0.08),transparent_35%),linear-gradient(160deg,#f4f7f7_0%,#eef3f2_48%,#f8f8f8_100%)]"
-    />
+  <main class="radar-app text-slate-900" :class="isPageMode ? 'pb-10 pt-5 md:pb-12 md:pt-6' : ''">
+    <div v-if="isPageMode" class="radar-container">
+      <section class="reveal grid gap-4 lg:grid-cols-[minmax(0,0.98fr)_300px]">
+        <article class="radar-panel-strong p-5 md:p-6">
+          <AuthHeaderBlock v-bind="{ isPageMode, showResetPanel }" />
 
-    <div :class="isPageMode ? 'mx-auto max-w-[980px] px-4 py-6 md:px-8 md:py-10' : ''">
-      <section
-        :class="
-          isPageMode
-            ? 'reveal rounded-[2rem] border border-zinc-200/70 bg-white/92 p-6 shadow-[0_20px_40px_-15px_rgba(7,13,20,0.1)]'
-            : 'rounded-[1.5rem] border border-zinc-200/80 bg-white p-5 shadow-[0_18px_38px_-16px_rgba(7,13,20,0.22)] md:p-6'
-        "
-      >
-        <AuthHeaderBlock :is-page-mode="isPageMode" />
+          <div v-if="restoringSession" class="mt-6 grid gap-3 md:grid-cols-2">
+            <div class="skeleton-box h-24 rounded-[1rem]" />
+            <div class="skeleton-box h-24 rounded-[1rem]" />
+          </div>
 
-        <div v-if="restoringSession" class="mt-4 grid gap-3 md:grid-cols-2">
-          <div class="skeleton-box h-24 rounded-2xl" />
-          <div class="skeleton-box h-24 rounded-2xl" />
-        </div>
-
-        <AuthSessionPanel
-          v-else-if="currentUser && !showResetPanel"
-          :current-user="currentUser"
-          :session-expires-at="sessionExpiresAt"
-          :to-time="toTime"
-          @logout="logout"
-        />
-
-        <template v-else>
-          <AuthModeSwitcher v-if="!showResetPanel" :mode="authMode" @change="setAuthMode" />
-
-          <AuthCredentialForms
-            v-model:auth-email="authForm.email"
-            v-model:auth-password="authForm.password"
-            v-model:code-email="codeForm.email"
-            v-model:code="codeForm.code"
-            v-model:register-code="registerCode"
-            v-model:reset-email="resetForm.email"
-            v-model:reset-token="resetForm.token"
-            v-model:reset-new-password="resetForm.newPassword"
-            :auth-mode="authMode"
-            :login-method="loginMethod"
-            :show-reset-panel="showResetPanel"
-            :auth-loading="authLoading"
-            :code-sending="codeSending"
-            :code-verifying="codeVerifying"
-            :reset-sending="resetSending"
-            :reset-submitting="resetSubmitting"
-            :login-code-cooldown-seconds="loginCodeCooldownSeconds"
-            :login-code-can-resend="loginCodeCanResend"
-            @submit-auth="submitAuth"
-            @submit-register="submitRegister"
-            @send-login-code="sendLoginCode"
-            @send-register-code="sendRegisterCode"
-            @verify-login-code="verifyLoginCode"
-            @set-login-method="setLoginMethod"
-            @open-reset-panel="openResetPanel"
-            @close-reset-panel="closeResetPanel"
-            @send-reset-email="sendResetEmail"
-            @reset-password="resetPassword"
-            @sync-primary-email="setPrimaryEmail"
+          <AuthSessionPanel
+            v-else-if="currentUser && !showResetPanel"
+            :current-user="currentUser"
+            :session-expires-at="sessionExpiresAt"
+            :to-time="toTime"
+            @logout="logout"
           />
-        </template>
+
+          <template v-else>
+            <AuthModeSwitcher
+              v-if="!showResetPanel"
+              :mode="authMode"
+              @change="setAuthMode"
+            />
+
+            <AuthCredentialForms
+              v-model:auth-email="authForm.email"
+              v-model:auth-password="authForm.password"
+              v-model:code-email="codeForm.email"
+              v-model:code="codeForm.code"
+              v-model:register-code="registerCode"
+              v-model:reset-email="resetForm.email"
+              v-model:reset-token="resetForm.token"
+              v-model:reset-new-password="resetForm.newPassword"
+              :auth-mode="authMode"
+              :login-method="loginMethod"
+              :show-reset-panel="showResetPanel"
+              :auth-loading="authLoading"
+              :code-sending="codeSending"
+              :code-verifying="codeVerifying"
+              :reset-sending="resetSending"
+              :reset-submitting="resetSubmitting"
+              :login-code-cooldown-seconds="loginCodeCooldownSeconds"
+              :login-code-can-resend="loginCodeCanResend"
+              @submit-auth="submitAuth"
+              @submit-register="submitRegister"
+              @send-login-code="sendLoginCode"
+              @send-register-code="sendRegisterCode"
+              @verify-login-code="verifyLoginCode"
+              @set-login-method="setLoginMethod"
+              @open-reset-panel="openResetPanel"
+              @close-reset-panel="closeResetPanel"
+              @send-reset-email="sendResetEmail"
+              @reset-password="resetPassword"
+              @sync-primary-email="setPrimaryEmail"
+            />
+          </template>
+        </article>
+
+        <aside class="grid gap-3">
+          <article class="radar-panel-dark p-4">
+            <p class="metric-mono text-[0.68rem] tracking-[0.24em] text-slate-300">
+              ENTRY POINT
+            </p>
+            <h2 class="mt-2 font-['Space_Grotesk'] text-2xl font-bold tracking-[-0.05em] text-white">
+              一个入口覆盖登录、注册、验证码与重置
+            </h2>
+            <p class="mt-3 text-sm leading-6 text-slate-300">
+              认证页不再只是一个输入表单，而是一块完整的访问中枢，用来承接整站的会话状态。
+            </p>
+          </article>
+
+          <article
+            v-for="card in featureCards"
+            :key="card.title"
+            class="radar-panel p-4"
+          >
+            <p class="metric-mono text-[0.68rem] tracking-[0.24em] text-slate-400">
+              {{ card.label }}
+            </p>
+            <h3 class="mt-2 font-['Space_Grotesk'] text-lg font-bold tracking-[-0.04em] text-slate-950">
+              {{ card.title }}
+            </h3>
+            <p class="mt-2 text-sm leading-6 text-slate-500">
+              {{ card.body }}
+            </p>
+          </article>
+        </aside>
       </section>
     </div>
+
+    <section
+      v-else
+      class="radar-panel-strong p-5 md:p-6"
+    >
+      <AuthHeaderBlock v-bind="{ isPageMode, showResetPanel }" />
+
+      <div v-if="restoringSession" class="mt-5 grid gap-3 md:grid-cols-2">
+        <div class="skeleton-box h-24 rounded-[1rem]" />
+        <div class="skeleton-box h-24 rounded-[1rem]" />
+      </div>
+
+      <AuthSessionPanel
+        v-else-if="currentUser && !showResetPanel"
+        :current-user="currentUser"
+        :session-expires-at="sessionExpiresAt"
+        :to-time="toTime"
+        @logout="logout"
+      />
+
+      <template v-else>
+        <AuthModeSwitcher
+          v-if="!showResetPanel"
+          :mode="authMode"
+          @change="setAuthMode"
+        />
+
+        <AuthCredentialForms
+          v-model:auth-email="authForm.email"
+          v-model:auth-password="authForm.password"
+          v-model:code-email="codeForm.email"
+          v-model:code="codeForm.code"
+          v-model:register-code="registerCode"
+          v-model:reset-email="resetForm.email"
+          v-model:reset-token="resetForm.token"
+          v-model:reset-new-password="resetForm.newPassword"
+          :auth-mode="authMode"
+          :login-method="loginMethod"
+          :show-reset-panel="showResetPanel"
+          :auth-loading="authLoading"
+          :code-sending="codeSending"
+          :code-verifying="codeVerifying"
+          :reset-sending="resetSending"
+          :reset-submitting="resetSubmitting"
+          :login-code-cooldown-seconds="loginCodeCooldownSeconds"
+          :login-code-can-resend="loginCodeCanResend"
+          @submit-auth="submitAuth"
+          @submit-register="submitRegister"
+          @send-login-code="sendLoginCode"
+          @send-register-code="sendRegisterCode"
+          @verify-login-code="verifyLoginCode"
+          @set-login-method="setLoginMethod"
+          @open-reset-panel="openResetPanel"
+          @close-reset-panel="closeResetPanel"
+          @send-reset-email="sendResetEmail"
+          @reset-password="resetPassword"
+          @sync-primary-email="setPrimaryEmail"
+        />
+      </template>
+    </section>
   </main>
 </template>

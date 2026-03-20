@@ -14,25 +14,26 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <section class="reveal rounded-[2rem] border border-zinc-200/70 bg-white/92 p-6 shadow-[0_20px_40px_-15px_rgba(7,13,20,0.1)]">
-    <div class="flex flex-wrap items-center justify-between gap-3">
+  <section class="reveal radar-panel-strong p-5 md:p-6">
+    <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-end">
       <div>
-        <p class="metric-mono text-xs tracking-[0.22em] text-zinc-500">
-          PROFILE
+        <p class="metric-mono text-[0.68rem] tracking-[0.24em] text-slate-500">
+          我的订阅
         </p>
-        <h1 class="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
+        <h1 class="mt-2 font-['Space_Grotesk'] text-3xl font-bold tracking-[-0.05em] text-slate-950 md:text-[2.5rem]">
           我的订阅
         </h1>
-        <p class="mt-2 text-sm text-zinc-600">
+        <p class="mt-3 text-sm leading-6 text-slate-600">
           当前账号：{{ currentUserEmail }}
         </p>
-        <p v-if="sessionExpiresAt" class="mt-1 text-xs text-zinc-500">
+        <p v-if="sessionExpiresAt" class="mt-1 text-sm text-slate-600">
           会话有效期至：{{ toTime(sessionExpiresAt) }}
         </p>
       </div>
-      <div class="flex flex-wrap items-center gap-2">
+
+      <div class="flex justify-start lg:justify-end">
         <button
-          class="inline-flex items-center justify-center rounded-xl border border-zinc-900 bg-zinc-900 px-3 py-2 text-sm font-medium text-white transition duration-300 hover:-translate-y-0.5 hover:bg-zinc-800 active:translate-y-[1px]"
+          class="radar-button-secondary"
           type="button"
           @click="emit('logout')"
         >
@@ -41,20 +42,20 @@ const emit = defineEmits<{
       </div>
     </div>
 
-    <div class="mt-6 grid gap-3 md:grid-cols-2">
-      <div class="rounded-2xl border border-zinc-200/75 bg-zinc-50/85 p-4">
-        <p class="text-xs font-medium uppercase tracking-[0.16em] text-zinc-500">
+    <div class="mt-5 grid gap-3 md:grid-cols-2">
+      <div class="rounded-[1rem] border border-blue-100 bg-[linear-gradient(180deg,#eff6ff,#ffffff)] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
+        <p class="text-xs font-semibold tracking-[0.16em] text-slate-500">
           监控任务数
         </p>
-        <p class="metric-mono mt-2 text-2xl font-semibold text-zinc-900">
+        <p class="radar-display mt-2 text-3xl font-semibold text-slate-950">
           {{ watchStats.total }}
         </p>
       </div>
-      <div class="rounded-2xl border border-zinc-200/75 bg-zinc-50/85 p-4">
-        <p class="text-xs font-medium uppercase tracking-[0.16em] text-zinc-500">
+      <div class="rounded-[1rem] border border-orange-100 bg-[linear-gradient(180deg,#fff7ed,#ffffff)] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
+        <p class="text-xs font-semibold tracking-[0.16em] text-slate-500">
           已设价格阈值
         </p>
-        <p class="metric-mono mt-2 text-2xl font-semibold text-zinc-900">
+        <p class="radar-display mt-2 text-3xl font-semibold text-orange-700">
           {{ watchStats.withTarget }}
         </p>
       </div>
