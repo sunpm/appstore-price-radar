@@ -1,48 +1,109 @@
 <script setup lang="ts">
 import type { HomeFeedSummary } from '../types'
+import { computed } from 'vue'
 
-defineProps<{
+const props = defineProps<{
   summary: HomeFeedSummary
 }>()
+
+const lastUpdatedText = computed(() => {
+  if (!props.summary.newestAt) {
+    return '等待载入'
+  }
+
+  return new Date(props.summary.newestAt).toLocaleString('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+})
+
+const statCards = computed(() => {
+  return [
+    {
+      label: '公开降价事件',
+      value: props.summary.total,
+      tone: 'text-slate-950',
+      valueTone: 'text-slate-950',
+      surface: 'border-slate-200 bg-white/88',
+    },
+    {
+      label: '覆盖应用数',
+      value: props.summary.apps,
+      tone: 'text-slate-950',
+      valueTone: 'text-slate-950',
+      surface: 'border-slate-200 bg-white/88',
+    },
+    {
+      label: '最高降幅',
+      value: `${props.summary.maxDrop.toFixed(2)}%`,
+      tone: 'text-orange-900',
+      valueTone: 'text-orange-700',
+      surface: 'border-orange-200 bg-orange-50',
+    },
+  ]
+})
 </script>
 
 <template>
-  <article class="reveal rounded-[2rem] border border-zinc-200/70 bg-white/92 p-6 shadow-[0_20px_40px_-15px_rgba(7,13,20,0.1)]">
-    <p class="metric-mono text-xs tracking-[0.2em] text-zinc-500">
-      PRICE DROP FEED
-    </p>
-    <h1 class="mt-4 text-4xl font-semibold tracking-tight text-zinc-900 md:text-5xl">
-      公开降价情报中心
-    </h1>
-    <p class="mt-4 max-w-[64ch] text-base leading-relaxed text-zinc-600">
-      仅展示曾出现价格下调的公开记录。即使后续恢复原价，记录仍会保留，时间标记为系统首次捕捉到降价的时刻。
-    </p>
+  <article class="radar-panel reveal radar-grid-accent overflow-hidden">
+    <div class="grid gap-5 p-5 md:p-6 xl:grid-cols-[minmax(0,1.12fr)_300px]">
+      <div>
+        <div class="flex flex-wrap gap-2">
+          <span class="radar-chip border-blue-100 bg-blue-50 text-blue-700 shadow-none">
+            公开情报
+          </span>
+        </div>
 
-    <div class="mt-6 grid gap-3 md:grid-cols-[1fr_1fr_1fr]">
-      <div class="rounded-2xl border border-zinc-200 bg-zinc-50/80 p-4">
-        <p class="text-xs uppercase tracking-[0.14em] text-zinc-500">
-          公开降价事件
-        </p>
-        <p class="metric-mono mt-2 text-2xl font-semibold">
-          {{ summary.total }}
-        </p>
+        <h1 class="mt-5 max-w-[12ch] font-['Space_Grotesk'] text-4xl font-bold tracking-[-0.08em] text-slate-950 md:text-[3.7rem] md:leading-[0.98]">
+          公开降价情报总览
+        </h1>
+
+        <div class="mt-6 grid gap-3 md:grid-cols-3">
+          <article
+            v-for="card in statCards"
+            :key="card.label"
+            class="rounded-[1rem] border p-4 backdrop-blur-sm"
+            :class="card.surface"
+          >
+            <p class="text-xs tracking-[0.18em]" :class="card.tone">
+              {{ card.label }}
+            </p>
+            <p class="radar-display mt-3 text-3xl font-semibold" :class="card.valueTone">
+              {{ card.value }}
+            </p>
+          </article>
+        </div>
       </div>
-      <div class="rounded-2xl border border-zinc-200 bg-zinc-50/80 p-4">
-        <p class="text-xs uppercase tracking-[0.14em] text-zinc-500">
-          覆盖应用数
-        </p>
-        <p class="metric-mono mt-2 text-2xl font-semibold">
-          {{ summary.apps }}
-        </p>
-      </div>
-      <div class="rounded-2xl border border-zinc-200 bg-zinc-50/80 p-4">
-        <p class="text-xs uppercase tracking-[0.14em] text-zinc-500">
-          最高降幅
-        </p>
-        <p class="metric-mono mt-2 text-2xl font-semibold text-emerald-700">
-          {{ summary.maxDrop.toFixed(2) }}%
-        </p>
-      </div>
+
+      <aside class="grid gap-3 self-stretch">
+        <article class="rounded-[1rem] border border-blue-100 bg-[linear-gradient(180deg,#eff6ff,#ffffff)] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.82)]">
+          <p class="metric-mono text-[0.68rem] tracking-[0.24em] text-slate-300">
+            实时快照
+          </p>
+
+          <dl class="mt-4 grid gap-4">
+            <div class="flex items-end justify-between gap-3">
+              <dt class="text-sm text-slate-500">
+                覆盖市场
+              </dt>
+              <dd class="radar-display text-3xl font-semibold text-slate-950">
+                {{ summary.countries }}
+              </dd>
+            </div>
+            <div class="h-px bg-slate-200" />
+            <div class="flex items-end justify-between gap-3">
+              <dt class="text-sm text-slate-500">
+                最近捕捉
+              </dt>
+              <dd class="text-sm font-medium text-slate-950">
+                {{ lastUpdatedText }}
+              </dd>
+            </div>
+          </dl>
+        </article>
+      </aside>
     </div>
   </article>
 </template>

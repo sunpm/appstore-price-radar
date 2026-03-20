@@ -19,16 +19,16 @@ const confirmPassword = defineModel<string>('confirmPassword', { required: true 
 </script>
 
 <template>
-  <section class="reveal reveal-delay-2 mt-4 rounded-[2rem] border border-zinc-200/70 bg-white/92 p-6 shadow-[0_20px_40px_-15px_rgba(7,13,20,0.1)]">
+  <section class="reveal reveal-delay-2 mt-4 radar-panel p-5">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div>
-        <p class="metric-mono text-xs tracking-[0.2em] text-zinc-500">
-          SECURITY
+        <p class="metric-mono text-[0.68rem] tracking-[0.24em] text-slate-400">
+          PASSWORD POLICY
         </p>
-        <h2 class="mt-1 text-xl font-semibold tracking-tight text-zinc-900">
+        <h2 class="mt-2 font-['Space_Grotesk'] text-2xl font-bold tracking-[-0.04em] text-slate-950">
           修改登录密码
         </h2>
-        <p class="mt-2 text-sm text-zinc-600">
+        <p class="mt-2 text-sm leading-6 text-slate-500">
           修改后其他设备会话将失效，当前设备保持登录。
         </p>
       </div>
@@ -36,7 +36,7 @@ const confirmPassword = defineModel<string>('confirmPassword', { required: true 
 
     <form class="mt-4 grid gap-3 md:grid-cols-3" @submit.prevent="emit('submit')">
       <label class="grid gap-2">
-        <span class="text-sm font-medium text-zinc-700">当前密码</span>
+        <span class="text-sm font-semibold text-slate-700">当前密码</span>
         <input
           v-model="currentPassword"
           type="password"
@@ -44,12 +44,12 @@ const confirmPassword = defineModel<string>('confirmPassword', { required: true 
           placeholder="请输入当前密码"
           required
           :minlength="props.minPasswordLength"
-          class="w-full rounded-xl border border-zinc-300/80 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+          class="radar-input"
         >
       </label>
 
       <label class="grid gap-2">
-        <span class="text-sm font-medium text-zinc-700">新密码</span>
+        <span class="text-sm font-semibold text-slate-700">新密码</span>
         <input
           v-model="newPassword"
           type="password"
@@ -57,12 +57,12 @@ const confirmPassword = defineModel<string>('confirmPassword', { required: true 
           placeholder="请输入新密码"
           required
           :minlength="props.minPasswordLength"
-          class="w-full rounded-xl border border-zinc-300/80 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+          class="radar-input"
         >
       </label>
 
       <label class="grid gap-2">
-        <span class="text-sm font-medium text-zinc-700">确认新密码</span>
+        <span class="text-sm font-semibold text-slate-700">确认新密码</span>
         <input
           v-model="confirmPassword"
           type="password"
@@ -70,23 +70,23 @@ const confirmPassword = defineModel<string>('confirmPassword', { required: true 
           placeholder="请再次输入新密码"
           required
           :minlength="props.minPasswordLength"
-          class="w-full rounded-xl border border-zinc-300/80 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+          class="radar-input"
         >
       </label>
 
-      <div class="md:col-span-3 flex flex-wrap items-center justify-between gap-3">
-        <p class="text-xs text-zinc-500">
+      <div class="flex flex-wrap items-center justify-between gap-3 md:col-span-3">
+        <p class="text-sm text-slate-500">
           忘记当前密码可使用
           <RouterLink
             :to="{ path: '/auth', query: { reset: '1' } }"
-            class="font-medium text-zinc-700 underline decoration-zinc-400 underline-offset-2 hover:text-zinc-900"
+            class="font-semibold text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-slate-950"
           >
             重置密码
           </RouterLink>
           流程。
         </p>
         <button
-          class="inline-flex items-center justify-center rounded-xl border border-zinc-900 bg-zinc-900 px-3 py-2.5 text-sm font-medium text-white transition duration-300 hover:-translate-y-0.5 hover:bg-zinc-800 active:translate-y-[1px] disabled:cursor-not-allowed disabled:opacity-60"
+          class="radar-button-primary"
           type="submit"
           :disabled="props.submitting"
         >

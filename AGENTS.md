@@ -43,6 +43,16 @@ PRs should include:
 ## Security & Configuration Tips
 Never commit secrets. Start from `.env.example` and `apps/worker/.dev.vars.example`. Keep production runtime variables in Cloudflare Dashboard/Netlify settings, not in committed config files.
 
+## 前端界面规则
+
+- 顶部导航不要做“当前路由高亮”。如果高亮状态不稳定、容易误判，宁可统一使用无激活态的普通导航样式。
+- PC 页面默认不要放“返回上一页”“返回列表”“返回公开情报”这类页面级返回按钮，优先依赖顶部导航和信息架构完成跳转。
+- 整体界面以 PC 工作台为准，不要做成移动端卡片堆叠感或 App 式页面头图。
+- 谨慎使用大圆角。面板、列表项、按钮、输入框都应保持克制，避免满屏胶囊和过度圆润的视觉语言。
+- 控制页面留白和模块间距，避免每一块内容都被拉得很开，导致页面像很多独立卡片拼起来。
+- 页面结构要强调“整体性”和“连续性”，让相邻模块像同一个工作区，而不是彼此割裂的多个信息岛。
+- 做桌面端视觉调整时，优先先收紧顶部区、主内容区、卡片半径、阴影强度和模块间距，再考虑增加装饰。
+
 ## 回复
 
 - 使用中文交流和回复

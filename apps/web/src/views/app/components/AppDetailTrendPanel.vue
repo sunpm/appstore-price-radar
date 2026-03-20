@@ -187,22 +187,25 @@ function directionSymbol(direction: TrendChangeRow['direction']): string {
 function directionTextClass(direction: TrendChangeRow['direction']): string {
   switch (direction) {
     case 'down':
-      return 'text-teal-500'
+      return 'text-blue-600'
     case 'up':
       return 'text-rose-500'
     default:
-      return 'text-zinc-400'
+      return 'text-slate-400'
   }
 }
 </script>
 
 <template>
-  <section class="reveal reveal-delay-1 rounded-[2rem] border border-zinc-200/70 bg-white/92 p-4 shadow-[0_20px_40px_-15px_rgba(7,13,20,0.1)] md:p-5">
-    <article class="rounded-[1.7rem] border border-zinc-200/80 bg-white p-5 shadow-[0_18px_36px_-26px_rgba(15,23,42,0.26)]">
-      <p class="text-center text-[1.7rem] font-semibold tracking-tight text-zinc-800">
-        官方渠道下载
+  <section class="grid gap-4">
+    <article class="radar-panel-strong p-4">
+      <p class="metric-mono text-[0.68rem] tracking-[0.24em] text-slate-500">
+        官方渠道
       </p>
-      <p class="mt-2 text-center text-sm text-zinc-500">
+      <h2 class="mt-2 font-['Space_Grotesk'] text-2xl font-bold tracking-[-0.05em] text-slate-950">
+        官方渠道下载
+      </h2>
+      <p class="mt-2 text-sm text-slate-600">
         {{ props.storePlatformLabel }}
       </p>
 
@@ -211,50 +214,48 @@ function directionTextClass(direction: TrendChangeRow['direction']): string {
         :href="props.storeUrl"
         target="_blank"
         rel="noreferrer"
-        class="mt-5 inline-flex h-14 w-full items-center justify-center rounded-full bg-[#ffd84f] px-5 text-xl font-medium text-zinc-900 shadow-[0_18px_32px_-22px_rgba(250,204,21,0.9)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#ffcf2d] active:translate-y-[1px]"
+        class="mt-4 inline-flex h-12 w-full items-center justify-center rounded-[0.9rem] bg-[#ffd84f] px-5 text-base font-semibold text-slate-950 shadow-[0_14px_24px_-18px_rgba(250,204,21,0.6)] transition duration-300 hover:bg-[#ffcf2d]"
       >
-        前往 App Store
+        官方渠道下载
       </a>
 
       <div
         v-else
-        class="mt-5 rounded-[1.3rem] border border-dashed border-zinc-300 bg-zinc-50 px-4 py-4 text-center text-sm text-zinc-500"
+        class="radar-empty mt-5 px-4 py-4 text-center text-sm"
       >
         暂无 App Store 官方链接
       </div>
     </article>
 
-    <article class="mt-4 overflow-hidden rounded-[1.7rem] border border-zinc-200/80 bg-[radial-gradient(circle_at_top_left,rgba(255,214,10,0.14),transparent_36%),linear-gradient(145deg,rgba(255,255,255,0.98),rgba(249,250,251,0.92))] p-5">
-      <div class="flex flex-col gap-4">
-        <div>
-          <p class="text-sm font-medium tracking-[0.12em] text-zinc-500">
-            价格历史
-          </p>
-          <h2 class="mt-3 text-2xl font-semibold tracking-tight text-zinc-900">
-            历史最低价
-          </h2>
-        </div>
+    <article class="radar-panel p-4">
+      <div>
+        <p class="metric-mono text-[0.68rem] tracking-[0.24em] text-slate-400">
+          PRICE RANGE
+        </p>
+        <h2 class="mt-2 font-['Space_Grotesk'] text-2xl font-bold tracking-[-0.04em] text-slate-950">
+          历史最低价
+        </h2>
       </div>
 
       <template v-if="lowestPoint">
-        <p class="metric-mono mt-6 text-[2.4rem] font-semibold text-rose-500">
+        <p class="radar-display mt-5 text-[2.45rem] font-semibold text-orange-600">
           {{ formatMoney(lowestPoint.price, lowestPoint.currency) }}
         </p>
-        <p class="mt-2 text-base text-zinc-500">
+        <p class="mt-2 text-base text-slate-500">
           {{ formatDate(lowestPoint.time) }}
         </p>
 
         <div
           v-if="showStandaloneCurrentPrice && latestPoint"
-          class="mt-5 rounded-[1.35rem] border border-zinc-200/80 bg-white/90 p-4"
+          class="mt-4 rounded-[1rem] border border-slate-200/80 bg-white p-4"
         >
-          <p class="text-sm font-medium tracking-[0.08em] text-zinc-500">
+          <p class="text-sm font-medium tracking-[0.08em] text-slate-500">
             当前价格
           </p>
-          <strong class="metric-mono mt-2 block text-2xl text-zinc-900">
+          <strong class="radar-display mt-2 block text-3xl text-slate-950">
             {{ formatMoney(latestPoint.price, latestPoint.currency) }}
           </strong>
-          <p class="mt-2 text-sm text-zinc-500">
+          <p class="mt-2 text-sm text-slate-500">
             {{ props.snapshot?.updatedAt ? `最近快照：${formatDateTime(props.snapshot.updatedAt)}` : '暂无快照时间' }}
           </p>
         </div>
@@ -262,69 +263,69 @@ function directionTextClass(direction: TrendChangeRow['direction']): string {
 
       <div
         v-else
-        class="mt-5 rounded-[1.4rem] border border-dashed border-zinc-300 bg-white/75 px-4 py-4 text-sm text-zinc-500"
+        class="radar-empty mt-5 px-4 py-4 text-sm"
       >
-        当前还没有可展示的价格轨迹。
+        暂无价格轨迹
       </div>
 
-      <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-        <article class="rounded-[1.35rem] border border-zinc-200/80 bg-white/90 p-4">
-          <p class="text-sm font-medium tracking-[0.08em] text-zinc-500">
+      <div class="mt-4 grid gap-3">
+        <article class="rounded-[0.95rem] border border-slate-200/80 bg-blue-50 p-4">
+          <p class="text-sm font-medium tracking-[0.08em] text-slate-500">
             一年内最低价
           </p>
-          <strong class="metric-mono mt-2 block text-2xl text-zinc-900">
+          <strong class="radar-display mt-2 block text-2xl text-slate-950">
             {{ oneYearLowestPoint ? formatMoney(oneYearLowestPoint.price, oneYearLowestPoint.currency) : '-' }}
           </strong>
-          <p class="mt-2 text-sm text-zinc-500">
+          <p class="mt-2 text-sm text-slate-500">
             {{ oneYearLowestPoint ? formatDate(oneYearLowestPoint.time) : '一年内暂无价格记录' }}
           </p>
         </article>
 
-        <article class="rounded-[1.35rem] border border-zinc-200/80 bg-white/90 p-4">
-          <p class="text-sm font-medium tracking-[0.08em] text-zinc-500">
+        <article class="rounded-[0.95rem] border border-slate-200/80 bg-white p-4">
+          <p class="text-sm font-medium tracking-[0.08em] text-slate-500">
             历史价格区间
           </p>
-          <strong class="mt-2 block text-base font-semibold leading-8 text-zinc-900">
+          <strong class="mt-2 block text-base font-semibold leading-8 text-slate-950">
             {{ lowestPoint ? `最低 ${formatMoney(lowestPoint.price, lowestPoint.currency)}` : '暂无最低价' }}
           </strong>
-          <p class="mt-2 text-sm text-zinc-500">
+          <p class="mt-2 text-sm text-slate-500">
             {{ highestPoint ? `最高 ${formatMoney(highestPoint.price, highestPoint.currency)}` : '暂无历史高点' }}
           </p>
         </article>
 
-        <article class="rounded-[1.35rem] border border-zinc-200/80 bg-white/90 p-4">
-          <p class="text-sm font-medium tracking-[0.08em] text-zinc-500">
+        <article class="rounded-[0.95rem] border border-slate-200/80 bg-white p-4">
+          <p class="text-sm font-medium tracking-[0.08em] text-slate-500">
             最近一次变化
           </p>
-          <strong class="mt-2 block text-base font-semibold leading-7 text-zinc-900">
+          <strong class="mt-2 block text-base font-semibold leading-7 text-slate-950">
             {{ latestChange ? `${formatMoney(latestChange.oldAmount, latestChange.currency)} -> ${formatMoney(latestChange.newAmount, latestChange.currency)}` : '暂无变化事件' }}
           </strong>
-          <p class="mt-2 text-sm text-zinc-500">
+          <p class="mt-2 text-sm text-slate-500">
             {{ latestChange ? formatDate(latestChange.time) : '等待后续价格更新' }}
           </p>
         </article>
 
-        <article class="rounded-[1.35rem] border border-zinc-200/80 bg-white/90 p-4">
-          <p class="text-sm font-medium tracking-[0.08em] text-zinc-500">
+        <article class="rounded-[0.95rem] border border-blue-100 bg-[linear-gradient(145deg,#eff6ff,#dbeafe)] p-4 text-slate-950">
+          <p class="text-sm font-medium tracking-[0.08em] text-slate-500">
             变价记录
           </p>
-          <strong class="metric-mono mt-2 block text-2xl text-zinc-900">
+          <strong class="radar-display mt-2 block text-3xl text-blue-700">
             {{ props.summary.totalChanges }}
           </strong>
-          <p class="mt-2 text-sm text-zinc-500">
+          <p class="mt-2 text-sm text-slate-600">
             已加载 {{ props.history.length }} / {{ props.summary.totalChanges }} 条
           </p>
         </article>
       </div>
     </article>
 
-    <article class="mt-4 rounded-[1.7rem] border border-zinc-200/80 bg-white p-5 shadow-[0_18px_36px_-26px_rgba(15,23,42,0.22)]">
+    <article class="radar-panel p-5">
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 class="text-xl font-semibold tracking-tight text-zinc-900">
+          <h3 class="font-['Space_Grotesk'] text-xl font-bold tracking-[-0.04em] text-slate-950">
             最低入手价浮动记录
           </h3>
-          <p class="mt-1 text-sm text-zinc-500">
+          <p class="mt-1 text-sm text-slate-500">
             {{ props.summary.latestChangeAt ? `最近更新：${formatDateTime(props.summary.latestChangeAt)}` : '暂无变价记录' }}
           </p>
         </div>
@@ -332,7 +333,7 @@ function directionTextClass(direction: TrendChangeRow['direction']): string {
 
       <div
         v-if="orderedChanges.length === 0"
-        class="mt-4 rounded-[1.4rem] border border-dashed border-zinc-300 bg-zinc-50/70 px-4 py-4 text-sm text-zinc-500"
+        class="radar-empty mt-4 px-4 py-4 text-sm"
       >
         当前窗口暂无历史变化事件。
       </div>
@@ -341,7 +342,7 @@ function directionTextClass(direction: TrendChangeRow['direction']): string {
         <li
           v-for="row in orderedChanges"
           :key="row.id"
-          class="grid grid-cols-[auto_minmax(0,1fr)] gap-3 rounded-[1.2rem] border border-zinc-200/80 bg-zinc-50/70 px-4 py-3 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center"
+          class="grid grid-cols-[auto_minmax(0,1fr)] gap-3 rounded-[0.9rem] border border-slate-200/80 bg-slate-50/82 px-4 py-3 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center"
         >
           <span
             class="text-2xl font-semibold leading-none"
@@ -350,11 +351,11 @@ function directionTextClass(direction: TrendChangeRow['direction']): string {
             {{ directionSymbol(row.direction) }}
           </span>
 
-          <p class="metric-mono min-w-0 text-lg leading-8 text-zinc-700">
+          <p class="metric-mono min-w-0 text-lg leading-8 text-slate-700">
             {{ formatMoney(row.oldAmount, row.currency) }} -> {{ formatMoney(row.newAmount, row.currency) }}
           </p>
 
-          <p class="metric-mono text-base text-zinc-500 md:text-right">
+          <p class="metric-mono text-base text-slate-500 md:text-right">
             {{ formatDate(row.time) }}
           </p>
         </li>
@@ -364,7 +365,7 @@ function directionTextClass(direction: TrendChangeRow['direction']): string {
         <button
           v-if="props.canLoadMore"
           type="button"
-          class="inline-flex items-center justify-center rounded-full border border-zinc-900 bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition duration-300 hover:-translate-y-0.5 hover:bg-zinc-800 active:translate-y-[1px] disabled:cursor-not-allowed disabled:opacity-60"
+          class="radar-button-primary"
           :disabled="props.loadingMore"
           @click="emit('loadMore')"
         >

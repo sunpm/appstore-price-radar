@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import type { PriceHistoryWindow } from '@appstore-price-radar/contracts'
-import type { AppDetailPayload } from './types'
+import type { AppDecisionStatsState, AppDetailPayload } from './types'
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePriceHistory } from '../../composables/usePriceHistory'
 import { resolveCountryLabel } from '../../constants/countries'
 import { useToast } from '../../lib/toast'
+import AppDetailDecisionStats from './components/AppDetailDecisionStats.vue'
 import AppDetailHeroCard from './components/AppDetailHeroCard.vue'
 import AppDetailMetadataPanel from './components/AppDetailMetadataPanel.vue'
 import AppDetailTrendPanel from './components/AppDetailTrendPanel.vue'
@@ -129,6 +130,27 @@ const storePlatformLabel = computed(() => {
 
 const canLoadMore = computed(() => Boolean(detail.value?.page.hasMore))
 
+const decisionStats = computed<AppDecisionStatsState>(() => {
+  const values = [
+    ...history.value.flatMap(item => [item.oldAmount, item.newAmount]),
+    snapshot.value?.lastPrice ?? null,
+  ].filter((value): value is number => value !== null && Number.isFinite(value))
+
+  const currentPrice = snapshot.value?.lastPrice ?? history.value.at(-1)?.newAmount ?? null
+  const peak = values.length > 0 ? Math.max(...values) : null
+
+  return {
+    averageUserRating: metadata.value?.averageUserRating ?? null,
+    averageUserRatingForCurrentVersion: metadata.value?.averageUserRatingForCurrentVersion ?? null,
+    userRatingCount: metadata.value?.userRatingCount ?? null,
+    primaryGenreName: metadata.value?.primaryGenreName ?? null,
+    dropFromPeakPct: peak && currentPrice !== null ? ((peak - currentPrice) / peak) * 100 : null,
+    lowestPrice: values.length > 0 ? Math.min(...values) : null,
+    totalChanges: summary.value.totalChanges,
+    currency: snapshot.value?.currency ?? history.value[0]?.currency ?? 'USD',
+  }
+})
+
 watch(
   () => [appId.value, country.value],
   async () => {
@@ -139,26 +161,24 @@ watch(
 </script>
 
 <template>
-  <main class="min-h-[100dvh] bg-zinc-100 text-zinc-900">
-    <div class="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_10%_8%,rgba(16,185,129,0.16),transparent_30%),radial-gradient(circle_at_90%_5%,rgba(20,83,45,0.1),transparent_34%),linear-gradient(158deg,#f3f7f6_0%,#edf3f3_48%,#f8f8f9_100%)]" />
-
-    <div class="mx-auto max-w-[1200px] px-4 py-6 md:px-8 md:py-10">
+  <main class="radar-view">
+    <div class="radar-container pb-12 pt-5 md:pb-14 md:pt-6">
       <section v-if="loading" class="grid gap-4">
-        <div class="skeleton-box h-48 rounded-[2rem]" />
-        <div class="skeleton-box h-[34rem] rounded-[2rem]" />
-        <div class="skeleton-box h-72 rounded-[2rem]" />
-        <div class="skeleton-box h-[40rem] rounded-[2rem]" />
+        <div class="skeleton-box h-56 rounded-[1.1rem]" />
+        <div class="skeleton-box h-42 rounded-[1.1rem]" />
+        <div class="skeleton-box h-84 rounded-[1.1rem]" />
+        <div class="skeleton-box h-[42rem] rounded-[1.1rem]" />
       </section>
 
       <p
         v-else-if="errorText"
-        class="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700"
+        class="rounded-[1rem] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700"
       >
         {{ errorText }}
       </p>
 
       <template v-else-if="detail">
-        <div class="grid items-start gap-4 xl:grid-cols-[minmax(0,1.08fr)_23rem] xl:gap-5">
+        <div class="grid items-start gap-4 xl:grid-cols-[minmax(0,1.08fr)_360px]">
           <div class="space-y-4">
             <AppDetailHeroCard
               :app-id="appId"
@@ -173,13 +193,15 @@ watch(
               :updated-at="detail.snapshot?.updatedAt ?? null"
             />
 
+            <AppDetailDecisionStats :stats="decisionStats" />
+
             <AppDetailMetadataPanel
               :metadata="detail.metadata"
               :app-name="appTitle"
             />
           </div>
 
-          <aside class="xl:sticky xl:top-8">
+          <aside class="xl:sticky xl:top-24">
             <AppDetailTrendPanel
               :snapshot="detail.snapshot"
               :history="detail.history"

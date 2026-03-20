@@ -3,11 +3,15 @@ import type { CountryOption } from '../../../types/common'
 
 const props = defineProps<{
   countryOptions: CountryOption[]
+  resultCount: number
+  selectedCountryLabel: string
+  totalCount: number
 }>()
 
 const emit = defineEmits<{
   refresh: []
 }>()
+
 const selectedCountry = defineModel<string>('selectedCountry', { required: true })
 const keyword = defineModel<string>('keyword', { required: true })
 
@@ -24,24 +28,40 @@ function onKeywordInput(event: Event): void {
 </script>
 
 <template>
-  <article class="reveal reveal-delay-1 rounded-[2rem] border border-zinc-200/70 bg-white/92 p-6 shadow-[0_20px_40px_-15px_rgba(7,13,20,0.1)]">
-    <h2 class="text-base font-semibold tracking-tight text-zinc-900">
-      智能筛选
-    </h2>
-    <div class="mt-4 grid gap-3">
+  <article class="radar-panel reveal reveal-delay-1 radar-grid-accent p-4 md:p-5">
+    <div class="flex items-start justify-between gap-4">
+      <div>
+        <p class="metric-mono text-[0.68rem] tracking-[0.24em] text-slate-400">
+          筛选面板
+        </p>
+        <h2 class="mt-2 font-['Space_Grotesk'] text-2xl font-bold tracking-[-0.04em] text-slate-950">
+          筛选控制台
+        </h2>
+      </div>
+
+      <button
+        type="button"
+        class="radar-button-secondary shrink-0 px-4 py-2.5 text-sm"
+        @click="emit('refresh')"
+      >
+        刷新数据
+      </button>
+    </div>
+
+    <div class="mt-5 grid gap-3">
       <label class="grid gap-2">
-        <span class="text-sm font-medium text-zinc-700">市场区域</span>
+        <span class="text-sm font-semibold text-slate-700">市场区域</span>
         <div class="relative">
           <select
             :value="selectedCountry"
-            class="w-full appearance-none rounded-xl border border-zinc-300 bg-white px-3 py-2.5 pr-11 text-sm leading-6 text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+            class="radar-select appearance-none pr-11"
             @change="onCountryChange"
           >
             <option v-for="option in props.countryOptions" :key="option.code" :value="option.code">
               {{ option.label }}
             </option>
           </select>
-          <span class="pointer-events-none absolute inset-y-0 right-3 grid place-items-center text-zinc-500">
+          <span class="pointer-events-none absolute inset-y-0 right-3 grid place-items-center text-slate-500">
             <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" class="h-4 w-4" stroke="currentColor" stroke-width="1.8">
               <path d="M5 8l5 5 5-5" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
@@ -50,23 +70,47 @@ function onKeywordInput(event: Event): void {
       </label>
 
       <label class="grid gap-2">
-        <span class="text-sm font-medium text-zinc-700">检索关键词</span>
+        <span class="text-sm font-semibold text-slate-700">检索关键词</span>
         <input
           :value="keyword"
           type="text"
           placeholder="请输入应用名称 / App ID / 地区"
-          class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+          class="radar-input"
           @input="onKeywordInput"
         >
       </label>
+    </div>
 
-      <button
-        type="button"
-        class="inline-flex items-center justify-center rounded-xl border border-zinc-900 bg-zinc-900 px-3 py-2.5 text-sm font-medium text-white transition duration-300 hover:-translate-y-0.5 hover:bg-zinc-800 active:translate-y-[1px]"
-        @click="emit('refresh')"
-      >
-        更新情报
-      </button>
+    <div class="mt-4 rounded-[1rem] border border-blue-100 bg-[linear-gradient(145deg,#eff6ff,#fff7ed)] px-4 py-4 text-slate-950 shadow-[0_18px_36px_-28px_rgba(59,130,246,0.16)]">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <p class="text-xs tracking-[0.18em] text-slate-500">
+            当前视角
+          </p>
+          <p class="mt-2 text-base font-semibold">
+            {{ selectedCountryLabel }}
+          </p>
+        </div>
+      </div>
+
+      <div class="mt-4 grid gap-3 sm:grid-cols-2">
+        <div class="rounded-[0.95rem] border border-white/80 bg-white/78 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
+          <p class="text-xs text-slate-500">
+            当前筛出
+          </p>
+          <p class="radar-display mt-2 text-3xl font-semibold text-slate-950">
+            {{ props.resultCount }}
+          </p>
+        </div>
+        <div class="rounded-[0.95rem] border border-white/80 bg-white/78 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
+          <p class="text-xs text-slate-500">
+            总公开样本
+          </p>
+          <p class="radar-display mt-2 text-3xl font-semibold text-slate-950">
+            {{ props.totalCount }}
+          </p>
+        </div>
+      </div>
     </div>
   </article>
 </template>

@@ -142,6 +142,7 @@ const filteredDrops = computed<DropEventItem[]>(() => {
 const summary = computed<HomeFeedSummary>(() => {
   const total = drops.value.length
   const apps = new Set(drops.value.map(item => `${item.appId}:${item.country}`)).size
+  const countries = new Set(drops.value.map(item => item.country)).size
   const maxDrop = drops.value.reduce((max, item) => {
     if (item.dropPercent === null) {
       return max
@@ -149,13 +150,26 @@ const summary = computed<HomeFeedSummary>(() => {
 
     return Math.max(max, item.dropPercent)
   }, 0)
+  const newestAt = drops.value.reduce<string | null>((latest, item) => {
+    if (!latest) {
+      return item.detectedAt
+    }
+
+    return new Date(item.detectedAt).getTime() > new Date(latest).getTime()
+      ? item.detectedAt
+      : latest
+  }, null)
 
   return {
     total,
     apps,
     maxDrop,
+    countries,
+    newestAt,
   }
 })
+
+const selectedCountryLabel = computed(() => countryLabel(selectedCountry.value))
 
 onMounted(async (): Promise<void> => {
   await loadDrops()
@@ -163,18 +177,22 @@ onMounted(async (): Promise<void> => {
 </script>
 
 <template>
-  <main class="min-h-[100dvh] bg-zinc-100 text-zinc-900">
-    <div class="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_12%_12%,rgba(16,185,129,0.16),transparent_32%),radial-gradient(circle_at_88%_6%,rgba(6,95,70,0.1),transparent_34%),linear-gradient(155deg,#f3f7f6_0%,#eef3f2_48%,#f7f7f8_100%)]" />
-
-    <div class="mx-auto max-w-[1400px] px-4 py-6 md:px-8 md:py-10">
-      <section class="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+  <main class="radar-view">
+    <div class="radar-container pb-12 pt-5 md:pb-14 md:pt-6">
+      <section class="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_340px] xl:items-start">
         <HomeFeedHero :summary="summary" />
-        <HomeFeedFilters
-          v-model:selected-country="selectedCountry"
-          v-model:keyword="keyword"
-          :country-options="countryOptions"
-          @refresh="loadDrops"
-        />
+
+        <aside class="xl:sticky xl:top-24">
+          <HomeFeedFilters
+            v-model:selected-country="selectedCountry"
+            v-model:keyword="keyword"
+            :country-options="countryOptions"
+            :result-count="filteredDrops.length"
+            :selected-country-label="selectedCountryLabel"
+            :total-count="drops.length"
+            @refresh="loadDrops"
+          />
+        </aside>
       </section>
 
       <HomeFeedList
