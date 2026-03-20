@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AppDecisionStatsState } from '../types'
 import { computed } from 'vue'
+import { resolveAppStoreGenreLabel } from '../../../lib/app-store'
 import { formatMoney } from '../../../lib/format'
 
 const props = defineProps<{
@@ -20,65 +21,73 @@ const statCards = computed(() => {
     {
       label: '综合评分',
       value: props.stats.averageUserRating === null ? '-' : props.stats.averageUserRating.toFixed(1),
-      accent: 'text-zinc-900',
+      tone: 'text-slate-950',
+      surface: 'bg-white',
     },
     {
       label: '当前版本评分',
       value: props.stats.averageUserRatingForCurrentVersion === null ? '-' : props.stats.averageUserRatingForCurrentVersion.toFixed(1),
-      accent: 'text-zinc-900',
+      tone: 'text-slate-950',
+      surface: 'bg-white',
     },
     {
       label: '评价数',
       value: props.stats.userRatingCount === null ? '-' : props.stats.userRatingCount.toLocaleString(),
-      accent: 'text-zinc-900',
+      tone: 'text-slate-950',
+      surface: 'bg-white',
     },
     {
       label: '距高点跌幅',
       value: toPercent(props.stats.dropFromPeakPct),
-      accent: props.stats.dropFromPeakPct === null ? 'text-zinc-900' : 'text-emerald-700',
+      tone: props.stats.dropFromPeakPct === null ? 'text-slate-950' : 'text-orange-700',
+      surface: 'bg-orange-50',
     },
     {
       label: '历史最低价',
       value: formatMoney(props.stats.lowestPrice, props.stats.currency),
-      accent: 'text-zinc-900',
+      tone: 'text-blue-700',
+      surface: 'bg-blue-50',
     },
     {
       label: '分类',
-      value: props.stats.primaryGenreName ?? '暂无',
-      accent: 'text-zinc-900',
+      value: resolveAppStoreGenreLabel(props.stats.primaryGenreName) ?? '暂无',
+      tone: 'text-slate-950',
+      surface: 'bg-white',
     },
     {
       label: '累计变化事件',
       value: String(props.stats.totalChanges),
-      accent: 'text-zinc-900',
+      tone: 'text-slate-950',
+      surface: 'bg-white',
     },
   ]
 })
 </script>
 
 <template>
-  <section class="rounded-[2rem] border border-zinc-200/70 bg-white/92 p-5 shadow-[0_20px_40px_-15px_rgba(7,13,20,0.1)] md:p-6">
+  <section class="radar-panel p-4 md:p-5">
     <div>
       <div>
-        <p class="metric-mono text-xs tracking-[0.18em] text-zinc-500">
-          DECISION SIGNALS
+        <p class="metric-mono text-[0.68rem] tracking-[0.24em] text-slate-400">
+          决策信号
         </p>
-        <h2 class="mt-2 text-xl font-semibold tracking-tight text-zinc-900">
+        <h2 class="mt-2 font-['Space_Grotesk'] text-2xl font-bold tracking-[-0.04em] text-slate-950">
           购买决策信号
         </h2>
       </div>
     </div>
 
-    <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+    <div class="mt-4 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
       <article
         v-for="card in statCards"
         :key="card.label"
-        class="rounded-[1.5rem] border border-zinc-200/80 bg-zinc-50/80 p-4"
+        class="rounded-[1rem] border border-slate-200/76 p-4"
+        :class="card.surface"
       >
-        <p class="text-xs font-medium uppercase tracking-[0.16em] text-zinc-500">
+        <p class="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
           {{ card.label }}
         </p>
-        <strong class="metric-mono mt-2 block text-xl" :class="card.accent">
+        <strong class="radar-display mt-2 block text-2xl" :class="card.tone">
           {{ card.value }}
         </strong>
       </article>

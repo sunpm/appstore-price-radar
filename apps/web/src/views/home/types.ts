@@ -17,4 +17,6 @@ export interface HomeFeedSummary {
   total: number
   apps: number
   maxDrop: number
+  countries: number
+  newestAt: string | null
 }
