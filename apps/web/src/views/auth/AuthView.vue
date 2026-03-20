@@ -165,7 +165,7 @@ async function submitAuth(): Promise<void> {
 
     applyAuthSession(data)
     authForm.password = ''
-    successText.value = props.redirectOnSuccess ? '登录成功，正在进入工作台。' : '登录成功。'
+    successText.value = props.redirectOnSuccess ? '登录成功，正在进入我的订阅。' : '登录成功。'
 
     await onAuthenticated()
   }
@@ -210,7 +210,7 @@ async function submitRegister(): Promise<void> {
     applyAuthSession(data)
     authForm.password = ''
     registerCode.value = ''
-    successText.value = props.redirectOnSuccess ? '账号创建成功，正在进入工作台。' : '账号创建成功。'
+    successText.value = props.redirectOnSuccess ? '账号创建成功，正在进入我的订阅。' : '账号创建成功。'
 
     await onAuthenticated()
   }
@@ -313,7 +313,7 @@ async function verifyLoginCode(): Promise<void> {
 
     applyAuthSession(data)
     codeForm.code = ''
-    successText.value = props.redirectOnSuccess ? '验证成功，正在进入工作台。' : '验证成功，已完成登录。'
+    successText.value = props.redirectOnSuccess ? '登录成功，正在进入我的订阅。' : '登录成功。'
 
     await onAuthenticated()
   }
@@ -419,7 +419,7 @@ async function logout(): Promise<void> {
   }
 
   clearSession()
-  successText.value = '已安全退出登录。'
+  successText.value = '已退出登录。'
 }
 
 onMounted(async (): Promise<void> => {
@@ -437,7 +437,7 @@ onMounted(async (): Promise<void> => {
       successText.value = '已识别重置令牌，请填写新密码后提交。'
     }
     else if (openResetPanel) {
-      successText.value = '请输入注册邮箱并完成密码重置流程。'
+      successText.value = '请输入邮箱并重置密码。'
     }
 
     if (openResetPanel || resetToken) {

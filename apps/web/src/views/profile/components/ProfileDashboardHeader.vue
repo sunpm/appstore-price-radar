@@ -21,7 +21,7 @@ const emit = defineEmits<{
           PROFILE
         </p>
         <h1 class="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
-          订阅策略工作台
+          我的订阅
         </h1>
         <p class="mt-2 text-sm text-zinc-600">
           当前账号：{{ currentUserEmail }}

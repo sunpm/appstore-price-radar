@@ -95,7 +95,7 @@ function toFriendlyLoadError(error: unknown): string {
     return message
   }
 
-  return '公开情报加载失败，请稍后重试。'
+  return '公开记录加载失败，请稍后重试。'
 }
 
 async function loadDrops(): Promise<void> {

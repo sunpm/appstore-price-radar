@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { AppDecisionMetadataDto } from '../types'
 import { computed } from 'vue'
-import { formatDate, formatFileSize } from '../../../lib/format'
 import { resolveAppStoreGenreLabels } from '../../../lib/app-store'
+import { formatDate, formatFileSize } from '../../../lib/format'
 
 interface InfoCardItem {
   label: string
@@ -328,7 +328,7 @@ const ratingCards = computed<InfoCardItem[]>(() => {
         App Store 信息
       </p>
       <h2 class="mt-2 text-xl font-semibold tracking-tight text-zinc-900 md:text-2xl">
-        {{ props.appName }} 的完整介绍
+        {{ props.appName }} 的 App Store 信息
       </h2>
     </div>
 
@@ -336,7 +336,7 @@ const ratingCards = computed<InfoCardItem[]>(() => {
       v-if="!hasMetadata"
       class="mt-4 rounded-[1.5rem] border border-dashed border-zinc-300 bg-zinc-50/70 px-4 py-4 text-sm text-zinc-500"
     >
-      当前还没有可展示的扩展元数据。
+      暂无更多 App Store 信息。
     </div>
 
     <template v-else>
@@ -347,7 +347,7 @@ const ratingCards = computed<InfoCardItem[]>(() => {
               应用截图
             </h3>
             <p class="mt-1 text-sm text-zinc-500">
-              按 App Store 风格展示，左右滑动查看更多预览。
+              左右滑动查看更多截图。
             </p>
           </div>
           <p class="text-sm text-zinc-500">
@@ -359,7 +359,7 @@ const ratingCards = computed<InfoCardItem[]>(() => {
           v-if="screenshotUrls.length === 0"
           class="mt-4 rounded-[1.35rem] border border-dashed border-zinc-300 bg-white/80 px-4 py-4 text-sm leading-7 text-zinc-500"
         >
-          当前 App Store 官方接口没有返回截图数据，所以这里不是跨域报错，而是源数据本身为空。
+          App Store 接口未返回截图数据。
         </div>
 
         <div v-else class="mt-4 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3">

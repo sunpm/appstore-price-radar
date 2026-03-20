@@ -192,7 +192,7 @@ async function createSubscription(): Promise<void> {
   resetMessages()
 
   if (!currentUser.value) {
-    errorText.value = '请先完成登录。'
+    errorText.value = '请先登录。'
     return
   }
 
@@ -294,13 +294,13 @@ onMounted(async (): Promise<void> => {
         />
 
         <section class="reveal reveal-delay-1 mt-4 rounded-[1.5rem] border border-zinc-200/75 bg-white/88 px-4 shadow-[0_18px_38px_-16px_rgba(7,13,20,0.12)] md:px-6">
-          <nav class="flex gap-2 border-b border-zinc-200/80" aria-label="工作台页面导航">
+          <nav class="flex gap-2 border-b border-zinc-200/80" aria-label="账号页面导航">
             <RouterLink
               :to="{ name: 'profile' }"
               class="group relative inline-flex min-w-fit items-center px-3 py-3.5 text-sm font-semibold tracking-[0.02em] transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/80 focus-visible:ring-offset-2"
               :class="isAccountSectionActive('profile') ? 'text-zinc-950' : 'text-zinc-500 hover:text-zinc-800'"
             >
-              监控工作台
+              我的订阅
               <span
                 class="pointer-events-none absolute inset-x-2 -bottom-[1px] h-0.5 rounded-full transition duration-300"
                 :class="isAccountSectionActive('profile') ? 'bg-zinc-900 opacity-100' : 'bg-zinc-400 opacity-0 group-hover:opacity-100'"
@@ -354,7 +354,7 @@ onMounted(async (): Promise<void> => {
           登录状态已失效
         </h2>
         <p class="mt-2 text-sm text-zinc-600">
-          请重新登录后再进入工作台或账号安全页面。
+          请重新登录。
         </p>
         <RouterLink
           to="/auth"

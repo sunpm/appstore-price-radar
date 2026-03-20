@@ -26,7 +26,7 @@ function onKeywordInput(event: Event): void {
 <template>
   <article class="reveal reveal-delay-1 rounded-[2rem] border border-zinc-200/70 bg-white/92 p-6 shadow-[0_20px_40px_-15px_rgba(7,13,20,0.1)]">
     <h2 class="text-base font-semibold tracking-tight text-zinc-900">
-      智能筛选
+      筛选
     </h2>
     <div class="mt-4 grid gap-3">
       <label class="grid gap-2">
@@ -50,7 +50,7 @@ function onKeywordInput(event: Event): void {
       </label>
 
       <label class="grid gap-2">
-        <span class="text-sm font-medium text-zinc-700">检索关键词</span>
+        <span class="text-sm font-medium text-zinc-700">关键词</span>
         <input
           :value="keyword"
           type="text"
@@ -65,7 +65,7 @@ function onKeywordInput(event: Event): void {
         class="inline-flex items-center justify-center rounded-xl border border-zinc-900 bg-zinc-900 px-3 py-2.5 text-sm font-medium text-white transition duration-300 hover:-translate-y-0.5 hover:bg-zinc-800 active:translate-y-[1px]"
         @click="emit('refresh')"
       >
-        更新情报
+        刷新记录
       </button>
     </div>
   </article>

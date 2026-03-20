@@ -12,10 +12,10 @@ defineProps<{
       PRICE DROP FEED
     </p>
     <h1 class="mt-4 text-4xl font-semibold tracking-tight text-zinc-900 md:text-5xl">
-      公开降价情报中心
+      公开降价记录
     </h1>
     <p class="mt-4 max-w-[64ch] text-base leading-relaxed text-zinc-600">
-      仅展示曾出现价格下调的公开记录。即使后续恢复原价，记录仍会保留，时间标记为系统首次捕捉到降价的时刻。
+      仅展示出现过降价的公开记录。即使后续恢复原价，记录仍会保留，时间为系统首次捕捉到降价的时刻。
     </p>
 
     <div class="mt-6 grid gap-3 md:grid-cols-[1fr_1fr_1fr]">

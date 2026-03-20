@@ -26,7 +26,7 @@ function appDetailTo(item: DropEventItem) {
   <section class="reveal reveal-delay-2 mt-4 rounded-[2rem] border border-zinc-200/70 bg-white/92 p-5 shadow-[0_20px_40px_-15px_rgba(7,13,20,0.1)] md:p-6">
     <div class="flex items-center justify-between gap-3">
       <h2 class="text-lg font-semibold tracking-tight text-zinc-900">
-        最新降价情报
+        最新降价记录
       </h2>
       <p class="text-sm text-zinc-500">
         共 {{ items.length }} 条公开记录
@@ -47,7 +47,7 @@ function appDetailTo(item: DropEventItem) {
       v-else-if="items.length === 0"
       class="mt-4 rounded-2xl border border-dashed border-zinc-300 bg-zinc-50/70 p-4 text-sm text-zinc-500"
     >
-      暂无匹配的降价情报，建议调整筛选条件后重试。
+      暂无匹配记录，请调整筛选条件后重试。
     </div>
 
     <ul v-else class="mt-4 grid gap-3">
@@ -93,7 +93,7 @@ function appDetailTo(item: DropEventItem) {
             :to="appDetailTo(item)"
             class="inline-flex items-center justify-center rounded-xl border border-zinc-900 bg-zinc-900 px-3 py-2 text-xs font-medium text-white transition duration-300 hover:-translate-y-0.5 hover:bg-zinc-800 active:translate-y-[1px]"
           >
-            查看详情页
+            查看详情
           </RouterLink>
 
           <a

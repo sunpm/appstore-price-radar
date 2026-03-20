@@ -51,7 +51,7 @@ const minPasswordLength = MIN_PASSWORD_LENGTH
               RECOVERY
             </p>
             <h2 class="mt-1 text-lg font-semibold tracking-tight text-zinc-900">
-              找回访问权限
+              重置密码
             </h2>
           </div>
           <button
@@ -172,7 +172,7 @@ const minPasswordLength = MIN_PASSWORD_LENGTH
         />
 
         <p class="text-xs text-zinc-500">
-          创建账号前需要先完成邮箱验证码校验。
+          先发送验证码，再创建账号。
         </p>
 
         <button
@@ -280,7 +280,7 @@ const minPasswordLength = MIN_PASSWORD_LENGTH
         />
 
         <p class="text-xs text-zinc-500">
-          验证码通常在 1 分钟内送达，首次使用该邮箱验证码登录会自动创建账号。
+          验证码通常在 1 分钟内送达。首次使用该邮箱验证码登录时会自动创建账号。
         </p>
 
         <button

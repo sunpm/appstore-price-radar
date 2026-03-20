@@ -86,7 +86,7 @@ watch(
             class="inline-flex items-center justify-center rounded-full border px-3 py-1.5 text-sm font-medium transition duration-300"
             :class="navClass(isRouteActive('/'))"
           >
-            市场动态
+            降价记录
           </RouterLink>
 
           <RouterLink
@@ -112,7 +112,7 @@ watch(
             class="inline-flex items-center justify-center rounded-full border px-3 py-1.5 text-sm font-medium transition duration-300"
             :class="navClass(isWorkbenchRouteActive())"
           >
-            我的工作台
+            我的订阅
           </RouterLink>
         </nav>
       </div>

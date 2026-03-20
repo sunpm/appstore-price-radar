@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { formatDateTime } from '../../../lib/format'
 import { resolveAppStoreGenreLabel } from '../../../lib/app-store'
+import { formatDateTime } from '../../../lib/format'
 
 const props = defineProps<{
   appId: string
