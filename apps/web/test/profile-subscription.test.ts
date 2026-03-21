@@ -66,7 +66,7 @@ describe('profile view subscriptions', () => {
 
     const submitButton = wrapper
       .findAll('button')
-      .find(button => button.text() === '创建并开始监控')
+      .find(button => button.text() === '创建任务')
 
     expect(submitButton).toBeTruthy()
 
@@ -75,7 +75,7 @@ describe('profile view subscriptions', () => {
 
     expect(wrapper.text()).toContain('监控任务已创建：123456789')
     expect(wrapper.text()).toContain('Radar Pro')
-    expect(wrapper.text()).toContain('App ID: 123456789')
+    expect(wrapper.text()).toContain('App ID 123456789')
 
     const createRequest = fetchMock.mock.calls[2]
     const createHeaders = new Headers(createRequest[1]?.headers)
@@ -100,7 +100,7 @@ describe('profile view subscriptions', () => {
 
     const submitButton = wrapper
       .findAll('button')
-      .find(button => button.text() === '创建并开始监控')
+      .find(button => button.text() === '创建任务')
 
     expect(submitButton).toBeTruthy()
 

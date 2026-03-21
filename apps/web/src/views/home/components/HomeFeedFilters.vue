@@ -3,6 +3,7 @@ import type { CountryOption } from '../../../types/common'
 
 const props = defineProps<{
   countryOptions: CountryOption[]
+  loading: boolean
   resultCount: number
   selectedCountryLabel: string
   totalCount: number
@@ -25,6 +26,10 @@ function onKeywordInput(event: Event): void {
   const target = event.target as HTMLInputElement
   keyword.value = target.value
 }
+
+function clearKeyword(): void {
+  keyword.value = ''
+}
 </script>
 
 <template>
@@ -42,9 +47,10 @@ function onKeywordInput(event: Event): void {
       <button
         type="button"
         class="radar-button-secondary shrink-0 px-4 py-2.5 text-sm"
+        :disabled="props.loading"
         @click="emit('refresh')"
       >
-        刷新记录
+        {{ props.loading ? '刷新中...' : '刷新记录' }}
       </button>
     </div>
 
@@ -71,13 +77,26 @@ function onKeywordInput(event: Event): void {
 
       <label class="grid gap-2">
         <span class="text-sm font-semibold text-slate-700">关键词</span>
-        <input
-          :value="keyword"
-          type="text"
-          placeholder="请输入应用名称 / App ID / 地区"
-          class="radar-input"
-          @input="onKeywordInput"
-        >
+        <div class="relative">
+          <input
+            :value="keyword"
+            type="text"
+            placeholder="请输入应用名称 / App ID / 地区"
+            class="radar-input pr-11"
+            @input="onKeywordInput"
+          >
+          <button
+            v-if="keyword"
+            type="button"
+            class="absolute inset-y-0 right-3 my-auto inline-flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:text-slate-700"
+            aria-label="清空关键词"
+            @click="clearKeyword"
+          >
+            <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" class="h-3.5 w-3.5" stroke="currentColor" stroke-width="1.8">
+              <path d="M6 6l8 8M14 6l-8 8" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+        </div>
       </label>
     </div>
 
@@ -110,6 +129,15 @@ function onKeywordInput(event: Event): void {
             {{ props.totalCount }}
           </p>
         </div>
+      </div>
+
+      <div class="mt-4 rounded-[0.95rem] border border-white/80 bg-white/72 px-4 py-3">
+        <p class="text-xs tracking-[0.16em] text-slate-500">
+          当前状态
+        </p>
+        <p class="mt-2 text-sm font-medium text-slate-900">
+          {{ keyword ? `关键词“${keyword}”` : '未输入关键词' }}
+        </p>
       </div>
     </div>
   </article>

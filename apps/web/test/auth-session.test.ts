@@ -46,7 +46,7 @@ describe('auth session routes', () => {
     await settlePromises()
 
     expect(router.currentRoute.value.fullPath).toBe('/profile')
-    expect(wrapper.text()).toContain('监控工作台')
+    expect(wrapper.text()).toContain('我的监控任务')
     expect(wrapper.text()).toContain(storedUser.email)
 
     const authRequest = fetchMock.mock.calls[0]

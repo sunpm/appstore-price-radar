@@ -31,10 +31,7 @@ function progressWidth(dropPercent: number | null): string {
   <section class="radar-panel reveal reveal-delay-2 mt-5 p-4 md:mt-6 md:p-5">
     <div class="flex flex-col gap-3 border-b border-slate-200/80 pb-3 md:flex-row md:items-end md:justify-between">
       <div>
-        <p class="metric-mono text-[0.68rem] tracking-[0.24em] text-slate-400">
-          降价列表
-        </p>
-        <h2 class="mt-2 font-['Space_Grotesk'] text-3xl font-bold tracking-[-0.05em] text-slate-950">
+        <h2 class="font-['Space_Grotesk'] text-3xl font-bold tracking-[-0.05em] text-slate-950">
           最新降价记录
         </h2>
       </div>

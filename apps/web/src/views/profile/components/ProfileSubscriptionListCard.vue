@@ -6,6 +6,7 @@ const props = defineProps<{
   subscriptions: SubscriptionItem[]
   countryLabel: (countryCode: string) => string
   toMoney: (value: number | null | undefined, currency?: string) => string
+  toTime: (value: string) => string
   targetRuleText: (targetPrice: number | null, currency?: string) => string
 }>()
 
@@ -28,14 +29,9 @@ function appDetailTo(item: SubscriptionItem) {
 <template>
   <article class="radar-panel p-4 md:p-5">
     <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-      <div>
-        <p class="metric-mono text-[0.68rem] tracking-[0.24em] text-slate-400">
-          ACTIVE WATCHES
-        </p>
-        <h2 class="mt-2 font-['Space_Grotesk'] text-2xl font-bold tracking-[-0.04em] text-slate-950">
-          我的监控任务
-        </h2>
-      </div>
+      <h2 class="font-['Space_Grotesk'] text-2xl font-bold tracking-[-0.04em] text-slate-950">
+        我的监控任务
+      </h2>
       <button
         class="radar-button-secondary"
         type="button"
@@ -47,9 +43,22 @@ function appDetailTo(item: SubscriptionItem) {
     </div>
 
     <div v-if="props.loadingList" class="mt-4 grid gap-3">
-      <div class="skeleton-box h-20 rounded-[1rem]" />
-      <div class="skeleton-box h-20 rounded-[1rem]" />
-      <div class="skeleton-box h-20 rounded-[1rem]" />
+      <article
+        v-for="index in 3"
+        :key="index"
+        class="grid gap-3 rounded-[1rem] border border-slate-200/80 bg-slate-50/55 p-3 md:grid-cols-[68px_minmax(0,1fr)_120px]"
+      >
+        <div class="skeleton-box h-[68px] w-[68px] rounded-[0.95rem]" />
+        <div class="grid gap-2">
+          <div class="skeleton-box h-6 w-40 rounded-lg" />
+          <div class="skeleton-box h-4 w-56 rounded-lg max-w-full" />
+          <div class="skeleton-box h-4 w-48 rounded-lg max-w-full" />
+        </div>
+        <div class="grid gap-2">
+          <div class="skeleton-box h-10 w-full rounded-[0.85rem]" />
+          <div class="skeleton-box h-10 w-full rounded-[0.85rem]" />
+        </div>
+      </article>
     </div>
 
     <div
@@ -63,34 +72,41 @@ function appDetailTo(item: SubscriptionItem) {
       <li
         v-for="item in props.subscriptions"
         :key="item.id"
-        class="grid gap-3 rounded-[1rem] border border-slate-200/80 bg-slate-50/55 p-3 md:grid-cols-[64px_1fr_auto] md:items-center"
+        class="grid gap-3 rounded-[1rem] border border-slate-200/80 bg-slate-50/55 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] md:grid-cols-[68px_minmax(0,1fr)_120px] md:items-center"
       >
         <img
           v-if="item.iconUrl"
           :src="item.iconUrl"
           :alt="item.appName ?? item.appId"
-          class="h-[64px] w-[64px] rounded-[0.9rem] border border-slate-200 object-cover"
+          loading="lazy"
+          class="h-[68px] w-[68px] rounded-[0.95rem] border border-slate-200 object-cover"
         >
         <div
           v-else
-          class="grid h-[64px] w-[64px] place-items-center rounded-[0.9rem] border border-slate-200 bg-white text-xs font-semibold tracking-[0.12em] text-slate-500"
+          class="grid h-[68px] w-[68px] place-items-center rounded-[0.95rem] border border-slate-200 bg-white text-xs font-semibold tracking-[0.12em] text-slate-500"
         >
           APP
         </div>
 
         <div class="min-w-0">
-          <p class="truncate font-['Space_Grotesk'] text-lg font-bold tracking-[-0.04em] text-slate-950">
-            {{ item.appName ?? `App ${item.appId}` }}
-          </p>
-          <p class="mt-1 text-sm text-slate-500">
-            App ID: {{ item.appId }} · {{ props.countryLabel(item.country) }}（{{ item.country }}）
-          </p>
-          <p class="mt-1 text-sm text-slate-600">
-            最新价格：{{ props.toMoney(item.currentPrice, item.currency ?? 'USD') }}
-          </p>
-          <p class="mt-1 text-sm text-slate-600">
-            通知规则：{{ props.targetRuleText(item.targetPrice, item.currency ?? 'USD') }}
-          </p>
+          <RouterLink :to="appDetailTo(item)" class="inline-block max-w-full">
+            <p class="truncate font-['Space_Grotesk'] text-lg font-bold tracking-[-0.04em] text-slate-950 transition hover:text-blue-700">
+              {{ item.appName ?? `App ${item.appId}` }}
+            </p>
+          </RouterLink>
+          <div class="mt-2 flex flex-wrap gap-2">
+            <span class="radar-chip border-slate-200 bg-white/85 text-slate-600 shadow-none">
+              App ID {{ item.appId }}
+            </span>
+            <span class="radar-chip border-slate-200 bg-white/85 text-slate-600 shadow-none">
+              {{ props.countryLabel(item.country) }}（{{ item.country }}）
+            </span>
+          </div>
+          <div class="mt-3 grid gap-2 text-sm text-slate-600">
+            <p>最新价格：{{ props.toMoney(item.currentPrice, item.currency ?? 'USD') }}</p>
+            <p>通知规则：{{ props.targetRuleText(item.targetPrice, item.currency ?? 'USD') }}</p>
+            <p>最近同步：{{ props.toTime(item.updatedAt) }}</p>
+          </div>
         </div>
 
         <div class="grid gap-2 md:w-[7.25rem]">
@@ -98,7 +114,7 @@ function appDetailTo(item: SubscriptionItem) {
             :to="appDetailTo(item)"
             class="radar-button-primary px-4 py-2 text-sm"
           >
-            详情页
+            查看详情
           </RouterLink>
           <button
             class="radar-button-danger px-4 py-2 text-sm"
