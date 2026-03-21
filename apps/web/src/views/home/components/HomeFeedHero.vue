@@ -36,13 +36,6 @@ const statCards = computed(() => {
       surface: 'border-slate-200 bg-white/88',
     },
     {
-      label: '平均降幅',
-      value: `${props.summary.averageDrop.toFixed(2)}%`,
-      tone: 'text-blue-900',
-      valueTone: 'text-blue-700',
-      surface: 'border-blue-200 bg-blue-50',
-    },
-    {
       label: '最高降幅',
       value: `${props.summary.maxDrop.toFixed(2)}%`,
       tone: 'text-orange-900',

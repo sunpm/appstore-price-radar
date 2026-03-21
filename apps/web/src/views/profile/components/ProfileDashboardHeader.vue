@@ -20,22 +20,10 @@ const statCards = [
     surface: 'border-blue-100 bg-[linear-gradient(180deg,#eff6ff,#ffffff)]',
   },
   {
-    label: '已设目标价',
+    label: '已设价格阈值',
     value: 'withTarget',
     tone: 'text-orange-700',
     surface: 'border-orange-100 bg-[linear-gradient(180deg,#fff7ed,#ffffff)]',
-  },
-  {
-    label: '任意降价通知',
-    value: 'withoutTarget',
-    tone: 'text-slate-950',
-    surface: 'border-slate-200 bg-white/90',
-  },
-  {
-    label: '覆盖市场',
-    value: 'markets',
-    tone: 'text-blue-700',
-    surface: 'border-blue-100 bg-blue-50',
   },
 ] as const
 </script>
@@ -63,7 +51,7 @@ const statCards = [
       </button>
     </div>
 
-    <div class="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+    <div class="mt-5 grid gap-3 md:grid-cols-2">
       <div
         v-for="card in statCards"
         :key="card.label"
