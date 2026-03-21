@@ -46,16 +46,7 @@ const quickFacts = computed(() => {
   <section class="radar-panel-strong overflow-hidden">
     <div class="grid gap-5 p-5 md:p-6 xl:grid-cols-[minmax(0,1fr)_260px]">
       <div>
-        <div class="flex flex-wrap gap-2">
-          <span class="radar-chip border-blue-100 bg-blue-50 text-blue-700 shadow-none">
-            应用详情
-          </span>
-          <span class="radar-chip border-orange-100 bg-orange-50 text-orange-700 shadow-none">
-            {{ props.storePlatformLabel }}
-          </span>
-        </div>
-
-        <div class="mt-5 flex flex-col gap-4 md:flex-row md:items-start">
+        <div class="flex flex-col gap-4 md:flex-row md:items-start">
           <img
             v-if="props.iconUrl"
             :src="props.iconUrl"

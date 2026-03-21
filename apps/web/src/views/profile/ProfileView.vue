@@ -295,6 +295,7 @@ onMounted(async (): Promise<void> => {
             :subscriptions="subscriptions"
             :country-label="countryLabel"
             :to-money="toMoney"
+            :to-time="toTime"
             :target-rule-text="targetRuleText"
             @refresh="loadSubscriptions()"
             @remove="removeSubscription($event)"

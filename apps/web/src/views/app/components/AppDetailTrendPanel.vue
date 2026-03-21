@@ -6,6 +6,7 @@ import type {
 } from '@appstore-price-radar/contracts'
 import { computed } from 'vue'
 import { formatDate, formatDateTime, formatMoney } from '../../../lib/format'
+import AppDetailMoneyDisplay from './AppDetailMoneyDisplay.vue'
 
 interface TrendPoint {
   key: string
@@ -164,6 +165,22 @@ const latestChange = computed(() => {
   return orderedChanges.value[0] ?? null
 })
 
+const currentPriceCardValue = computed(() => {
+  if (!latestPoint.value) {
+    return '暂无'
+  }
+
+  return formatMoney(latestPoint.value.price, latestPoint.value.currency)
+})
+
+const loadProgress = computed(() => {
+  if (props.summary.totalChanges <= 0) {
+    return 0
+  }
+
+  return Math.min((props.history.length / props.summary.totalChanges) * 100, 100)
+})
+
 const showStandaloneCurrentPrice = computed(() => {
   if (!latestPoint.value || !lowestPoint.value) {
     return false
@@ -198,66 +215,61 @@ function directionTextClass(direction: TrendChangeRow['direction']): string {
 
 <template>
   <section class="grid gap-4">
-    <article class="radar-panel-strong p-4">
-      <p class="metric-mono text-[0.68rem] tracking-[0.24em] text-slate-500">
-        APP STORE
-      </p>
-      <h2 class="mt-2 font-['Space_Grotesk'] text-2xl font-bold tracking-[-0.05em] text-slate-950">
-        App Store 下载
-      </h2>
-      <p class="mt-2 text-sm text-slate-600">
-        {{ props.storePlatformLabel }}
-      </p>
-
-      <a
-        v-if="props.storeUrl"
-        :href="props.storeUrl"
-        target="_blank"
-        rel="noreferrer"
-        class="mt-4 inline-flex h-12 w-full items-center justify-center rounded-[0.9rem] bg-[#ffd84f] px-5 text-base font-semibold text-slate-950 shadow-[0_14px_24px_-18px_rgba(250,204,21,0.6)] transition duration-300 hover:bg-[#ffcf2d]"
-      >
-        前往 App Store
-      </a>
-
-      <div
-        v-else
-        class="radar-empty mt-5 px-4 py-4 text-center text-sm"
-      >
-        暂无 App Store 链接
-      </div>
-    </article>
-
-    <article class="radar-panel p-4">
-      <div>
-        <p class="metric-mono text-[0.68rem] tracking-[0.24em] text-slate-400">
-          PRICE RANGE
-        </p>
-        <h2 class="mt-2 font-['Space_Grotesk'] text-2xl font-bold tracking-[-0.04em] text-slate-950">
-          历史最低价
+    <article class="radar-panel-strong p-4 md:p-5">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <h2 class="font-['Space_Grotesk'] text-2xl font-bold tracking-[-0.05em] text-slate-950">
+          价格轨迹
         </h2>
+
+        <a
+          v-if="props.storeUrl"
+          :href="props.storeUrl"
+          target="_blank"
+          rel="noreferrer"
+          class="radar-button-secondary shrink-0 px-4 py-2.5"
+        >
+          打开 App Store
+        </a>
       </div>
 
       <template v-if="lowestPoint">
-        <p class="radar-display mt-5 text-[2.45rem] font-semibold text-orange-600">
-          {{ formatMoney(lowestPoint.price, lowestPoint.currency) }}
-        </p>
-        <p class="mt-2 text-base text-slate-500">
-          {{ formatDate(lowestPoint.time) }}
-        </p>
+        <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+          <article class="min-w-0 rounded-[1rem] border border-orange-200 bg-orange-50 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.84)]">
+            <p class="text-xs tracking-[0.16em] text-slate-500">
+              历史最低价
+            </p>
+            <div class="mt-3">
+              <AppDetailMoneyDisplay
+                :value="lowestPoint.price"
+                :currency="lowestPoint.currency"
+                size="hero"
+                tone="orange"
+              />
+            </div>
+            <p class="mt-2 text-sm text-slate-600">
+              {{ formatDate(lowestPoint.time) }}
+            </p>
+          </article>
 
-        <div
-          v-if="showStandaloneCurrentPrice && latestPoint"
-          class="mt-4 rounded-[1rem] border border-slate-200/80 bg-white p-4"
-        >
-          <p class="text-sm font-medium tracking-[0.08em] text-slate-500">
-            当前价格
-          </p>
-          <strong class="radar-display mt-2 block text-3xl text-slate-950">
-            {{ formatMoney(latestPoint.price, latestPoint.currency) }}
-          </strong>
-          <p class="mt-2 text-sm text-slate-500">
-            {{ props.snapshot?.updatedAt ? `最近快照：${formatDateTime(props.snapshot.updatedAt)}` : '暂无快照时间' }}
-          </p>
+          <article
+            v-if="showStandaloneCurrentPrice && latestPoint"
+            class="min-w-0 rounded-[1rem] border border-blue-200 bg-white/92 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.84)]"
+          >
+            <p class="text-xs tracking-[0.16em] text-slate-500">
+              当前价格
+            </p>
+            <div class="mt-3">
+              <AppDetailMoneyDisplay
+                :value="latestPoint.price"
+                :currency="latestPoint.currency"
+                size="hero"
+                tone="blue"
+              />
+            </div>
+            <p class="mt-2 text-sm text-slate-600">
+              {{ props.snapshot?.updatedAt ? `最近快照：${formatDateTime(props.snapshot.updatedAt)}` : '暂无快照时间' }}
+            </p>
+          </article>
         </div>
       </template>
 
@@ -268,44 +280,86 @@ function directionTextClass(direction: TrendChangeRow['direction']): string {
         暂无价格记录。
       </div>
 
-      <div class="mt-4 grid gap-3">
-        <article class="rounded-[0.95rem] border border-slate-200/80 bg-blue-50 p-4">
+      <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+        <article class="min-w-0 rounded-[0.95rem] border border-slate-200/80 bg-blue-50 p-4">
           <p class="text-sm font-medium tracking-[0.08em] text-slate-500">
             一年内最低价
           </p>
-          <strong class="radar-display mt-2 block text-2xl text-slate-950">
-            {{ oneYearLowestPoint ? formatMoney(oneYearLowestPoint.price, oneYearLowestPoint.currency) : '-' }}
-          </strong>
+          <div class="mt-2">
+            <AppDetailMoneyDisplay
+              :value="oneYearLowestPoint?.price ?? null"
+              :currency="oneYearLowestPoint?.currency ?? 'USD'"
+              size="card"
+              tone="default"
+              placeholder="-"
+            />
+          </div>
           <p class="mt-2 text-sm text-slate-500">
             {{ oneYearLowestPoint ? formatDate(oneYearLowestPoint.time) : '一年内暂无价格记录' }}
           </p>
         </article>
 
-        <article class="rounded-[0.95rem] border border-slate-200/80 bg-white p-4">
+        <article class="min-w-0 rounded-[0.95rem] border border-slate-200/80 bg-white p-4">
           <p class="text-sm font-medium tracking-[0.08em] text-slate-500">
             历史价格区间
           </p>
-          <strong class="mt-2 block text-base font-semibold leading-8 text-slate-950">
-            {{ lowestPoint ? `最低 ${formatMoney(lowestPoint.price, lowestPoint.currency)}` : '暂无最低价' }}
+          <div v-if="lowestPoint" class="mt-2 flex flex-wrap items-end gap-2">
+            <span class="text-sm font-medium text-slate-500">最低</span>
+            <AppDetailMoneyDisplay
+              :value="lowestPoint.price"
+              :currency="lowestPoint.currency"
+              size="inline"
+              tone="orange"
+            />
+          </div>
+          <strong v-else class="mt-2 block text-base font-semibold leading-8 text-slate-950">
+            暂无最低价
           </strong>
           <p class="mt-2 text-sm text-slate-500">
-            {{ highestPoint ? `最高 ${formatMoney(highestPoint.price, highestPoint.currency)}` : '暂无历史高点' }}
+            <template v-if="highestPoint">
+              最高
+              <AppDetailMoneyDisplay
+                class="ml-2"
+                :value="highestPoint.price"
+                :currency="highestPoint.currency"
+                size="inline"
+                tone="default"
+              />
+            </template>
+            <template v-else>
+              暂无历史高点
+            </template>
           </p>
         </article>
 
-        <article class="rounded-[0.95rem] border border-slate-200/80 bg-white p-4">
+        <article class="min-w-0 rounded-[0.95rem] border border-slate-200/80 bg-white p-4">
           <p class="text-sm font-medium tracking-[0.08em] text-slate-500">
             最近一次变价
           </p>
-          <strong class="mt-2 block text-base font-semibold leading-7 text-slate-950">
-            {{ latestChange ? `${formatMoney(latestChange.oldAmount, latestChange.currency)} -> ${formatMoney(latestChange.newAmount, latestChange.currency)}` : '暂无变价记录' }}
+          <div v-if="latestChange" class="mt-2 flex flex-wrap items-end gap-2 text-slate-950">
+            <AppDetailMoneyDisplay
+              :value="latestChange.oldAmount"
+              :currency="latestChange.currency"
+              size="inline"
+              tone="default"
+            />
+            <span class="text-sm font-medium text-slate-400">→</span>
+            <AppDetailMoneyDisplay
+              :value="latestChange.newAmount"
+              :currency="latestChange.currency"
+              size="inline"
+              :tone="latestChange.direction === 'down' ? 'blue' : latestChange.direction === 'up' ? 'orange' : 'default'"
+            />
+          </div>
+          <strong v-else class="mt-2 block text-base font-semibold leading-7 text-slate-950">
+            暂无变价记录
           </strong>
           <p class="mt-2 text-sm text-slate-500">
             {{ latestChange ? formatDate(latestChange.time) : '暂无最近变价时间' }}
           </p>
         </article>
 
-        <article class="rounded-[0.95rem] border border-blue-100 bg-[linear-gradient(145deg,#eff6ff,#dbeafe)] p-4 text-slate-950">
+        <article class="min-w-0 rounded-[0.95rem] border border-blue-100 bg-[linear-gradient(145deg,#eff6ff,#dbeafe)] p-4 text-slate-950">
           <p class="text-sm font-medium tracking-[0.08em] text-slate-500">
             变价记录
           </p>
@@ -315,20 +369,24 @@ function directionTextClass(direction: TrendChangeRow['direction']): string {
           <p class="mt-2 text-sm text-slate-600">
             已加载 {{ props.history.length }} / {{ props.summary.totalChanges }} 条
           </p>
+          <div class="mt-3 h-2 overflow-hidden rounded-full bg-white/70">
+            <div
+              class="h-full rounded-full bg-gradient-to-r from-blue-500 to-orange-400"
+              :style="{ width: `${Math.max(loadProgress, props.history.length > 0 ? 12 : 0)}%` }"
+            />
+          </div>
         </article>
       </div>
     </article>
 
     <article class="radar-panel p-5">
       <div class="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h3 class="font-['Space_Grotesk'] text-xl font-bold tracking-[-0.04em] text-slate-950">
-            价格变动记录
-          </h3>
-          <p class="mt-1 text-sm text-slate-500">
-            {{ props.summary.latestChangeAt ? `最近更新：${formatDateTime(props.summary.latestChangeAt)}` : '暂无变价记录' }}
-          </p>
-        </div>
+        <h3 class="font-['Space_Grotesk'] text-xl font-bold tracking-[-0.04em] text-slate-950">
+          价格变动记录
+        </h3>
+        <span class="radar-chip border-slate-200 bg-slate-50 text-slate-600 shadow-none">
+          当前价格 {{ currentPriceCardValue }}
+        </span>
       </div>
 
       <div
@@ -342,18 +400,42 @@ function directionTextClass(direction: TrendChangeRow['direction']): string {
         <li
           v-for="row in orderedChanges"
           :key="row.id"
-          class="grid grid-cols-[auto_minmax(0,1fr)] gap-3 rounded-[0.9rem] border border-slate-200/80 bg-slate-50/82 px-4 py-3 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center"
+          class="grid gap-3 rounded-[0.95rem] border border-slate-200/80 bg-slate-50/82 px-4 py-3 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center"
         >
-          <span
-            class="text-2xl font-semibold leading-none"
-            :class="directionTextClass(row.direction)"
-          >
-            {{ directionSymbol(row.direction) }}
-          </span>
-
-          <p class="metric-mono min-w-0 text-lg leading-8 text-slate-700">
-            {{ formatMoney(row.oldAmount, row.currency) }} -> {{ formatMoney(row.newAmount, row.currency) }}
-          </p>
+          <div class="flex items-center gap-3">
+            <span
+              class="inline-flex h-9 w-9 items-center justify-center rounded-full border text-lg font-semibold leading-none"
+              :class="{
+                'border-blue-200 bg-blue-50 text-blue-600': row.direction === 'down',
+                'border-rose-200 bg-rose-50 text-rose-500': row.direction === 'up',
+                'border-slate-200 bg-white text-slate-400': row.direction === 'flat',
+              }"
+            >
+              {{ directionSymbol(row.direction) }}
+            </span>
+            <div class="min-w-0">
+              <p class="min-w-0">
+                <span class="flex flex-wrap items-end gap-2 text-slate-700">
+                  <AppDetailMoneyDisplay
+                    :value="row.oldAmount"
+                    :currency="row.currency"
+                    size="inline"
+                    tone="default"
+                  />
+                  <span class="text-sm font-medium text-slate-300">→</span>
+                  <AppDetailMoneyDisplay
+                    :value="row.newAmount"
+                    :currency="row.currency"
+                    size="inline"
+                    :tone="row.direction === 'down' ? 'blue' : row.direction === 'up' ? 'orange' : 'default'"
+                  />
+                </span>
+              </p>
+              <p class="text-sm" :class="directionTextClass(row.direction)">
+                {{ row.direction === 'down' ? '价格下降' : row.direction === 'up' ? '价格上调' : '价格未变' }}
+              </p>
+            </div>
+          </div>
 
           <p class="metric-mono text-base text-slate-500 md:text-right">
             {{ formatDate(row.time) }}

@@ -323,13 +323,23 @@ const ratingCards = computed<InfoCardItem[]>(() => {
 
 <template>
   <section class="radar-panel p-5 md:p-6">
-    <div>
-      <p class="metric-mono text-[0.68rem] tracking-[0.24em] text-slate-400">
-        应用元数据
-      </p>
-      <h2 class="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
-        App Store 信息
-      </h2>
+    <h2 class="text-2xl font-semibold tracking-tight text-slate-950">
+      App Store 信息
+    </h2>
+
+    <div v-if="hasMetadata" class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div
+        v-for="item in overviewCards.slice(0, 4)"
+        :key="`overview-${item.label}`"
+        class="rounded-[0.95rem] border border-slate-200/80 bg-slate-50/78 p-4"
+      >
+        <p class="text-xs tracking-[0.16em] text-slate-500">
+          {{ item.label }}
+        </p>
+        <p class="mt-3 break-words text-base font-semibold leading-7 text-slate-950">
+          {{ item.value }}
+        </p>
+      </div>
     </div>
 
     <div
@@ -341,19 +351,9 @@ const ratingCards = computed<InfoCardItem[]>(() => {
 
     <template v-else>
       <article class="mt-4 rounded-[1rem] border border-slate-200/80 bg-slate-50/76 p-4 md:p-5">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h3 class="text-lg font-semibold tracking-tight text-slate-950">
-              应用截图
-            </h3>
-            <p class="mt-1 text-sm text-slate-500">
-              左右滑动查看更多截图。
-            </p>
-          </div>
-          <p class="text-sm text-slate-500">
-            {{ screenshotUrls.length > 0 ? `共 ${screenshotUrls.length} 张` : '暂无官方截图' }}
-          </p>
-        </div>
+        <h3 class="text-lg font-semibold tracking-tight text-slate-950">
+          应用截图
+        </h3>
 
         <div
           v-if="screenshotUrls.length === 0"
@@ -372,6 +372,7 @@ const ratingCards = computed<InfoCardItem[]>(() => {
               <img
                 :src="url"
                 :alt="`${props.appName} 截图 ${index + 1}`"
+                loading="lazy"
                 class="aspect-[9/19.5] w-full object-cover"
               >
             </div>
@@ -435,7 +436,7 @@ const ratingCards = computed<InfoCardItem[]>(() => {
 
         <div class="mt-4 grid gap-3 md:grid-cols-2">
           <div
-            v-for="item in overviewCards"
+            v-for="item in overviewCards.slice(4)"
             :key="item.label"
             class="rounded-[0.9rem] border border-slate-200/80 bg-white/90 p-4"
           >

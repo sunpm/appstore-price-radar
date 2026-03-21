@@ -187,6 +187,7 @@ onMounted(async (): Promise<void> => {
             v-model:selected-country="selectedCountry"
             v-model:keyword="keyword"
             :country-options="countryOptions"
+            :loading="loading"
             :result-count="filteredDrops.length"
             :selected-country-label="selectedCountryLabel"
             :total-count="drops.length"

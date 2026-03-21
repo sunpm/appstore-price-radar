@@ -33,13 +33,27 @@ function onTargetPriceInput(event: Event): void {
 <template>
   <article class="radar-panel p-4 md:p-5">
     <div class="flex items-end justify-between gap-3">
-      <div>
-        <p class="metric-mono text-[0.68rem] tracking-[0.24em] text-slate-400">
-          WATCH FORM
+      <h2 class="font-['Space_Grotesk'] text-2xl font-bold tracking-[-0.04em] text-slate-950">
+        新建监控任务
+      </h2>
+    </div>
+
+    <div class="mt-4 grid gap-3">
+      <div class="rounded-[0.95rem] border border-blue-100 bg-blue-50/80 p-4">
+        <p class="text-xs tracking-[0.16em] text-slate-500">
+          输入格式
         </p>
-        <h2 class="mt-2 font-['Space_Grotesk'] text-2xl font-bold tracking-[-0.04em] text-slate-950">
-          新建监控任务
-        </h2>
+        <p class="mt-2 text-sm leading-6 text-slate-700">
+          支持 App ID，也支持直接粘贴 App Store 链接。
+        </p>
+      </div>
+      <div class="rounded-[0.95rem] border border-orange-100 bg-orange-50/80 p-4">
+        <p class="text-xs tracking-[0.16em] text-slate-500">
+          通知规则
+        </p>
+        <p class="mt-2 text-sm leading-6 text-slate-700">
+          目标价留空时，只要检测到降价就会通知。
+        </p>
       </div>
     </div>
 
@@ -88,7 +102,7 @@ function onTargetPriceInput(event: Event): void {
           @input="onTargetPriceInput"
         >
         <p class="text-sm leading-6 text-slate-500">
-          通知规则：当前价 &lt;= 目标价格。留空表示任意降价都会通知。
+          当前价格低于或等于目标价格时通知。留空表示任意降价都会通知。
         </p>
       </label>
 
