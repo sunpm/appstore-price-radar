@@ -83,7 +83,7 @@ describe('app detail view price history', () => {
 
     const firstMount = await mountAppAt('/apps/123456789/cn')
 
-    expect(firstMount.wrapper.text()).toContain('官方渠道下载')
+    expect(firstMount.wrapper.text()).toContain('打开 App Store')
     expect(firstMount.wrapper.text()).toContain('iOS / macOS')
     expect(firstMount.wrapper.text()).toContain('中国大陆')
     expect(firstMount.wrapper.text()).not.toContain('地区 中国大陆')
@@ -91,7 +91,9 @@ describe('app detail view price history', () => {
     expect(firstMount.wrapper.text()).not.toContain('Medical')
     expect(firstMount.wrapper.text()).toContain('历史最低价')
     expect(firstMount.wrapper.text()).toContain('一年内最低价')
-    expect(firstMount.wrapper.text()).toContain('最低入手价浮动记录')
+    expect(firstMount.wrapper.text()).toContain('价格变动记录')
+    expect(firstMount.wrapper.text().match(/价格与评分/g)).toHaveLength(1)
+    expect(firstMount.wrapper.text().match(/价格轨迹/g)).toHaveLength(1)
     expect(firstMount.wrapper.text()).toContain('已加载 1 / 1 条')
     expect(firstMount.wrapper.text()).toContain('应用截图')
     expect(firstMount.wrapper.text()).toContain('更新说明')
@@ -109,7 +111,7 @@ describe('app detail view price history', () => {
     expect(firstMount.wrapper.text()).not.toContain('返回市场动态')
     expect(firstMount.wrapper.text()).not.toContain('iPhone16-iPhone16')
     expect(firstMount.wrapper.text()).not.toContain('## Major improvements')
-    expect(firstMount.wrapper.findAll('a').filter(link => link.text() === '前往 App Store')).toHaveLength(1)
+    expect(firstMount.wrapper.findAll('a').filter(link => link.text() === '打开 App Store')).toHaveLength(1)
     expect(firstMount.wrapper.text()).not.toContain('30 天')
     expect(firstMount.wrapper.text()).not.toContain('90 天')
     expect(fetchMock).toHaveBeenCalledTimes(1)
@@ -197,7 +199,7 @@ describe('app detail view price history', () => {
     const { wrapper } = await mountAppAt('/apps/123456789/us')
 
     expect(wrapper.text()).toContain('应用截图')
-    expect(wrapper.text()).toContain('当前 App Store 官方接口没有返回截图数据')
+    expect(wrapper.text()).toContain('App Store 接口未返回截图数据。')
 
     wrapper.unmount()
   })

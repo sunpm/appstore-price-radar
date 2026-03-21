@@ -3,6 +3,17 @@ import type { AppDecisionStatsState } from '../types'
 import { computed } from 'vue'
 import { resolveAppStoreGenreLabel } from '../../../lib/app-store'
 import { formatMoney } from '../../../lib/format'
+import AppDetailMoneyDisplay from './AppDetailMoneyDisplay.vue'
+
+interface DecisionStatCard {
+  label: string
+  value: string
+  tone: string
+  surface: string
+  kind?: 'money'
+  amount?: number | null
+  currency?: string
+}
 
 const props = defineProps<{
   stats: AppDecisionStatsState
@@ -16,7 +27,7 @@ function toPercent(value: number | null | undefined): string {
   return `${value.toFixed(2)}%`
 }
 
-const statCards = computed(() => {
+const statCards = computed<DecisionStatCard[]>(() => {
   return [
     {
       label: '综合评分',
@@ -47,6 +58,9 @@ const statCards = computed(() => {
       value: formatMoney(props.stats.lowestPrice, props.stats.currency),
       tone: 'text-blue-700',
       surface: 'bg-blue-50',
+      kind: 'money',
+      amount: props.stats.lowestPrice,
+      currency: props.stats.currency,
     },
     {
       label: '分类',
@@ -66,28 +80,32 @@ const statCards = computed(() => {
 
 <template>
   <section class="radar-panel p-4 md:p-5">
-    <div>
-      <div>
-        <p class="metric-mono text-[0.68rem] tracking-[0.24em] text-slate-400">
-          STATS
-        </p>
-        <h2 class="mt-2 font-['Space_Grotesk'] text-2xl font-bold tracking-[-0.04em] text-slate-950">
-          价格与评分
-        </h2>
-      </div>
+    <div class="flex items-end justify-between gap-3">
+      <h2 class="font-['Space_Grotesk'] text-2xl font-bold tracking-[-0.04em] text-slate-950">
+        价格与评分
+      </h2>
     </div>
 
-    <div class="mt-4 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       <article
         v-for="card in statCards"
         :key="card.label"
-        class="rounded-[1rem] border border-slate-200/76 p-4"
+        class="rounded-[1rem] border border-slate-200/76 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.82)]"
         :class="card.surface"
       >
-        <p class="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+        <p class="text-xs font-medium tracking-[0.16em] text-slate-500">
           {{ card.label }}
         </p>
-        <strong class="radar-display mt-2 block text-2xl" :class="card.tone">
+        <AppDetailMoneyDisplay
+          v-if="card.kind === 'money'"
+          class="mt-2"
+          :value="card.amount"
+          :currency="card.currency"
+          size="card"
+          tone="blue"
+          placeholder="-"
+        />
+        <strong v-else class="radar-display mt-2 block text-2xl" :class="card.tone">
           {{ card.value }}
         </strong>
       </article>
